@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ImpD Documentation</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <style>
+    body {
+      max-width: 50em;
+    }
+    pre {
+      background-color: #E0E0F0;
+      padding-left: 2em;
+    }
+    code {
+      color: #3030A0;
+    }
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">ImpD Documentation</h1>
+</header>
+<h1 id="impd">ImpD</h1>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#syntax">Syntax</a>
+<ul>
+<li><a href="#comments">Comments</a></li>
+<li><a href="#variables">Variables</a></li>
+<li><a href="#spaces">Spaces</a></li>
+<li><a href="#line-breaks">Line breaks</a></li>
+<li><a href="#expressions">Expressions</a></li>
+<li><a href="#primitive-functions">Primitive Functions</a></li>
+<li><a href="#primitive-instructions">Primitive Instructions</a>
+<ul>
+<li><a href="#call">call</a></li>
+<li><a href="#debug">debug</a></li>
+<li><a href="#for">for</a></li>
+<li><a href="#format">format</a></li>
+<li><a href="#if">if</a></li>
+<li><a href="#include">include</a></li>
+<li><a href="#local">local</a></li>
+<li><a href="#meta">meta</a></li>
+<li><a href="#repeat">repeat</a></li>
+<li><a href="#return">return</a></li>
+<li><a href="#stop">stop</a></li>
+<li><a href="#trace">trace</a></li>
+</ul></li>
+<li><a href="#faux-data-structures">Faux data structures</a></li>
+</ul></li>
+</ul>
+<h2 id="introduction">Introduction</h2>
+<p><em>ImpD</em> is a text-based data format based on a simple
+imperative language designed to be reasonably compact yet easy to read
+and write for humans and machines. The language includes variables, and
+basic control flow statements like <code>if</code>, <code>while</code>,
+and function calls, which enable “intelligent” data that adapt to
+loading conditions and allow data to be generated on the fly when a file
+is being loaded. <em>ImpD</em> was created for the <em>IVG</em> graphics
+format, but <em>ImpD</em> is generic and can be used for any file
+data.</p>
+<h2 id="syntax">Syntax</h2>
+<p>An <em>ImpD</em> file consists of a sequence of <em>statements</em>,
+usually one per line. Except for <em>variable assignments</em> (which
+have a different syntax), each statement begins with an
+<em>instruction</em> followed by <em>arguments</em> separated by space.
+Arguments may be <em>ordinal</em> or prefixed with a <em>label</em> and
+a colon. Labeled arguments are often (but not always) optional and may
+appear mixed with ordinal arguments in any order, but each unique label
+may occur only once. Instructions, labels, and most argument values are
+case insensitive, but otherwise, <em>ImpD</em> is generally strict about
+its syntax and does not allow unrecognized instruction and superfluous
+arguments.</p>
+<p>As an example, the first statement should be the <code>format</code>
+instruction which looks like this:</p>
+<pre><code>format IVG-2 requires:ImpD-1</code></pre>
+<p>The loading program must recognize the format (<code>IVG-2</code>
+above), or the file will not load. The labeled <code>requires</code>
+argument tells the parser that <em>ImpD</em> version 1 is required to
+interpret the file (other requirements may follow separated by
+comma).</p>
+<h3 id="comments">Comments</h3>
+<p>Comments are written in C++ style:</p>
+<pre><code>// single line comment
+
+/*
+    multi
+    -line
+    comment
+*/</code></pre>
+<h3 id="variables">Variables</h3>
+<p>Variable assignment looks like this:</p>
+<pre><code>my_variable = some text here</code></pre>
+<p>Variable names must begin with lower- or uppercase <code>a</code> to
+<code>z</code> or <code>_</code> but may also contain <code>0</code> to
+<code>9</code>, <code>-</code> and <code>.</code>. Except for leading
+and trailing spaces, all other spaces on the right-hand side of
+<code>=</code> are included.</p>
+<p><code>$</code> is used to expand variables:</p>
+<pre><code>// print: some text here
+trace $my_variable</code></pre>
+<p><em>ImpD</em> also performs variable expansion in assignment
+statements, both on the left-hand and right-hand sides. For example:</p>
+<pre><code>// Equivalent to myVar = 1337:
+assignTo = myVar
+assignValue = 1337
+$assignTo = $assignValue</code></pre>
+<p>You can “delay” variable expansion of the right-hand side by
+enclosing it in brackets <code>[</code> and <code>]</code> or prevent
+expansion entirely by enclosing it in double quotes <code>"</code>. You
+would typically use brackets to allow spaces in arguments or to define
+the body for a function call, if-statement or loop.</p>
+<p>For example, <code>TEXT</code> is part of the IVG format and takes
+one single argument. If we want to pass an arbitrary string as its only
+argument, we need to enclose it in brackets like this:</p>
+<pre><code>TEXT [$my_variable]</code></pre>
+<p>If we did not use brackets, <code>$my_variable</code> would expand to
+three different arguments before <code>TEXT</code> is invoked
+(<code>some</code>, <code>text</code>, and <code>here</code>). By
+enclosing <code>$my_variable</code> in brackets, the full string will be
+passed on to <code>TEXT</code> as its first argument, and the
+<code>TEXT</code> instruction will remove the brackets and perform the
+variable expansion during invocation.</p>
+<p>Notice that the built-in <code>trace</code> primitive does not parse
+its arguments. You use it for debugging purposes, and the entire trace
+line is output without removing any brackets or quotes.</p>
+<h3 id="spaces">Spaces</h3>
+<p>Brackets are one of three different techniques that exist for
+including spaces in arguments:</p>
+<pre><code>TEXT [
+    This argument can now include spaces, span several lines, and include delayed
+    $var_expansion . You should know that consecutive space characters, including
+    linefeeds, etc., are joined into one single space character. Also, /* comments
+    are removed */.
+]
+
+TEXT Backslash\ can\ escape\ spaces\
+and\ even\ linefeeds
+
+TEXT &quot;Quotes will preserve spaces exactly
+    including tabs, linefeeds, etc., and no $var_expansion is performed.&quot;</code></pre>
+<p>Besides using backslash to escape space characters, all the
+conventional C-style escape codes, such as <code>\n</code>,
+<code>\r</code>, <code>\t</code> etc. are available, as well as
+<code>\x</code> for two-digit hex values, <code>\u</code> for four-digit
+hex values, and <code>\U</code> for eight-digit hex values.
+<code>\</code> followed by a decimal number also works.</p>
+<p>When instructions expect lists, you can delimit the elements with
+commas or spaces. It is just a matter of taste:</p>
+<pre><code>// Equivalent:
+RECT [10 10 100 100]
+RECT 10,10,100,100</code></pre>
+<h3 id="line-breaks">Line breaks</h3>
+<p>A single linefeed, where the following argument would otherwise
+appear, is enough to mark the end of a statement. If you want to break
+up a single statement over several lines, start the following line with
+two periods. Like this:</p>
+<pre><code>pen green
+    .. width:5
+    .. dash:10</code></pre>
+<p>Use semicolon if you wish to do the opposite and write more than one
+statement on a single line:</p>
+<pre><code>scale 2.0; offset 5,5; rotate 7</code></pre>
+<p>Notice: semicolon terminates a variable assignment line too.
+E.g.:</p>
+<pre><code>// This will trace B, then A,
+// $brokenLine will be `trace A` only:
+brokenLine=trace A; trace B
+$brokenLine
+
+// This on the other hand will trace A, then B,
+// $wholeLine will be `[trace A; trace B]`:
+wholeLine=[trace A; trace B]
+$wholeLine</code></pre>
+<h3 id="expressions">Expressions</h3>
+<p>You use curly brackets <code>{</code> and <code>}</code> to evaluate
+C-style expressions and inject their results as strings. The following
+operations are supported (in order of descending precedence):</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 9%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Example</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>{"a" "b"}</code></td>
+<td style="text-align: left;"><code>ab</code></td>
+<td style="text-align: left;">string concatenation</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{$myVar}</code></td>
+<td style="text-align: left;"><code>???</code></td>
+<td style="text-align: left;">variable lookup</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{$number$i}</code></td>
+<td style="text-align: left;"><code>???</code></td>
+<td style="text-align: left;">spliced variable name lookup (same as
+<code>{$(number$i)}</code>)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{2 ** 3}</code></td>
+<td style="text-align: left;"><code>8</code></td>
+<td style="text-align: left;">exponentiation</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{10%}</code></td>
+<td style="text-align: left;"><code>0</code>.1</td>
+<td style="text-align: left;">percentage</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{"b"{1}}</code></td>
+<td style="text-align: left;"><code>b</code></td>
+<td style="text-align: left;">indexing (first character is
+<code>{0}</code>)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{"abcde"{1:2}}</code></td>
+<td style="text-align: left;"><code>bc</code></td>
+<td style="text-align: left;">substring
+(<code>{offset:length}</code>)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{!(5 &lt; 3)}</code></td>
+<td style="text-align: left;"><code>yes</code></td>
+<td style="text-align: left;">logical not</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{-(3 + 2)}</code></td>
+<td style="text-align: left;"><code>-5</code></td>
+<td style="text-align: left;">numerical negation</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{+"056.0"}</code></td>
+<td style="text-align: left;"><code>56</code></td>
+<td style="text-align: left;">convert to number</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{3 * 9}</code></td>
+<td style="text-align: left;"><code>27</code></td>
+<td style="text-align: left;">multiplication</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{9 / 3}</code></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;">division (division by 0 is an error)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{-11 % 3}</code></td>
+<td style="text-align: left;"><code>-2</code></td>
+<td style="text-align: left;">modulo (modulo with 0 is an error)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{123 + 123}</code></td>
+<td style="text-align: left;"><code>246</code></td>
+<td style="text-align: left;">addition</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{246 - 123}</code></td>
+<td style="text-align: left;"><code>123</code></td>
+<td style="text-align: left;">subtraction</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{100 &lt; 200}</code></td>
+<td style="text-align: left;"><code>yes</code></td>
+<td style="text-align: left;">less than (prefers numerical
+comparison)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{100 &lt;= 100}</code></td>
+<td style="text-align: left;"><code>yes</code></td>
+<td style="text-align: left;">less than or equal (prefers numerical
+comparison)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{100 == 100.0}</code></td>
+<td style="text-align: left;"><code>yes</code></td>
+<td style="text-align: left;">equals (prefers numerical comparison)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{100 != 100.0}</code></td>
+<td style="text-align: left;"><code>no</code></td>
+<td style="text-align: left;">not equals (prefers numerical
+comparison)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{b &gt; a}</code></td>
+<td style="text-align: left;"><code>yes</code></td>
+<td style="text-align: left;">greater than (prefers numerical
+comparison)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{B &gt;= c}</code></td>
+<td style="text-align: left;"><code>no</code></td>
+<td style="text-align: left;">greater than or equal (prefers numerical
+comparison)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{yes &amp;&amp; no}</code></td>
+<td style="text-align: left;"><code>no</code></td>
+<td style="text-align: left;">logical and</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>{no || yes}</code></td>
+<td style="text-align: left;"><code>yes</code></td>
+<td style="text-align: left;">logical or</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>{yes ? 3 : 1}</code></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;">conditional
+(<code>boolean ? true : false</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Notice that you use the strings <code>yes</code> and <code>no</code>
+for boolean values (not <code>true</code> and <code>false</code> like in
+most C-style languages).</p>
+<p>Inside curly brackets, anything that is not a number, a known
+operator, a comment, etc., is taken as a literal string, but you may
+also use double quotes. E.g.</p>
+<pre><code>// These two will both concatenate to abc:
+trace {a b c}
+trace {&quot;a&quot; &quot;b&quot; &quot;c&quot;}</code></pre>
+<p>Parenthesis <code>(</code> and <code>)</code> are used to group
+sub-expressions as expected. Brackets <code>[</code> and <code>]</code>
+may be used to process a string as it would be processed outside curly
+brackets. E.g.:</p>
+<pre><code>// First two traces are identical:
+myVar = 99
+trace {[$myVar bottles of beer]}
+trace $myVar bottles of beer
+
+// But this one will concatenate all strings to 99bottlesofbeer:
+trace {$myVar bottles of beer}</code></pre>
+<h3 id="primitive-functions">Primitive Functions</h3>
+<p>Inside curly brackets, the following functions are available:</p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 85%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Function</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>abs(x)</code></td>
+<td style="text-align: left;">returns the absolute value of a
+number</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>acos(x)</code></td>
+<td style="text-align: left;">returns the inverse cosine of a number in
+radians</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>asin(x)</code></td>
+<td style="text-align: left;">returns the inverse sine of a number in
+radians</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>atan(x)</code></td>
+<td style="text-align: left;">returns the inverse tangent of a number in
+radians</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>ceil(x)</code></td>
+<td style="text-align: left;">returns the smallest integer greater than
+or equal to a number</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>cos(x)</code></td>
+<td style="text-align: left;">returns the cosine of a number in
+radians</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>cosh(x)</code></td>
+<td style="text-align: left;">returns the hyperbolic cosine of a
+number</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>exp(x)</code></td>
+<td style="text-align: left;">returns the value of <code>e</code> raised
+to a power</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>floor(x)</code></td>
+<td style="text-align: left;">returns the largest integer less than or
+equal to a number</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>log(x)</code></td>
+<td style="text-align: left;">returns the natural logarithm of a
+number</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>log10(x)</code></td>
+<td style="text-align: left;">returns the base-10 logarithm of a
+number</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>round(x)</code></td>
+<td style="text-align: left;">returns the nearest integer to a number
+(.5 rounds upwards)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>sin(x)</code></td>
+<td style="text-align: left;">returns the sine of a number in
+radians</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>sinh(x)</code></td>
+<td style="text-align: left;">returns the hyperbolic sine of a
+number</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>sqrt(x)</code></td>
+<td style="text-align: left;">returns the square root of a number</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>tan(x)</code></td>
+<td style="text-align: left;">returns the tangent of a number in
+radians</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>tanh(x)</code></td>
+<td style="text-align: left;">returns the hyperbolic tangent of a
+number</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>len(s)</code></td>
+<td style="text-align: left;">returns the length of a string</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>def(var)</code></td>
+<td style="text-align: left;">checks if a variable is defined (do not
+begin variable with <code>$</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>There is also a single constant: <code>pi</code>.</p>
+<h3 id="primitive-instructions">Primitive Instructions</h3>
+<h4 id="call">call</h4>
+<p>The <code>call</code> instruction parses the unlabeled
+<code>args</code> into <code>$0</code> and up (labeled arguments go into
+<code>$&lt;name&gt;</code>) and then executes the <code>body</code> code
+in a new <em>function frame</em>:</p>
+<pre><code>call &lt;body&gt; [args ...]                                              </code></pre>
+<p><code>body</code> is usually a variable that contains the function
+definition. For example:</p>
+<pre><code>fibonacci = [
+    local y = $1
+    if {$y &gt;= 2} [
+        local x
+        call $fibonacci x {$y - 1}
+        call $fibonacci y {$y - 2}
+        y = {$x + $y}
+    ]
+    return $0 = $y
+]
+
+local result
+call $fibonacci result 10
+trace the 10th fibonacci number is $result</code></pre>
+<p>Another choice is to put the <code>call</code> instruction in the
+function definition instead of function invocation. For example:</p>
+<pre><code>sum = [ return $0 = {$1 + $2} ]
+call $sum x 123 456
+
+// Can also be written like this:
+
+sum = call [ return $0 = {$1 + $2} ]
+$sum x 123 456</code></pre>
+<p>Both solutions expand into the same
+<code>call [ return $0 = {$1 + $2} ] x 123 456</code> line for the
+interpreter. It is just a matter of taste.</p>
+<p>Notice that <em>ImpD</em> uses <em>dynamic</em> scoping. All local
+variables of the caller are accessible to the callee. For example:</p>
+<pre><code>// This will trace:
+//  valueB
+//
+funcA = [
+    local aVariable = valueA
+    call $funcB
+    trace $aVariable
+]
+funcB = [
+    aVariable = valueB
+]
+call $funcA</code></pre>
+<h4 id="debug">debug</h4>
+<p>The <code>_debug</code> instruction is for testing only:</p>
+<pre><code>_debug [expand:(yes|no)=no] [args ...]                                </code></pre>
+<p>It outputs the specified <code>args</code> after optional
+“preprocessing” according to the <code>expand</code> parameter.</p>
+<h4 id="for">for</h4>
+<p>The <code>for</code> instruction iterates over a range of numbers or
+a list of elements and sets a <code>var</code> to each value, then
+executes a code <code>body</code>:</p>
+<pre><code>for [var] (from:&lt;n&gt; to:&lt;n&gt; | in:&lt;list&gt; [reverse:(yes|no)=no]) &lt;body&gt;</code></pre>
+<p>The <code>to:</code> parameter is inclusive. The <code>in:</code>
+parameter parses and iterates over a comma or space-separated list. You
+can use the <code>reverse</code> parameter to iterate in reverse
+order.</p>
+<p>Examples:</p>
+<pre><code>// This example traces the numbers 1 to 5
+//
+for i from:1 to:5 [
+    trace $i
+]
+
+// This example traces:
+//  orange
+//  banana
+//  apple
+//
+for item in:[apple,banana,orange] reverse:yes [
+    trace $item
+]</code></pre>
+<h4 id="format">format</h4>
+<p>The <code>format</code> instruction specifies the file format and its
+requirements:</p>
+<pre><code>format &lt;id&gt; [uses:&lt;id&gt;[,&lt;id&gt;,...]] [requires:&lt;id&gt;[,&lt;id&gt;,...]]</code></pre>
+<p>The <code>id</code> is typically in the form of
+<code>&lt;name&gt;-&lt;version&gt;</code>. The <code>uses</code>
+parameter specifies meta tags <code>id</code>s. The
+<code>requires</code> parameter specifies the baseline <em>ImpD</em>
+(e.g. <code>ImpD-1</code>) and any custom extensions. If the parser does
+not recognize a required <code>id</code>, it cannot load the file.</p>
+<p>Including a <code>format</code> instruction in your <em>ImpD</em>
+document is good practice, although not strictly necessary. It should be
+the first instruction in your document, and no more than one
+<code>format</code> instruction should be present.</p>
+<h4 id="if">if</h4>
+<p>The <code>if</code> instruction executes a code <code>body</code> if
+a <code>condition</code> is <code>yes</code> (otherwise, it executes an
+optional <code>else</code> body):</p>
+<pre><code>if [&lt;condition&gt;] [&lt;body&gt;] [else:&lt;body&gt;]</code></pre>
+<h4 id="include">include</h4>
+<p>The <code>include</code> instruction is similar to <a
+href="#call"><code>call</code></a>, but the <code>body</code> code gets
+loaded from a file or another type of “asset” implemented by the
+host:</p>
+<pre><code>include &lt;file&gt; [args ...]</code></pre>
+<h4 id="local">local</h4>
+<p>The <code>local</code> instruction declares that a variable is local
+to the current call and optionally initializes it:</p>
+<pre><code>local &lt;var&gt; [= ...]</code></pre>
+<p>If you assign using <code>&lt;var&gt; = ...</code> <em>without</em>
+<code>local</code>, the calling chain is searched upwards for the
+presence of <code>&lt;var&gt;</code>. If it is found in any caller, its
+value is updated. If the variable is not found, a new global variable at
+the <em>root frame</em> is created. <code>local</code>, on the other
+hand, always creates variables in the current <em>variable frame</em>.
+You cannot create a local variable with a name that already exist.</p>
+<h4 id="meta">meta</h4>
+<p>The <code>meta</code> instruction is akin to a comment for the client
+software or a vendor-specific instruction:</p>
+<pre><code>meta &lt;id&gt; ...</code></pre>
+<p>The <code>id</code> must be a unique identifier. The <a
+href="#format"><code>format</code></a> instruction should have listed it
+in the <code>uses</code> argument. Unknown <code>id</code>s are
+ignored.</p>
+<h4 id="repeat">repeat</h4>
+<p>The <code>repeat</code> instruction repeats a code <code>body</code>
+either until the <code>condition</code> is not <code>yes</code> or the
+specified number of <code>count</code> times:</p>
+<pre><code>repeat &lt;count&gt; [while:&lt;condition&gt;] &lt;body&gt;</code></pre>
+<h4 id="return">return</h4>
+<p>The <code>return</code> instruction assigns a string to a variable
+outside the current <em>variable frame</em>:</p>
+<pre><code>return &lt;var&gt; [= ...]</code></pre>
+<p>As with ordinary assignments using <code>&lt;var&gt; = ...</code>,
+the calling chain is searched upwards for the presence of
+<code>&lt;var&gt;</code>, but the search starts in the <em>caller’s</em>
+<em>variable frame</em>. If it is found in any caller, its value is
+updated. If the variable is not found, a new global variable at the
+<em>root frame</em> is created.</p>
+<p>Without the <code>[= ...]</code> argument, <code>return</code> will
+lookup <code>&lt;var&gt;</code> and use its existing value.</p>
+<p>Notice that <code>return</code> does not actually stop executing the
+function body. It merely assigns values.</p>
+<h4 id="stop">stop</h4>
+<p>The <code>stop</code> instruction terminates the parsing (early
+exit):</p>
+<pre><code>stop</code></pre>
+<h4 id="trace">trace</h4>
+<p>The <code>trace</code> instruction outputs an arbitrary string
+without argument parsing:</p>
+<pre><code>trace ...</code></pre>
+<h3 id="faux-data-structures">Faux data structures</h3>
+<p><em>ImpD</em> does not support <em>first class objects</em> such as
+<em>arrays</em> and <em>structs</em>, but you can “simulate” these data
+structures using <em>spliced variable names</em>. For example, a random
+access array can be created by appending an index suffix to a variable
+name. For example:</p>
+<pre><code>// Create a sine table by creating 1000 variables with the name `sine.` and an index.
+for i from:0 to:999 [
+    sine.$i = {sin(($i + 0.5) / 1000 * 2 * pi)}
+]
+// Lookup indexes from a list
+for e in:[0,614,287,511,999] [
+    trace {$sine.$e} // same as {$(sine.$e)}
+]</code></pre>
+<p>Here is an example of using faux key/value structures:</p>
+<pre><code>drawBall = call [
+    fill {$($0).color}
+    ellipse {$($0).x},{$($0).y},{$($0).size}
+]
+
+ballA.color=yellow; ballA.size=5;  ballA.x=23;  ballA.y=50
+ballB.color=lime;   ballB.size=25; ballB.x=77;  ballB.y=33
+ballC.color=red;    ballC.size=13; ballC.x=133; ballC.y=20
+
+$drawBall ballA
+$drawBall ballB
+$drawBall ballC</code></pre>
+<p>Notice that <code>.</code> before the key names is an arbitrary
+choice, you might as well use <code>_</code>, <code>$</code> or any
+other character that is allowed in a variable name.</p>
+</body>
+</html>

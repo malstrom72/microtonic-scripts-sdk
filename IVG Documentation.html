@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>IVG Documentation</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <style>
+    body {
+      max-width: 50em;
+    }
+    pre {
+      background-color: #E0E0F0;
+      padding-left: 2em;
+    }
+    code {
+      color: #3030A0;
+    }
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">IVG Documentation</h1>
+</header>
+<h1 id="ivg">IVG</h1>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#intro">Intro</a></li>
+<li><a href="#instructions">Instructions</a>
+<ul>
+<li><a href="#ellipse">ELLIPSE</a></li>
+<li><a href="#image">IMAGE</a></li>
+<li><a href="#path">PATH</a></li>
+<li><a href="#rect">RECT</a></li>
+<li><a href="#star">STAR</a></li>
+<li><a href="#text">TEXT</a></li>
+<li><a href="#wipe">WIPE</a></li>
+</ul></li>
+<li><a href="#directives">Directives</a>
+<ul>
+<li><a href="#bounds">bounds</a></li>
+<li><a href="#context">context</a></li>
+<li><a href="#define">define</a></li>
+<li><a href="#fill">fill</a></li>
+<li><a href="#font">font</a></li>
+<li><a href="#mask">mask</a></li>
+<li><a href="#options">options</a></li>
+<li><a href="#pen">pen</a></li>
+<li><a href="#reset">reset</a></li>
+</ul></li>
+<li><a href="#specifications">Specifications</a>
+<ul>
+<li><a href="#color-specification">Color Specification</a></li>
+<li><a href="#gradient-specification">Gradient Specification</a></li>
+<li><a href="#paint-specification">Paint Specification</a></li>
+<li><a href="#transform-specification">Transform Specification</a></li>
+</ul></li>
+</ul>
+<h2 id="intro">Intro</h2>
+<p><em>IVG</em> (<em>Imperative Vector Graphics</em>) is a compact,
+easy-to-read 2D vector graphics format and rendering engine built on top
+of a simple imperative language called <em>ImpD</em>. It allows the
+creation of generative graphics that can adapt to input parameters
+rather than just describing static images.</p>
+<p><em>IVG</em> is easy to integrate into existing C++ projects and has
+no dependencies on other libraries or operating system function calls.
+It uses a low-level 2D rendering C++ library called <em>NuXPixels</em>
+(included in the distribution), which is light on the CPU and provides
+high-quality anti-aliasing.</p>
+<p>In <em>IVG</em>, the graphics are described using a set of drawing
+instructions, which are interpreted by <em>ImpD</em> and then sent to
+the <em>NuXPixels</em> engine to produce the final pixel raster. These
+instructions include basic shapes like rectangles, ellipses, and stars
+and more advanced options like paths, images, and text. Additionally,
+the <em>IVG</em> format includes options for styling and transforming
+the graphics, such as setting colors, gradients, and patterns for fills
+and strokes, as well as applying transformations like scaling, rotating,
+and skewing.</p>
+<p>To give you a better idea of how <em>IVG</em> works, here’s an
+example of a simple source code that creates a smiley face:</p>
+<pre><code>// IVG and ImpD version.
+format IVG-2 requires:ImpD-1
+
+// Set the canvas bounds to 400x400 pixels.
+bounds 0,0,400,400
+
+// Wipe the canvas with a deep red fill.
+WIPE maroon
+
+// Set the fill color to yellow.
+fill yellow
+
+// Draw the face.
+ELLIPSE 200,200,150
+
+// Set the fill color to black.
+fill black
+
+// Draw the eyes.
+ELLIPSE 150,170,25
+ELLIPSE 250,170,25
+
+// Draw the mouth using a SVG path.
+PATH svg:[M 150,270 Q 200,320 250,270]</code></pre>
+<p><img src="images/smiley.png" /></p>
+<p>This is just a simple example, but it demonstrates the basic
+structure and syntax of an <em>IVG</em> document. As you continue
+reading the documentation, you will learn about all the different
+instructions and options available in <em>IVG</em> and how to use them
+to create your vector graphics.</p>
+<p>It’s worth noting that basic knowledge of the <em>ImpD</em> language
+is necessary to understand and use the <em>IVG</em> format fully. For
+more information on <em>ImpD</em>, please refer to the separate <a
+href="ImpD%20Documentation.html"><em>ImpD documentation</em></a>
+provided. It will cover how to use variables and control flow statements
+to create dynamic and interactive graphics.</p>
+<p>The <em>ImpD format</em> used in this documentation is
+<code>IVG-2</code>. Therefore, the <code>format</code> instruction
+should be as follows:</p>
+<pre><code>format IVG-2 requires:ImpD-1</code></pre>
+<p>Notice that <em>ImpD</em> is case-insensitive, but in this document,
+we follow a convention where we have written “directives” (defining
+settings, etc.) in lowercase and drawing instructions in uppercase.</p>
+<h2 id="instructions">Instructions</h2>
+<h3 id="ellipse">ELLIPSE</h3>
+<p>The <code>ELLIPSE</code> instruction draws an ellipse or circle shape
+on the canvas. It will be filled with the current <a
+href="#fill"><code>fill</code></a> setting and outlined with the current
+<a href="#pen"><code>pen</code></a> setting.</p>
+<p>Syntax:</p>
+<pre><code>ELLIPSE &lt;cx&gt;,&lt;cy&gt;,(&lt;r&gt;|&lt;rx&gt;,&lt;ry&gt;)</code></pre>
+<ul>
+<li><p><code>&lt;cx&gt;,&lt;cy&gt;</code> is the center point of the
+ellipse.</p></li>
+<li><p><code>(&lt;r&gt;|&lt;rx&gt;,&lt;ry&gt;)</code> is the radius of
+the ellipse. If you only provide one value, it will be used as the
+radius for both the x and y axis, creating a circle.</p></li>
+</ul>
+<p>Example:</p>
+<pre><code>bounds 0,0,300,200
+
+// Wipe the canvas with near-white.
+WIPE #E0E0E0
+
+// Fill a red circle.
+fill #802020
+ELLIPSE 150,100,80
+
+// Outline a flat ellipse, rotated 10 degrees clockwise around its center.
+fill none
+pen #802020 width:5
+rotate 10 anchor:150,100
+ELLIPSE 150,100,140,30</code></pre>
+<p><img src="images/ellipseExample.png" /></p>
+<h3 id="image">IMAGE</h3>
+<p>You use the <code>IMAGE</code> instruction for drawing an image on
+the canvas. The image can be a previously defined image created with the
+<a href="#define-image"><code>define image</code></a> directive or an
+external resource specified by its name or file path.</p>
+<p>Syntax:</p>
+<pre><code>IMAGE &lt;x&gt;,&lt;y&gt; &lt;name&gt;
+      [ align:top|middle|bottom left|center|right=&quot;top left&quot; ]
+      [ clip:&lt;x&gt;,&lt;y&gt;,&lt;w&gt;,&lt;h&gt; ]
+      [ width:&lt;width&gt; ]
+      [ height:&lt;height&gt; ]
+      [ transform:&lt;transform&gt; ]
+      [ opacity:&lt;opacity&gt; ]</code></pre>
+<ul>
+<li><p>The <code>&lt;x&gt;,&lt;y&gt;</code> coordinates specify the
+position of the image. By default, the image’s top-left corner is placed
+on these coordinates, but you can choose the alignment with the ‘align’
+option.</p></li>
+<li><p><code>&lt;name&gt;</code> is the name of the image, either
+defined with <a href="#define-image"><code>define image</code></a> or an
+external resource name or path.</p></li>
+<li><p>The <code>align</code> option specifies the image’s alignment on
+the canvas. The default value is <code>top left</code>.</p></li>
+<li><p>The <code>clip</code> option is used to define a clipping
+rectangle in source image coordinates to limit the area of the image
+that will be drawn.</p></li>
+<li><p>The <code>width</code> and <code>height</code> options fit the
+source image into a specific width and height. If you only provide one
+of these options, the aspect ratio of the image will be
+preserved.</p></li>
+<li><p>The <code>transform</code> option is used to apply a
+transformation to the image when it is drawn. See <a
+href="#transform-specification">Transform Specification</a></p></li>
+<li><p>The <code>opacity</code> option is used to set the image’s
+opacity. A value of 1 (or <code>#FF</code>) is fully opaque, and 0 is
+fully transparent.</p></li>
+</ul>
+<p><code>IMAGE</code> uses <em>bilinear interpolation</em> when
+executing all transformations, resulting in efficient performance.
+However, it is important to note that large rescales may result in low
+image quality.</p>
+<p>Demonstration:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,340,300
+options aa-gamma:1.5
+
+// Fill the canvas with a &quot;barber pole&quot; pattern
+WIPE pattern:[bounds 0,0,40,300; WIPE gradient:[linear 0,0,40,0 stops:[
+    0,gray,0.25,blue,0.5,gray,0.75,maroon,1,gray
+] ] ] transform:[rotate 45]
+
+// Define an image called &quot;silly&quot;
+define image silly [
+    bounds 0,0,100,100
+    pen white; RECT 0.5,0.5,99,99
+    fill aqua; pen black; ELLIPSE 50,50,35,45
+    fill white; pen black; ELLIPSE 37,40,10; ELLIPSE 62,45,10
+    fill black; ELLIPSE 39,42,4; ELLIPSE 60,42,4
+    fill red; PATH svg:[M 27,65 Q 70,85 72,60 z]
+]
+
+font serif size:20 color:silver outline:black
+fill red opacity:#60
+pen red width:1
+
+// A: standard
+IMAGE 10,10 silly
+STAR 10,10,4,5
+TEXT at:60,130 anchor:center A
+
+// B: showcasing alignment and transform
+IMAGE 170,70 silly align:[middle center] transform:[scale 0.7;rotate -20]
+STAR 170,70,4,5
+TEXT at:170,130 anchor:center B
+
+// C: showcasing clipping and opacity
+IMAGE 230,10 silly clip:[25,25,50,50] opacity:0.6
+STAR 230,10,4,5
+TEXT at:280,130 anchor:center C
+
+// D: showcasing clipping and scale to exact width
+IMAGE 10,160 silly align:[top left] clip:[25,25,50,50] width:100
+STAR 10,160,4,5
+TEXT at:60,280 anchor:center D
+
+// E: showcasing a different aspect ratio 
+IMAGE 220,260 silly align:[bottom right] width:100 height:66
+STAR 220,260,4,5
+TEXT at:170,280 anchor:center E
+
+// F: showcasing vertical flipping with transform
+IMAGE 230,160 silly align:[bottom right] transform:[scale -1]
+STAR 230,160,4,5
+TEXT at:280,280 anchor:center F</code></pre>
+<p><img src="images/imageExample.png" /></p>
+<h3 id="path">PATH</h3>
+<p>The <code>PATH</code> instruction is used for drawing a path from SVG
+data. It will be filled with the current <a
+href="#fill"><code>fill</code></a> setting and outlined with the current
+<a href="#pen"><code>pen</code></a> setting.</p>
+<p>Syntax:</p>
+<pre><code>PATH svg:&lt;svg data&gt;</code></pre>
+<ul>
+<li><code>&lt;svg data&gt;</code> is a string containing the SVG path
+data.</li>
+</ul>
+<p>See https://svgwg.org/specs/paths/ for documentation on the SVG path
+format.</p>
+<p>Example:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,400,380
+
+// Wipe the canvas with a very dark purple
+WIPE rgb(0.1,0.0,0.1)
+
+// Pink fill and red transparent outline
+fill rgb(0.9,0.5,0.7)
+pen rgb(0.5,0.2,0.2,0.5) width:20
+
+// Rotate the canvas
+rotate -135 anchor:200,200
+
+// Draw the heart path
+PATH svg:[M100,300 v-200 h200 a100,100,90,0,1,0,200 a100,100,90,0,1,-200,0 z]</code></pre>
+<p><img src="images/svgPathExample.png" /></p>
+<h3 id="rect">RECT</h3>
+<p>You use the <code>RECT</code> instruction to draw a rectangle shape.
+It will be filled with the current <a href="#fill"><code>fill</code></a>
+setting and outlined with the current <a
+href="#pen"><code>pen</code></a> setting.</p>
+<p>Syntax:</p>
+<pre><code>RECT &lt;x&gt;,&lt;y&gt;,&lt;w&gt;,&lt;h&gt; [rounded:&lt;r&gt;|&lt;rx&gt;,&lt;ry&gt;]</code></pre>
+<ul>
+<li><p><code>&lt;x&gt;,&lt;y&gt;,&lt;w&gt;,&lt;h&gt;</code> is a
+rectangle specification in the format of x,y,w,h.</p></li>
+<li><p>The <code>rounded</code> option specifies the radius of the
+rounded corners. You specify the radius as a single value for all
+corners or as separate values for the x and y radius.</p></li>
+</ul>
+<p>Example:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,300,80
+
+// Draw a dark blue rectangle.
+fill #406080
+RECT 60,10,180,60
+
+// Draw a brighter rounded rectangle on top with a white outline.
+fill #80C0E0
+pen #C0E0E0
+RECT 80,20,140,40 rounded:30,20</code></pre>
+<p><img src="images/rectExample.png" /></p>
+<h3 id="star">STAR</h3>
+<p>The <code>STAR</code> instruction is used for drawing a star shape or
+regular polygon. It will be filled with the current <a
+href="#fill"><code>fill</code></a> setting and outlined with the current
+<a href="#pen"><code>pen</code></a> setting.</p>
+<p>Syntax:</p>
+<pre><code>STAR &lt;cx&gt;,&lt;cy&gt;,&lt;points&gt;,&lt;r1&gt;[,&lt;r2&gt;=&lt;r1&gt;] [rotation:&lt;angle&gt;]</code></pre>
+<ul>
+<li><p><code>&lt;cx&gt;, &lt;cy&gt;</code> are the x and y coordinates
+of the center of the star.</p></li>
+<li><p><code>&lt;points&gt;</code> is the number of points of the
+star.</p></li>
+<li><p><code>&lt;r1&gt; and &lt;r2&gt;</code> are the inner and outer
+radius of the star. If only <code>&lt;r1&gt;</code> is specified, it
+will be used for both the inner and outer radius (effectively creating a
+regular polygon).</p></li>
+<li><p>The <code>rotation</code> option specifies the angle of rotation
+for the star in degrees.</p></li>
+</ul>
+<p>This example shows the effect of varying the number of points and the
+proportion of <code>&lt;r2&gt;</code> to <code>&lt;r1&gt;</code>:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,540,420
+options aa-gamma:1.5
+
+// Black canvas, white pen and maroon fill.
+WIPE black
+pen white
+fill navy
+
+// White serif font face, size 20.
+font serif size:20 color:white
+
+// Setup a list of star point counts.
+counts = [3,4,5,6,8,10,12]
+
+// Loop through a list of &lt;r2&gt; to &lt;r1&gt; proportions.
+offset 60,0
+for r2 in:[100,80,60,40,20,0] [
+    context [
+        // Draw a label indicating the proportion on this row.
+        TEXT at:15,45 $r2% anchor:right
+
+        // Loop through the list of star point counts.
+        for c in:$counts [
+            // Offset 60 pixels to the right on each iteration.
+            offset 60,0
+
+            // Draw a star with the current point count and radius values.
+            STAR 0,40,$c,20,{20*$r2%}
+        ]
+    ]
+
+    // Offset 60 pixels down on each iteration
+    offset 0,60
+]
+
+// Loop through the list of star point counts.
+for c in:[3,4,5,6,8,10,12] [
+    // Offset 60 pixels to the right on each iteration
+    offset 60,0
+
+    // Draw a label indicating the point count for this column.
+    TEXT at:0,30 $c anchor:center
+]</code></pre>
+<p><img src="images/starExample.png" /></p>
+<h3 id="text">TEXT</h3>
+<p>You use the <code>TEXT</code> instruction for drawing text on the
+canvas. It uses the current font settings for its text style.</p>
+<p>Syntax:</p>
+<pre><code>TEXT [at:&lt;x,y&gt;] [anchor:left|center|right=left] [caret:&lt;variable&gt;] &lt;text&gt;</code></pre>
+<ul>
+<li><p>The <code>at</code> option specifies the x,y coordinates of the
+text. If not present, the text will continue to the right of the last
+written string.</p></li>
+<li><p>The <code>anchor</code> option specifies the horizontal alignment
+of the text. The default value is <code>left</code>, and anything else
+requires the <code>at</code> argument.</p></li>
+<li><p>The <code>caret</code> option specifies a variable that will be
+set to the final horizontal caret position, i.e., the position where the
+next character would have been written.</p></li>
+<li><p><code>&lt;text&gt;</code> is the text to be drawn on the canvas.
+<code>TEXT</code> draws a single line of text only.</p></li>
+</ul>
+<p>Demonstration:</p>
+<pre><code>FORMAT IVG-2 requires:ImpD-1
+options aa-gamma:1.5
+
+bounds 0,0,440,80
+WIPE hsv(0.5,0.8,0.1)
+ 
+// Setup parameters for drawing the text.
+s=&quot;Lorem Ipsum Dolor Sit Amet&quot;
+size=24
+x=220
+y=45
+margin=15
+
+/*
+    The shear transformation creates a slant, and the tracking value increases the space
+    between letters. IVG in itself has no built-in fonts, but &quot;serif&quot;, &quot;sans-serif&quot; and
+    &quot;code&quot; are used when creating this documentation (and they are included in ivgfiddle).
+*/
+font serif size:$size color:hsv(0.47,0.3,0.9) outline:black
+    .. transform:[shear -0.3,0] tracking:0.1
+
+/*
+    To measure the text, draw it centered around position, store the final x position in
+    the variable `rx`
+*/
+TEXT at:$x,$y $s anchor:center caret:rx
+
+// Setup fill and pen gradients for the box.
+fill gradient:[linear 0,18,0,40 from:hsv(0.5,0.5,0.2) to:hsv(0.5,0.7,0.6)]
+pen gradient:[radial $x,{$y-$size/3},{$rx-$x},$size
+    .. from:hsv(0.4,0.7,0.9) to:hsv(0.5,0.7,0.4)] width:8.0
+
+/*
+    Draw a rounded rect box around the text. The equations make the box dimensions adjust
+    to the text width and height.
+*/
+RECT {$x*2-$rx-$margin},{$y-$size*1.2},{$rx*2-$x*2+$margin*2},{$size*1.8}
+    .. rounded:{$size*1.8/2}
+
+// Draw the final text.
+TEXT at:$x,$y $s anchor:center</code></pre>
+<p><img src="images/textExample.png" /></p>
+<h3 id="wipe">WIPE</h3>
+<p>The <code>WIPE</code> instruction is used for painting over the
+entire canvas, except for any masked areas.</p>
+<p>Syntax:</p>
+<pre><code>WIPE &lt;paint&gt;</code></pre>
+<ul>
+<li><code>&lt;paint&gt;</code> is the paint used for the wipe. You
+specify it as a color, gradient, or pattern. See <a
+href="#paint-specification">Paint Specification</a> for more
+information. Note that <em>relative paint</em> is not allowed for this
+instruction.</li>
+</ul>
+<p>Example:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,200,200
+
+// Wipe the full canvas with a radial rainbow gradient
+WIPE gradient:[
+    radial 100,100,100
+    stops:[0,red,0.25,yellow,0.5,lime,0.75,aqua,1,blue]
+]</code></pre>
+<p><img src="images/wipeExample.png" /></p>
+<h2 id="directives">Directives</h2>
+<h3 id="bounds">bounds</h3>
+<p>The <code>bounds</code> directive declares the outer boundaries of a
+<em>standalone</em> canvas:</p>
+<pre><code>bounds &lt;x&gt;,&lt;y&gt;,&lt;w&gt;,&lt;h&gt;</code></pre>
+<p>You should only use it once at the top level of the document and once
+in each pattern and image definition. You must declare it before the
+first drawing instruction. You may omit this directive if the canvas is
+not <em>standalone</em> but part of a shared drawing area.</p>
+<p>Example:</p>
+<pre><code>// Declare a 400 pixels wide and 300 pixels high canvas. The top-left corner is (10,50).
+bounds 10,50,400,300</code></pre>
+<h3 id="context">context</h3>
+<p><code>context</code> declares a local group where all modified
+properties, masks, transforms, and definitions are restored when the
+group ends.</p>
+<pre><code>context &lt;instructions&gt;</code></pre>
+<p>Demonstration:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,300,300
+
+// Wipe the canvas with a gradient, to begin with.
+WIPE gradient:[linear 0,0,200,200 from:black to:gray]
+
+// Setup fill, pen, and an initial transform of x2.
+pen black width:3
+fill none
+
+// Draw a small rect.
+RECT 75,75,150,150
+context [
+    // rotate
+    rotate 10 anchor:150,150
+    
+    // The fill and pen will be local to this context.
+    fill gradient:[linear 0,0,1,0 from:silver to:blue] relative:yes
+    pen none
+    
+    // Fill a rotated, masked gradient 3d cube silhouette.
+    STAR 150,150,6,90,110
+]
+// This rect will have the same style and transformation as the first.
+RECT 60,60,180,180</code></pre>
+<p><img src="images/contextDemo.png" /></p>
+<h3 id="define">define</h3>
+<p>The <code>define</code> directive is used to create reusable elements
+in the document, such as images and fonts. These elements can be
+referred to by name in other document parts.</p>
+<h4 id="define-image">define image</h4>
+<p>You use the <code>define image</code> directive to create an image
+you can reuse throughout the document with the <a
+href="#image"><code>IMAGE</code></a> instruction.</p>
+<p>Syntax:</p>
+<pre><code>define image &lt;name&gt; [ resolution:&lt;number&gt;=1 ] &lt;instructions&gt;</code></pre>
+<ul>
+<li><p><code>&lt;name&gt;</code> is a unique identifier for the image.
+Image names are case-sensitive, and you may only define the image
+once.</p></li>
+<li><p>The <code>resolution</code> option specifies the resolution
+factor to use when creating the image. The default value is 1, which
+corresponds to the normal resolution. A value of 2, for example, would
+use twice the resolution when creating the image.</p></li>
+<li><p><code>&lt;instructions&gt;</code> are the graphic instructions
+that define the image, enclosed in brackets <code>[</code> and
+<code>]</code>. The drawing context for the image contents does not
+inherit settings from the current context. A <code>bounds</code>
+directive is required.</p></li>
+</ul>
+<p>When you create an image using the <code>define image</code>
+directive, it will be converted into pixels at the time of definition.
+It’s important to use a resolution matching the size you plan to use for
+displaying the image.</p>
+<p>See <a href="#image">IMAGE</a> for an example of how to use
+<code>define image</code>.</p>
+<h4 id="define-font">define font</h4>
+<p>You can use the <code>define font</code> directive to create and
+embed a font face within the <em>IVG</em> document. The font is defined
+using <em>ivgfont</em>, a format describing glyphs using SVG paths. Like
+<em>IVG</em>, <em>ivgfont</em> is also based on <em>ImpD</em>.</p>
+<p>Syntax:</p>
+<pre><code>define font &lt;name&gt; &lt;definition&gt;</code></pre>
+<ul>
+<li><p><code>&lt;name&gt;</code> is a unique identifier for the font
+face. Font names are case-sensitive, and you may only define the font
+once.</p></li>
+<li><p><code>&lt;definition&gt;</code> is the font face definition in
+<em>ivgfont</em> format, enclosed in brackets <code>[</code> and
+<code>]</code>.</p></li>
+</ul>
+<p>It’s worth noting that the <code>define font</code> directive is not
+necessary for referencing fonts provided by the hosting application, as
+they can be referred to by name and set with the <a
+href="#font"><code>font</code></a> directive, just like embedded
+fonts.</p>
+<p>Example:</p>
+<pre><code>format IVG-1 requires:ImpD-1
+
+// Embed a font called &quot;myEmbeddedFont&quot; with only 3 defined glyphs.
+define font myEmbeddedFont [
+    format ivgfont-1 requires:ImpD-1
+    metrics upm:1000 ascent:1036 descent:-335 linegap:0
+
+    glyph I 371 m136-617-92-11v-41h283v41l-92,11-2,128v308l2,129,92,11V0H44v-41l92-11q2-63,2-128v-308q0-65-2-129z
+    glyph V 674 m90-619-75-9v-41h273v45l-96,9,168,479,162-478-88-10v-45h231v41l-87,12L367,7h-44L90-619z
+    glyph G 682 m384,15q-100,0-176-45-76-46-119-125-42-79-42-180t43-179q43-79,119-124,77-46,179-46,62,0,110,12,49,11,91,35l4,146h-62l-20-114q-52-29-114-29-69,0-124,35-54,35-86,102-31,66-31,162,0,143,66,221t181,78q57,0,107-20v-32l-1-90-1-91-104-9v-40h263v40l-61,6-2,91v137Q552-17,499-1T384,15z
+
+    // Adjust kerning between V and G with -70.
+    kern -70 V G
+]
+
+// Show it off.
+bounds 0,0,265,160
+wipe yellow
+font myEmbeddedFont size:100 color:red outline:[black width:5] tracking:0.1
+TEXT at:40,110 &quot;IVG&quot;</code></pre>
+<p><img src="images/defineFontExample.png" /></p>
+<h3 id="fill">fill</h3>
+<p>The fill directive sets the fill style for subsequent drawing
+operations in the current <a href="#context">context</a>.</p>
+<pre><code>fill &lt;paint&gt;
+     [ rule:(non-zero|even-odd)=non-zero]</code></pre>
+<ul>
+<li><p><code>&lt;paint&gt;</code> sets the color, gradient, or pattern.
+See <a href="#paint-specification">Paint Specification</a> for more
+information.</p></li>
+<li><p>The <code>rule</code> option sets the rule used to determine
+which regions of the path will be filled. The possible values are
+<code>non-zero</code> (for the <em>non-zero winding rule</em>) and
+<code>even-odd</code>. See https://en.wikipedia.org/wiki/Nonzero-rule
+and https://en.wikipedia.org/wiki/Even-odd_rule. The default value is
+<code>non-zero</code>.</p></li>
+</ul>
+<p>Fill rule demonstration:</p>
+<pre><code>format IVG-1 requires:ImpD-1
+bounds 0,0,350,230
+
+// Setup style.
+WIPE silver
+fill white
+pen black width:3
+font serif size:30 color:black
+
+/*
+    Showing non-zero winding fill rule. The two triangles making up
+    the star are both winding clockwise so the overlap will be filled.
+*/
+context [
+    offset 100,100
+    scale 0.75
+    fill rule:non-zero
+    PATH svg:[M 0 -100 87 50 -87 50 z M 87 -50 0 100 -87 -50 z]
+    TEXT at:0,135 anchor:center &quot;non-zero&quot;
+]
+
+// Showing even-odd fill rule. Overlap will be unfilled.
+context [
+    offset 250,100
+    scale 0.75
+    fill rule:even-odd
+    PATH svg:[M 0 -100 87 50 -87 50 z M 87 -50 0 100 -87 -50 z]
+    TEXT at:0,135 anchor:center &quot;even-odd&quot;
+]</code></pre>
+<p><img src="images/fillRuleDemo.png" /></p>
+<h3 id="font">font</h3>
+<p>The <code>font</code> directive updates font settings for the current
+context. The settings will be used for subsequent text drawing
+operations and will be active until they are changed or the current <a
+href="#context">context</a> ends or is <a href="#reset">reset</a>.</p>
+<p>Syntax:</p>
+<pre><code>font [ &lt;name&gt; ]
+     [ size:&lt;number&gt; ]
+     [ color:&lt;paint&gt; ]
+     [ outline:&lt;stroke&gt; ]
+     [ transform:&lt;transform&gt; ]
+     [ tracking:&lt;number&gt; ]</code></pre>
+<ul>
+<li><p><code>&lt;name&gt;</code> is the name of the font face to be
+used. Before drawing text, you are required to set the font name. It can
+be a font previously defined using the <a
+href="#define-font"><code>define font</code></a> directive or a font
+provided by the hosting application. If not specified, the font face
+will not be changed.</p></li>
+<li><p><code>size</code> sets the font size in pixels. One “unit” in the
+font definition corresponds to this many pixels in size. This value
+usually corresponds to the font height (it’s “ascent”). The initial
+setting is 20.</p></li>
+<li><p><code>color</code> sets the color of the text. The initial
+setting is <code>black</code>. See <a href="#paint-specification">Paint
+Specification</a> for more information.</p></li>
+<li><p><code>outline</code> sets the outline of the text. It accepts the
+same arguments as the <a href="#pen"><code>pen</code></a> directive.
+Note that the outline will be drawn under the fill color, which is the
+opposite behavior of other shapes. Also, the stroke width is twice the
+regular width because normally, you only see half the stroke (the outer
+part that is not overdrawn by the glyph’s interior).</p></li>
+<li><p><code>transform</code> will transform each glyph separately. You
+express offsets in (size-independent) <em>em units</em>.</p></li>
+<li><p><code>tracking</code> adjusts letter spacing in
+(size-independent) <em>em units</em> (0 is no adjustment).</p></li>
+</ul>
+<p>See <a href="#text">TEXT</a> for an example of how to set the
+font.</p>
+<h3 id="mask">mask</h3>
+<p>The <code>mask</code> instruction is used to create a mask that will
+be applied to subsequent drawing operations. You define the mask with a
+set of instructions that draws the mask. The effect of the mask lasts
+until the end of the current <a href="#context">context</a> or until it
+is <a href="#reset">reset</a>.</p>
+<p>Syntax:</p>
+<pre><code>mask &lt;instructions&gt; [ inverted:(yes|no)=no ]</code></pre>
+<ul>
+<li><p><code>&lt;instructions&gt;</code> defines the mask. You can use
+all available drawing directives and instructions. Enclose in brackets
+<code>[</code> and <code>]</code>.</p></li>
+<li><p>The <code>inverted</code> option specifies whether you want to
+invert the mask or not (default is <code>no</code>). When the mask is
+not inverted, it will reveal all painted areas and hide everything else.
+On the other hand, if the mask is inverted, it will hide all painted
+areas and reveal everything else.</p></li>
+</ul>
+<p>In mask definitions, drawing directives and instructions work like
+normal, and you can even nest masks in masks. The one big difference is
+that a mask is single-channeled (grayscale effectively); therefore, all
+<code>&lt;paint&gt;</code> specifications use a single value between 0
+and 1. Alternatively, you can use a hexadecimal value between
+<code>#00</code> to <code>#FF</code>.</p>
+<p>A color value of 1 or <code>#FF</code> represents the fully opaque
+color, meaning that (in non-inverted mode) areas painted with this color
+will be fully visible, while lower values will result in more
+transparency.</p>
+<p>Initially, the pen (and font outline) is set to <code>none</code>,
+and the fill (and font color) to <code>#FF</code> (fully opaque).</p>
+<p>Demonstration:</p>
+<pre><code>format IVG-1 requires:ImpD-1
+bounds 0,0,310,320
+
+// Make a rotated striped background.
+WIPE pattern:[
+    bounds 0,0,20,20
+    WIPE #101010
+    fill #202020
+    RECT 0,0,10,20
+] transform:[rotate 45]
+
+// Setup styles.
+fill red
+font serif size:18 color:yellow
+
+// Define two circles.
+c1=70,70,50
+c2=110,70,30
+
+// A macro to outline them.
+outline=context [
+    fill none
+    pen silver width:0.5 dash:4
+    ellipse $c2
+    ellipse $c1
+]
+
+// A: no masking. Draw only circle 1.
+ellipse $c1
+$outline
+TEXT at:70,145 anchor:center &quot;A&quot;
+
+// B: mask circle 1 to include only circle 2.
+offset 150,0
+context [
+    mask [
+        ellipse $c2
+    ]
+    ellipse $c1
+]
+$outline
+TEXT at:70,145 anchor:center &quot;B&quot;
+
+// C: mask circle 1 to exclude circle 2.
+offset -150,150
+context [
+    mask [
+        ellipse $c2
+    ] inverted:yes
+    ellipse $c1
+]
+$outline
+TEXT at:70,145 anchor:center &quot;C&quot;
+
+// D: masks can also be semi-transparent.
+offset 150,0
+context [
+    mask [
+        fill gradient:[linear 0,0,0.5,1 from:#00 to:#C0] relative:yes
+        ellipse $c2
+    ]
+    ellipse $c1
+]
+$outline
+TEXT at:70,145 anchor:center &quot;D&quot;</code></pre>
+<p><img src="images/maskDemo.png" /></p>
+<h3 id="options">options</h3>
+<p><code>options</code> is a directive that allows fine-tuning quality
+settings for the subsequent instructions. Settings are local to the
+current <a href="#context">context</a>.</p>
+<pre><code>options [ aa-gamma:&lt;number&gt; ]
+        [ curve-quality:&lt;number&gt; ]
+        [ pattern-resolution:&lt;number&gt; ]</code></pre>
+<ul>
+<li><p><code>aa-gamma</code> allows adjusting gamma correction applied
+to the edges of strokes and fills to improve anti-alias quality. Note
+that the best quality gamma setting depends on your mixing colors.
+Settings higher than 1 usually make light strokes on dark backgrounds
+look better, and settings lower than 1 can make drawing dark on light
+look better. The initial value is 1, and the valid range is any number
+greater than 0.</p></li>
+<li><p><code>curve-quality</code> controls the quality when converting
+strokes, ellipses, arcs, and splines to polygons. The standard value is
+1, and the valid range is between 0 and 100.</p></li>
+<li><p><code>pattern-resolution</code> changes the resolution used when
+creating patterns. A value of 1 uses standard resolution, 2 uses twice
+the resolution, and so on. Notice that the effective pixel resolution is
+chosen with a formula that considers the current context transform, and
+the resolution is always an integer factor.</p></li>
+</ul>
+<p><code>aa-gamma</code> demonstration:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,400,124
+
+// Draw a white rectangle on black background.
+WIPE black
+fill white
+rect 0,40,400,40
+
+fill none
+font serif size:20 color:white
+
+// Loop through different gamma values.
+offset 20,0
+for gamma in:[0.6,0.7,0.8,0.9,1.0,1.2,1.5,2.0,3.0,4.0] [
+    // Set current gamma option.
+    options aa-gamma:$gamma
+
+    // Draw white and black circles.
+    pen white; ellipse 0,20,14; ellipse 0,20,4
+    pen black; ellipse 0,60,14; ellipse 0,60,4
+
+    // Write gamma value under circles.
+    text at:0,110 $gamma anchor:center
+    offset 40,0
+]</code></pre>
+<p><img src="images/gammaDemo.png" /></p>
+<p><code>curve-quality</code> demonstration:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,410,100
+WIPE white
+pen black
+offset 40,40
+for quality in:[0.001 0.01 0.1 1.0 10.0] [
+    options curve-quality: $quality
+
+    // Draw an SVG path with a high number of curve segments
+    path svg:[M0,0Q8,0,0,5Q-7,9-10,0Q-14-12,0-15Q17-19,20,0Q24,22,0,25Q-27,28-30,0Q-33-32,0-35Q37-38,40,0]
+
+    // Draw a label under the path indicating the current curve quality
+    font serif size:20 color:black
+    text at:0,50 $quality anchor:center
+    offset 80,0
+]</code></pre>
+<p><img src="images/curveQualityDemo.png" /></p>
+<p><code>pattern-resolution</code> demonstration:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,320,100
+
+// Wipe the canvas with a dark grey color.
+WIPE #101010
+    
+// Loop through different pattern resolution values.
+x=0
+for resolution in:[1,2,4,8] [
+    context [
+        // Set the pattern resolution option to the current value.
+        options pattern-resolution:$resolution
+        
+        // Declare the pattern using a simple gradient-colored circle.
+        fill pattern:[
+            bounds 0,0,10,10
+            pen gradient:[linear 0,0,1,1 stops:[0,blue,0.5,yellow,0.8,blue]] relative:yes
+            ellipse 5,5,3
+        ]
+        
+        // Scale the pattern up by 8x after the pattern definition to
+        // showcase the need to set the resolution option higher than 1.
+        scale 8
+        
+        // Draw a rectangle to show the pattern.
+        rect $x,0,10,10
+        
+        // Write the resolution value under the rectangle.
+        font serif color:white size:2
+        text at:{$x+5},11 [$resolution x] anchor:center
+        
+        x={$x+10}
+    ]
+]</code></pre>
+<p><img src="images/patternResolutionDemo.png" /></p>
+<h3 id="pen">pen</h3>
+<p>The <code>pen</code> directive sets the style of lines and outlines
+of shapes. The style settings are used for subsequent drawing operations
+until they are changed or the current <a href="#context">context</a>
+ends or is <a href="#reset">reset</a>.</p>
+<p>Syntax:</p>
+<pre><code>pen [ &lt;paint&gt; ]
+    [ width:&lt;number&gt; ]
+    [ caps:butt|round|square ]
+    [ joints:bevel|curve|miter ]
+    [ miter-limit:&lt;number&gt; ]
+    [ dash:none | (&lt;dash&gt;[,&lt;gap&gt;]) ]
+    [ dash-offset:&lt;number&gt; ]</code></pre>
+<ul>
+<li><p><code>&lt;paint&gt;</code> sets the color, gradient, or pattern.
+See <a href="#paint-specification">Paint Specification</a>.</p></li>
+<li><p>The <code>width</code> option sets the width of the stroke in
+pixels. The initial value is 1.</p></li>
+<li><p>The <code>caps</code> option sets the shape at the end of open
+paths. The possible values are <code>butt</code>, <code>round</code>,
+and <code>square</code>. The initial value is
+<code>butt</code>.</p></li>
+<li><p>The <code>joints</code> option sets the shape at the corners of
+paths. The possible values are <code>bevel</code>, <code>miter</code>,
+and <code>round</code>. The initial value is
+<code>miter</code>.</p></li>
+<li><p>The <code>miter-limit</code> option controls the maximum ratio of
+the miter length to the stroke width. The initial value is 2, and the
+valid range is greater than or equal to 1.</p></li>
+<li><p>The <code>dash</code> option sets the pattern of dashes and gaps
+used to stroke paths. When specifying <code>dash</code> and omitting
+<code>gap</code>, the gap will be the same as the dash length. The
+initial value is <code>none</code>.</p></li>
+<li><p>The <code>dash-offset</code> option sets the distance into the
+dash pattern at which the stroke begins.</p></li>
+</ul>
+<p>The initial pen is <code>none</code>. In other words, invisible.</p>
+<p>Demonstration of different stroke styles:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,560,400
+
+// Wipe canvas and setup styles.
+WIPE #F0F0D0
+font code size:16
+pen #202040 width:20 caps:butt joints:miter
+fill none
+
+// $drawPath &lt;x&gt; &lt;y&gt; &lt;pen instruction&gt;
+drawPath = call [
+    context [
+        path=[M -100,100 L 0,0 L 100,100]
+        
+        // Draw at &lt;x&gt;,&lt;y&gt;.
+        offset $0,$1
+        
+        // Execute argument 2: &lt;pen instruction&gt; and draw the path.
+        $2
+        PATH svg:$path
+        
+        // Draw the path with a thin non-dashed line.
+        pen width:1 caps:butt joints:miter #A0A0C0 dash:none
+        PATH svg:$path
+        
+        // Show the three coordinates defining the shape.
+        fill #7070C0
+        ELLIPSE -100,100,3
+        ELLIPSE 0,0,3
+        ELLIPSE 100,100,3
+        
+        // Write out the &lt;pen instruction&gt; but cut out &quot;[pen &quot; and &quot;]&quot;.
+        TEXT at:0,140 anchor:center [{$2{5:len($2)-6}}]
+    ]
+]
+
+$drawPath 150 30 [pen caps:square joints:miter]
+$drawPath 400 30 [pen caps:round joints:curve]
+$drawPath 150 230 [pen caps:butt joints:bevel]
+$drawPath 400 230 [pen dash:20,10 dash-offset:4]</code></pre>
+<p><img src="images/strokesDemo.png" /></p>
+<h3 id="reset">reset</h3>
+<p>The <code>reset</code> directive is used to clear the current state
+of the drawing context and set it back to the initial state of the
+current context.</p>
+<p>Syntax:</p>
+<pre><code>reset</code></pre>
+<p>Note that <code>reset</code> does not take any arguments or options.
+It simply resets the state of the context to what it was at the entry of
+the context. This operation includes resetting the current <a
+href="#mask">mask</a>, <a href="#pen">pen</a>, <a href="#fill">fill</a>,
+and <a href="#font">font</a> settings and other options associated with
+the context.</p>
+<p>The reset directive does not affect any previously drawn elements on
+the canvas.</p>
+<p><code>reset</code> can be useful for clearing the current state
+before starting a new drawing or for resetting the state after applying
+a series of transformations or other modifications to the context.</p>
+<h2 id="specifications">Specifications</h2>
+<h3 id="color-specification">Color Specification</h3>
+<p><code>&lt;color&gt;</code> is used in many directives, such as <a
+href="#pen"><code>pen</code></a>, <a href="#fill"><code>fill</code></a>,
+and <a href="#font"><code>font</code></a>. The syntax for specifying a
+color is as follows:</p>
+<pre><code>&lt;color&gt; = rgb(&lt;r&gt;,&lt;g&gt;,&lt;b&gt;[,&lt;opacity&gt;])
+          | hsv(&lt;h&gt;,&lt;s&gt;,&lt;v&gt;[,&lt;opacity&gt;])
+          | #&lt;hex&gt;&lt;hex&gt;&lt;hex&gt;
+          | #&lt;hex&gt;&lt;hex&gt;&lt;hex&gt;&lt;hex&gt;
+          | none
+          | ( aqua|black|blue|fuchsia|gray|green|lime|maroon
+              |navy|olive|purple|red|silver|teal|white|yellow )</code></pre>
+<ul>
+<li><p>The <code>rgb</code> alternative specifies the color using the
+red, green, and blue components. The values for <code>&lt;r&gt;</code>,
+<code>&lt;g&gt;</code>, and <code>&lt;b&gt;</code> are decimal numbers
+between 0 and 1, representing the intensity of each component. The
+optional <code>&lt;opacity&gt;</code> value is also a decimal number
+between 0 and 1, where 0 is full transparency, and 1 is full
+opacity.</p></li>
+<li><p>The <code>hsv</code> alternative specifies the color using the
+hue, saturation, and value components. The values for
+<code>&lt;h&gt;</code>, <code>&lt;s&gt;</code>, and
+<code>&lt;v&gt;</code> are decimal numbers between 0 and 1, representing
+the intensity of each component. The optional
+<code>&lt;opacity&gt;</code> value is also a decimal number between 0
+and 1, where 0 is full transparency and 1 is full opacity</p></li>
+<li><p>The <code>#&lt;hex&gt;&lt;hex&gt;&lt;hex&gt;</code> alternative
+specifies the color using a hexadecimal RGB value, where each color
+component is between <code>#00</code> and <code>#FF</code>. This is a
+common way to specify colors on the web.</p></li>
+<li><p>The <code>#&lt;hex&gt;&lt;hex&gt;&lt;hex&gt;&lt;hex&gt;</code>
+alternative specifies the color using a hexadecimal RGBA value where the
+RGB values need to be pre-multiplied with the alpha value. For example,
+the color yellow <code>#FFFF00</code> with a transparency of 0.75
+(decimal equivalent of <code>#C0</code>) becomes
+<code>#C0C000C0</code>.</p></li>
+<li><p><code>none</code> is a special color, meaning that no color will
+be used; it will be invisible.</p></li>
+<li><p>The last alternative specifies the color using one of the
+predefined color names.</p></li>
+</ul>
+<p>Colors example:</p>
+<pre><code>format IVG-2 requires:ImpD-1
+bounds 0,0,500,380
+
+// Wipe canvas with a checkboard pattern and setup styles.
+WIPE pattern:[
+    bounds 0,0,20,20
+    WIPE #202020
+    fill #404040
+    RECT 0,0,10,10
+    RECT 10,10,20,20
+]
+font code size:16 color:white outline:[black width:2]
+pen white width:1
+
+// Iterate through all named colors and some other examples.
+colorList = [
+    aqua,black,blue,fuchsia,
+    gray,green,lime,maroon,
+    navy,olive,purple,red,
+    silver,teal,white,yellow
+    #4050A0, #A04050A0, #403020, #50403020,
+    &quot;rgb(0.5,0.3,0.7)&quot;, &quot;rgb(0.5,0.3,0.7,0.5)&quot;,
+    &quot;hsv(0.5,0.3,0.7)&quot;, &quot;hsv(0.5,0.3,0.7,0.5)&quot;
+]
+x=20; y=20
+for color in:$colorList [
+    // Make box size wider for long color examples.
+    w={len($color)&gt;10 ? 220 : 100}
+
+    // If box doesn&#39;t fit, wrap to next line.
+    if {$x+$w &gt; 480} [ x=20; y={$y+50} ]
+    
+    // Draw a filled colored box and write the color inside it.
+    fill $color
+    RECT $x,$y,$w,40
+    TEXT at:{$x+$w/2},{$y+25} anchor:center $color
+    
+    // Next x
+    x={$x+$w+20}
+]</code></pre>
+<p><img src="images/colorsExample.png" /></p>
+<h3 id="gradient-specification">Gradient Specification</h3>
+<p>The <code>&lt;gradient&gt;</code> paint type creates a smooth
+transition between multiple colors. It can be specified with a starting
+and ending color or multiple color stops. <code>&lt;gradient&gt;</code>
+is used by the <a
+href="#paint-specification"><code>&lt;paint&gt;</code></a>
+specification, such as in the <a href="#pen"><code>pen</code></a> and <a
+href="#fill"><code>fill</code></a> directives. The syntax for specifying
+a gradient is as follows:</p>
+<pre><code>&lt;gradient&gt; = linear &lt;x0&gt;,&lt;y0&gt;,&lt;x1&gt;,&lt;y1&gt; | radial &lt;cx&gt;,&lt;cy&gt;,(&lt;r&gt;|&lt;rx&gt;,&lt;ry&gt;)
+             from:&lt;color&gt; to:&lt;color&gt; | stops:&lt;number&gt;,&lt;color&gt;,[&lt;number&gt;,&lt;color&gt;,...]</code></pre>
+<ul>
+<li><p>The <code>linear</code> alternative creates a linear gradient
+that transitions between colors along a straight line defined by two
+points (<code>&lt;x0&gt;,&lt;y0&gt;</code> and
+<code>&lt;x1&gt;,&lt;y1&gt;</code>).</p></li>
+<li><p>The <code>radial</code> alternative creates a radial gradient
+that transitions between colors emanating from a single point
+(<code>&lt;cx&gt;,&lt;cy&gt;</code>) and spreading outward. You can
+further define the shape of the gradient by providing either the radius
+(<code>&lt;r&gt;</code>), which creates a circular shape or the x-radius
+and y-radius (<code>&lt;rx&gt;,&lt;ry&gt;</code>), which creates an
+elliptical shape.</p></li>
+<li><p>The <code>from</code> alternative specifies the start and end
+colors of the gradient (see <a href="#color-specification">Color
+Specification</a>).</p></li>
+<li><p>The <code>stops</code> alternative allows you to specify multiple
+color stops at specific positions along the gradient. The
+<code>&lt;number&gt;</code>’s represent positions where 0 is the start
+or center of the gradient, and 1 is the end. The
+<code>&lt;color&gt;'</code>s specify the color at that position (see <a
+href="#color-specification">Color Specification</a>). It is important to
+note that you must set the stops in ascending order of the
+<code>&lt;number&gt;</code> positions.</p></li>
+</ul>
+<p>Gradient demonstration:</p>
+<pre><code>format IVG-2 requires:IMPD-1
+bounds 0,0,500,500
+
+// Set font style.
+font serif size:16 color:white
+
+// Wipe the canvas with a simple Linear gradient from red to blue.
+WIPE gradient:[linear 0,0,500,500 from:red to:blue]
+RECT 0,0,500,500
+TEXT at:10,490 anchor:left &quot;linear gradient&quot;
+
+// We will use relative fill. 0,0 is top-left corner. 1,1 is bottom-right.
+fill relative:yes
+
+// Elliptic gradient with stops.
+fill gradient:[radial 0.5,0.5,0.7,0.5 stops:0,blue,0.25,yellow,0.5,blue,0.75,lime,1,blue]
+RECT 200,200,250,250
+TEXT at:210,440 anchor:left &quot;radial gradient with stops&quot;
+
+// Linear gradient with stops.
+fill gradient:[linear 0,0.3,1,0.7 stops:0,red,0.5,lime,1,blue]
+RECT 40,40,250,250
+TEXT at:50,280 anchor:left &quot;linear gradient with stops&quot;</code></pre>
+<p><img src="images/gradientDemo.png" /></p>
+<h3 id="paint-specification">Paint Specification</h3>
+<p><code>&lt;paint&gt;</code> is used in many directives, such as <a
+href="#pen"><code>pen</code></a>, <a href="#fill"><code>fill</code></a>,
+<a href="#font"><code>font</code></a>, and others. It can be a solid <a
+href="#color-specification"><code>&lt;color&gt;</code></a>
+specification, a <a href="#gradient-specification">gradient</a>, or a <a
+href="#pattern-specification">pattern</a>. The paint specification
+provides different ways of specifying how the paint should look like.
+You can select a solid color, a gradient of colors, or a pattern.</p>
+<pre><code>&lt;paint&gt; = &lt;color&gt; | gradient:&lt;gradient&gt; | pattern:&lt;instructions&gt;
+          [ transform:&lt;transform&gt; ]
+          [ relative:yes|no ]
+          [ opacity:&lt;opacity&gt; ]</code></pre>
+<ul>
+<li><p>The <code>&lt;color&gt;</code> paint type specifies a solid color
+using either RGB, HSV, hexadecimal, or name. See <a
+href="#color-specification">Color Specification</a>.</p></li>
+<li><p>The <code>gradient</code> paint type specifies a gradient of
+colors that can be set with a starting and ending color or multiple
+color stops. See <a href="#gradient-specification">Gradient
+Specification</a>.</p></li>
+<li><p>The <code>pattern</code> paint type is used to specify a
+repeating graphical pattern created from a set of drawing instructions.
+You define the pattern by enclosing the instructions in brackets
+<code>[</code> and <code>]</code>. The drawing context for the pattern
+inherits all settings from the current context, such as <a
+href="#pen"><code>pen</code></a>, <a href="#fill"><code>fill</code></a>,
+etc., except for the <a href="#mask"><code>mask</code></a> setting. A <a
+href="#bounds"><code>bounds</code></a> directive is required to define
+the pattern’s dimensions. The resolution used for rasterizing the
+pattern can be changed using the <a
+href="#options"><code>options</code></a> directive.</p></li>
+<li><p>The <code>transform</code> option allows you to apply a series of
+transformations on the paint. These transformations are relative to the
+current transformation of the active <a href="#context">context</a>. See
+<a href="#transform-specification">Transform Specification</a>.
+(Irrelevant for solid colors.)</p></li>
+<li><p>The <code>relative</code> option allows you to specify whether
+the paint transforms with the objects drawn. If set to <code>yes</code>,
+the paint will be transformed along with the objects. If set to
+<code>no</code> it will stay static. (Irrelevant for solid
+colors.)</p></li>
+<li><p>The <code>opacity</code> option allows you to specify the opacity
+of the paint. The value should be between 0 and 1, where 0 is full
+transparency and 1 is full opacity. Alternatively, you can use
+hexadecimal values <code>#00</code> to <code>#FF</code>.</p></li>
+</ul>
+<p>Demonstration:</p>
+<pre><code>format IVG-1 requires:ImpD-1
+bounds 0,0,400,300
+
+// Light gray background.
+WIPE silver
+
+// Fill the canvas with another (mostly transparent) pattern, opacity:0.6.
+WIPE pattern:[
+    bounds 0,0,20,20
+    
+    // Make a 3D-bevel with black and white paths.
+    pen black; PATH svg:[M18.5,2.5h-16v16]
+    pen white; PATH svg:[M2.5,18.5h16v-16]
+] opacity:0.6
+
+// Create a mask from a rotated pattern with circles. Scale to 75%.
+mask [
+    WIPE pattern:[
+        bounds 0,0,100,100
+        ELLIPSE 40,45,30
+        ELLIPSE 80,80,20
+    ] transform:[scale 0.75; rotate 10 anchor:200,150]
+]
+
+// Fill the mask with a relative gradient.
+fill gradient:[ linear 0,0,1,1 stops:0.0,white,1.0,blue ] relative:yes
+RECT 0,0,400,300</code></pre>
+<p><img src="images/paintDemo.png" /></p>
+<h3 id="transform-specification">Transform Specification</h3>
+<p><code>&lt;transform&gt;</code> instructions modify the drawing
+instructions’ position, shape, or orientation. You use transformations
+in two ways:</p>
+<ol type="1">
+<li><p>You can use a transformation as an instruction of its own to
+transform the current <a href="#context">context</a> and all subsequent
+drawing operations. The transformation is applied to the entire canvas
+when used in this way.</p></li>
+<li><p>Additionally, transformations can also be used in other
+directives such as <a
+href="#paint-specification"><code>&lt;paint&gt;</code></a>, <a
+href="#font"><code>font</code></a>, and <a
+href="#image"><code>image</code></a> to transform specific objects. In
+these cases, you specify the transformation within square brackets
+<code>[</code> and <code>]</code>, and you can list multiple
+transformations separated with a semicolon <code>;</code>. It is
+important to note that the order of the transformations in the list
+matters, as transformations are applied in the order they
+appear.</p></li>
+</ol>
+<p>The syntax for specifying a transformation is as follows:</p>
+<pre><code>&lt;transform&gt; = offset &lt;x&gt;,&lt;y&gt;
+              | scale &lt;n&gt;[,&lt;n&gt;]
+              | rotate &lt;degrees&gt;
+              | shear &lt;x&gt;,&lt;y&gt;
+              | matrix &lt;n&gt;,&lt;n&gt;,&lt;n&gt;,&lt;n&gt;,&lt;n&gt;,&lt;n&gt;
+              [ anchor:&lt;x&gt;,&lt;y&gt; ]</code></pre>
+<ul>
+<li><p>The <code>offset</code> alternative moves the context/object by
+the specified <code>&lt;x&gt;</code> and <code>&lt;y&gt;</code>
+amount.</p></li>
+<li><p>The scale <code>&lt;n&gt;[,&lt;n&gt;]</code> alternative resizes
+the context/object by the specified <code>&lt;n&gt;</code> factor. You
+can provide an optional second value to specify a different scaling
+factor for the x and y-axis.</p></li>
+<li><p>The <code>rotate</code> alternative rotates the context/object by
+the specified <code>&lt;degrees&gt;</code> amount.</p></li>
+<li><p>The <code>shear</code> alternative skews the context/object by
+the specified <code>&lt;x&gt;</code> and <code>&lt;y&gt;</code>
+amount.</p></li>
+<li><p>The <code>matrix</code> alternative applies a transformation
+matrix to the context/object. The six values provided represent the
+coefficients of the matrix.</p></li>
+<li><p>You can provide an optional anchor point with any of the above
+alternatives (except <code>offset</code>) by appending
+<code>anchor</code> to the transformation. <code>anchor</code> will
+specify a point in the context/object that will be used as the base for
+the transformation. By default, the anchor point is the origin
+(0,0).</p></li>
+</ul>
+<p>Demonstration:</p>
+<pre><code>format IVG-1 requires:ImpD-1
+bounds 0,0,310,240
+
+wipe #403020
+fill #C04030 opacity:0.8
+pen #C090C0 width:2
+font serif size:22 color:white
+
+// We start a context here so we can use reset between each transform.
+context [
+    // No transform.
+    RECT 20,20,80,50
+
+    // Simple translation (moving the rectangle)
+    offset 60,20
+    RECT 20,20,80,50
+    TEXT at:25,65 &quot;offset&quot;
+    reset
+    
+    // -10 degrees rotation around an anchor (center of rect).
+    offset 180,0
+    rotate -10 anchor:60,45
+    RECT 20,20,80,50
+    TEXT at:25,65 &quot;rotate&quot;
+    reset
+    
+    // Scale X and Y differently (0.7 and 2).
+    offset 0,80
+    scale 0.7,2
+    RECT 20,20,80,50
+    TEXT at:25,65 &quot;scale&quot;
+    reset
+    
+    // Shear
+    offset 60,100
+    shear 0.2,0.3
+    RECT 20,20,80,50
+    TEXT at:25,65 &quot;shear&quot;
+    reset
+    
+    // Arbitrary transform matrix.
+    matrix -0.2,0.8,1.6,0.2,180,120
+    RECT 20,20,80,50
+    TEXT at:25,65 &quot;matrix&quot;
+]</code></pre>
+<p><img src="images/transformDemo.png" /></p>
+</body>
+</html>
