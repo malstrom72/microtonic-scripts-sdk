@@ -205,8 +205,8 @@ createSchemaParser = function {
 	};
 
 	makeDir(bake('{::run.root}build'), false);
-	buildPath = bake('{::run.root}build{DIR_SLASH}cushy.schema.pika');
-	if (isFileNewer(bake('{::run.root}cushy.schema'), buildPath)) {
+	builtSchemaPath = bake('{::run.root}cushy.schema.pika');
+	if (isFileNewer(bake('{::run.root}cushy.schema'), builtSchemaPath)) {
 		freezable = (coalesce(@::_alloc, 0) == 0);
 		if (!freezable) {
 			print("Warning! Cannot freeze Cushy schema unless it is created first on the heap.");
@@ -222,12 +222,12 @@ createSchemaParser = function {
 			for (i = 0; i < ::_alloc; ++i) frozen #= sourceFor(@::[i]);
 			frozen #= sourceFor(@::_alloc);
 			frozen #= sourceFor(@::schema);
-			save(buildPath, frozen);
+			save(builtSchemaPath, frozen);
 			print("Updated cushy.schema.pika");
 		};
 	} else {
 		print("Defrosting cushy.schema.pika");
-		run(buildPath);
+		run(builtSchemaPath);
 	};
 
 	// Not using iterate since we might grow the list while we parse more schema files. First entry is always cushy.schema.
