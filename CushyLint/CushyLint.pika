@@ -24,17 +24,15 @@
 */
 
 // include('debug.pika');
-include('build/systools.pika');
 include('stdlib.pika');
+include('include/systools.pika');
 include('include/initPPEG.pika');
 include('include/objects.pika');
 
 if (PLATFORM === "UNIX") {
-	MAKARON_SOURCE_PATH = ::run.root # 'support/MakaronCmd.cpp';
 	MAKARON_EXE_PATH = ::run.root # 'build/MakaronCmd';
 	BUILD_MAKARON_PATH = ::run.root # 'support/buildMakaron.sh';
 } else {
-	MAKARON_SOURCE_PATH = ::run.root # 'support\MakaronCmd.cpp';
 	MAKARON_EXE_PATH = ::run.root # 'build\MakaronCmd.exe';
 	BUILD_MAKARON_PATH = ::run.root # 'support\buildMakaron.cmd';
 };
@@ -718,7 +716,7 @@ if ($n < 2) {
 	pwd = currentDir();
 	::run.root = fullPath(pwd, ::run.root);
 
-	if (isFileNewer(MAKARON_SOURCE_PATH, MAKARON_EXE_PATH)) {
+	if (!pathExists(MAKARON_EXE_PATH)) {
 		shell(quotePath(BUILD_MAKARON_PATH));
 	};
 
