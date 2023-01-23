@@ -19,8 +19,6 @@
 		    }
 
 	*)	Include exact offset for error (not just node begin), e.g. for peg's
-
-	*)	Allow .schema file to specify include dirs (and possibly other options)
 */
 
 // include('debug.pika');
