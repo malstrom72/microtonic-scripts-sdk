@@ -1,800 +1,800 @@
 /**
-	Schema syntax reference
+    Schema syntax reference
 
-	( )             : group
-	[ ] 			: optional
-	| 				: alternatives
-	< > 			: use rule
-	< > = 			: define rule
-	<- 				: define peg
-	' '             : literal text
-	" " 			: literal string
-	* 				: any (unquoted) text
-	*<peg> 			: any text validated by peg
-	% 				: any (quoted) string
-	%<peg> 			: any string validated by peg
-	?				: any value
-	?file:<ext> 	: check that resource of type <ext> exists
-	{ k:v, k:v }	: structure
-	{ k:v, *:v }	: structure, validate remaining fields against *
-	{ v, v }		: list (exact match)
-	{ v, ... }		: array (zero or more matches)
-	\group\tag 		: collect and check against group rule
-	include:		: include another .schema file
-	resources:		: add a search path for resources
+    ( )             : group
+    [ ]             : optional
+    |               : alternatives
+    < >             : use rule
+    < > =           : define rule
+    <-              : define peg
+    ' '             : literal text
+    " "             : literal string
+    *               : any (unquoted) text
+    *<peg>          : any text validated by peg
+    %               : any (quoted) string
+    %<peg>          : any string validated by peg
+    ?               : any value
+    ?file:<ext>     : check that resource of type <ext> exists
+    { k:v, k:v }    : structure
+    { k:v, *:v }    : structure, validate remaining fields against *
+    { v, v }        : list (exact match)
+    { v, ... }      : array (zero or more matches)
+    \group\tag      : collect and check against group rule
+    include:        : include another .schema file
+    resources:      : add a search path for resources
 **/
 
 /**
-	PEGs
+    PEGs
 **/
-intExpr				<- intGroup _ ([-+*/] _ intGroup _)*
-intGroup			<- ('-' _)* ('(' _ intExpr ')' / [0-9]+ / '$') _
-rectInt				<- rectIntGroup _ ([-+*/] _ rectIntGroup _)*
-rectIntGroup		<- ('-' _)* ('(' _ rectInt ')' / [0-9]+ / [$tlwhrb]) _
-floatExpr 			<- floatGroup _ ([-+*/] _ floatGroup _)*
-floatGroup			<- ('-' _)* ('(' _ floatExpr ')' / [0-9]+ ('.' [0-9]+)? / '$') _
-_                 	<- [ \t\r\n]*
-identifier 			<- [a-zA-Z_$][a-zA-Z0-9_$.\[\]]*
+intExpr             <- intGroup _ ([-+*/] _ intGroup _)*
+intGroup            <- ('-' _)* ('(' _ intExpr ')' / [0-9]+ / '$') _
+rectInt             <- rectIntGroup _ ([-+*/] _ rectIntGroup _)*
+rectIntGroup        <- ('-' _)* ('(' _ rectInt ')' / [0-9]+ / [$tlwhrb]) _
+floatExpr           <- floatGroup _ ([-+*/] _ floatGroup _)*
+floatGroup          <- ('-' _)* ('(' _ floatExpr ')' / [0-9]+ ('.' [0-9]+)? / '$') _
+_                   <- [ \t\r\n]*
+identifier          <- [a-zA-Z_$][a-zA-Z0-9_$.\[\]]*
 hex8                <- '0x' hex hex
 hex32               <- '0x' hex hex hex hex hex hex hex hex
 hex                 <- [0-9A-Fa-f]
-singleChar			<- .
-positiveIntLiteral	<- [+]? [0-9]+
-floatLiteral		<- [-+]? ('0' / [1-9] [0-9]*) ('.' [0-9]+)?
-hexColor			<- '#' hex hex hex hex hex hex (hex hex)?
-decimalColor		<- ('rgb(' / 'hsv(') floatExpr ',' floatExpr ',' floatExpr (',' floatExpr)? ')'
-numericColor		<- hexColor / decimalColor
+singleChar          <- .
+positiveIntLiteral  <- [+]? [0-9]+
+floatLiteral        <- [-+]? ('0' / [1-9] [0-9]*) ('.' [0-9]+)?
+hexColor            <- '#' hex hex hex hex hex hex (hex hex)?
+decimalColor        <- ('rgb(' / 'hsv(') floatExpr ',' floatExpr ',' floatExpr (',' floatExpr)? ')'
+numericColor        <- hexColor / decimalColor
 
 /**
-	Meta text
+    Meta text
 **/
-metaText			<- (metaTag / metaChars)*
-metaChars 			<- (metaTag / (!'[' (('\\' .) / .))+)
-metaTag				<- metaVar / metaWindows / metaMac / metaXLate / metaUppercase / metaLowercase / metaTrim
-					   / metaCapitalize / metaTitle
-metaVar				<- '[var]' (!'[/var]' metaTag / metaChars)* '[/var]'
-metaWindows			<- '[windows]' (!'[/windows]' metaTag / metaChars)* '[/windows]'
-metaMac				<- '[mac]' (!'[/mac]' metaTag / metaChars)* '[/mac]'
-metaXLate			<- '[xlate]' (!'[/xlate]' metaTag / metaChars)* '[/xlate]'
-metaUppercase		<- '[uppercase]' (!'[/uppercase]' metaTag / metaChars)* '[/uppercase]'
-metaLowercase		<- '[lowercase]' (!'[/lowercase]' metaTag / metaChars)* '[/lowercase]'
-metaTrim			<- '[trim]' (!'[/trim]' metaTag / metaChars)* '[/trim]'
-metaCapitalize		<- '[capitalize]' (!'[/capitalize]' metaTag / metaChars)* '[/capitalize]'
-metaTitle			<- '[title]' (!'[/title]' metaTag / metaChars)* '[/title]'
+metaText            <- (metaTag / metaChars)*
+metaChars           <- (metaTag / (!'[' (('\\' .) / .))+)
+metaTag             <- metaVar / metaWindows / metaMac / metaXLate / metaUppercase / metaLowercase / metaTrim
+                       / metaCapitalize / metaTitle
+metaVar             <- '[var]' (!'[/var]' metaTag / metaChars)* '[/var]'
+metaWindows         <- '[windows]' (!'[/windows]' metaTag / metaChars)* '[/windows]'
+metaMac             <- '[mac]' (!'[/mac]' metaTag / metaChars)* '[/mac]'
+metaXLate           <- '[xlate]' (!'[/xlate]' metaTag / metaChars)* '[/xlate]'
+metaUppercase       <- '[uppercase]' (!'[/uppercase]' metaTag / metaChars)* '[/uppercase]'
+metaLowercase       <- '[lowercase]' (!'[/lowercase]' metaTag / metaChars)* '[/lowercase]'
+metaTrim            <- '[trim]' (!'[/trim]' metaTag / metaChars)* '[/trim]'
+metaCapitalize      <- '[capitalize]' (!'[/capitalize]' metaTag / metaChars)* '[/capitalize]'
+metaTitle           <- '[title]' (!'[/title]' metaTag / metaChars)* '[/title]'
 
 /**
-	Meta variable
+    Meta variable
 
-	FUTURE: check actions and params of these too somehow
-	(maybe also variables)
-**/
-/*
-	TODO: add 'editable: <variable>' to cushy?
-*/
-metaVariable		<- 'can:' metaAction (',' metaParams)?
-					   / 'checked:' metaAction (',' metaParams)?
-					   / ('lowercase:'
-					     / 'modifiable:'
-					   	 / 'trimmed:'
-					   	 / 'uppercase:'
-					   	 / 'translated:'
-					   ) (metaVariable / identifier)
-					   / 'calculated:' _ metaCalced
-					   / 'text:' .*
-					   / 'metatext:' metaText
-metaCalced 			<- metaCalcedGroup _ ([-+*/] _ metaCalcedGroup _)*
-metaCalcedGroup		<- ('-' _)* ('(' _ metaCalced ')' / [0-9]+ ('.' [0-9]+)? / metaCalcedSymbol) _
-metaCalcedSymbol	<- [a-zA-Z0-9$_.:]+
-metaAction			<- identifier
-metaParams			<- .*
-
-/**
-	Click masks
-	===========
-
-	Masks are scanned bottom up, thus later masks have priority over earlier. The mask has to contain one (and only one)
-	"type mask" and zero or more "modifiers masks" combined with '+'.
-
-	Type Masks
-	----------
-	"click"         Clicked a <click> view (also context clicks!) or pressed (and released) a <button> view (no context
-					clicks!) (this is the default mask).
-
-	"context"		Context menu click (Windows: right mouse button up, Mac: right mouse button down or control-click)
-
-	"press"         Mouse button clicked (called once at the actual mouse press moment, not after released inside
-					<button> view like "click"). Not issued for context clicks in <click> etc.
-
-	"release"		Button released (called once at the actual mouse release moment, before "click"). Remember that
-					context-clicks do not get "release"!
-
-	"down"			Hit-tracking entered (e.g. <button> goes down)
-
-	"up"			Hit-tracking left (e.g. <button> goes up)
-
-	Modifier Masks
-	--------------
-	"shift"			Shift held
-
-	"control"		Control held
-
-	"alt"			Alt / option held
-
-	"command"		Command held (Mac only)
-
-	"windows"		We are on Windows
-
-	"mac"			We are on Mac
+    FUTURE: check actions and params of these too somehow
+    (maybe also variables)
 **/
 /*
-	TODO: maybe implement in the future if we have the need. The problem now is that "context" is issued via WM_CONTEXT
-	on Windows after a WM_RBUTTONUP returns "not handled" and e.g. a "click" "nop" view will then steal the right-clicks
-	and WM_CONTEXT will never be issued.
+    TODO: add 'editable: <variable>' to cushy?
 */
-//	"left"			Left mouse button
-//	"right"			Right mouse button
-clickMask			<- typeMask ('+' modifierMask)*
-typeMask			<- 'click' / 'press' / 'release' / 'down' / 'up' / 'context'
-modifierMask 		<- 'shift' / 'control' / 'alt' / 'command' / 'windows' / 'mac'
+metaVariable        <- 'can:' metaAction (',' metaParams)?
+                       / 'checked:' metaAction (',' metaParams)?
+                       / ('lowercase:'
+                         / 'modifiable:'
+                         / 'trimmed:'
+                         / 'uppercase:'
+                         / 'translated:'
+                       ) (metaVariable / identifier)
+                       / 'calculated:' _ metaCalced
+                       / 'text:' .*
+                       / 'metatext:' metaText
+metaCalced          <- metaCalcedGroup _ ([-+*/] _ metaCalcedGroup _)*
+metaCalcedGroup     <- ('-' _)* ('(' _ metaCalced ')' / [0-9]+ ('.' [0-9]+)? / metaCalcedSymbol) _
+metaCalcedSymbol    <- [a-zA-Z0-9$_.:]+
+metaAction          <- identifier
+metaParams          <- .*
 
 /**
-	Primitives
+    Click masks
+    ===========
+
+    Masks are scanned bottom up, thus later masks have priority over earlier. The mask has to contain one (and only one)
+    "type mask" and zero or more "modifiers masks" combined with '+'.
+
+    Type Masks
+    ----------
+    "click"         Clicked a <click> view (also context clicks!) or pressed (and released) a <button> view (no context
+                    clicks!) (this is the default mask).
+
+    "context"       Context menu click (Windows: right mouse button up, Mac: right mouse button down or control-click)
+
+    "press"         Mouse button clicked (called once at the actual mouse press moment, not after released inside
+                    <button> view like "click"). Not issued for context clicks in <click> etc.
+
+    "release"       Button released (called once at the actual mouse release moment, before "click"). Remember that
+                    context-clicks do not get "release"!
+
+    "down"          Hit-tracking entered (e.g. <button> goes down)
+
+    "up"            Hit-tracking left (e.g. <button> goes up)
+
+    Modifier Masks
+    --------------
+    "shift"         Shift held
+
+    "control"       Control held
+
+    "alt"           Alt / option held
+
+    "command"       Command held (Mac only)
+
+    "windows"       We are on Windows
+
+    "mac"           We are on Mac
 **/
-<bool> 				= 'false'|'true'
-<real> 				= *floatExpr
-<int> 				= *intExpr
-<string> 			= %
-<rect> 				= { *rectInt, *rectInt, *rectInt, *rectInt }
-<var> 				= *identifier | %metaVariable
-<value> 			= % | *floatLiteral | 'false' | 'true'
-<pixels>			= <real>
-<percent> 			= <real>
-<fps> 				= <real>
-<secs> 				= <real>
-<degrees>			= <real>
-<clickMask> 		= %clickMask
-<modifierMask> 		= %modifierMask
-<action> 			= \actions\action
-<params> 			= \actions\params
-<metaText> 			= %metaText
-<hex8> 				= *hex8
-<hex32> 			= *hex32
-<uint> 				= *positiveIntLiteral
-<chars> 			= %
-<char> 				= %singleChar
-<cursorName> 		= "arrow" | "iBeam" | "cross" | "hand" | "sizeWE" | "sizeNS"
-<cursorNameWin>		= <cursorName> | "wait" | "upArrow" | "sizeAll" | "sizeNWSE" | "sizeNESW" | "appStarting" | "help"
-					  | "no"
-<cursorNameMac>		= <cursorName> | "closedHand" | "openHand" | "sizeW" | "sizeE" | "sizeN" | "sizeS"
-<floatRect> 		= { <pixels>, <pixels>, <pixels>, <pixels> }
-<cursor> 			= <cursorName> | <var> | { [ windows: <cursorNameWin> ], [ mac: <cursorNameMac> ] }
-<pngFile> 			= ?file:png
-<ivgfontFile> 		= ?file:ivgfont
-<ivgFile> 			= ?file:ivg
-<cushyFile> 		= ?file:cushy
-<numericColor> 		= %numericColor
-<clickThru> 		= <bool> | <var>
-<hitMask> 			= <image> | { image: <image>, [ visible: <bool> ] }
-<mousePosition>		= <var> | { [xy: <var>], [x: <var>], [y: <var>], [ integer: <bool> /* = true */ ] }
-<editSpec>			= <string> | { label: <string>, [color: <color>], [selectedColor: <color>], [grid: <int>] }
-
-<builtInAction> 	= <nop>
-					  | <reload>
-					  | <set>
-					  | <assign>
-					  | <switch>
-					  | <batch>
-					  | <execute>
-					  | <alert>
-					  | <hint>
-					  | <popup>
-					  | <edit>
-					  | <launch>
-					  | <assert>
+/*
+    TODO: maybe implement in the future if we have the need. The problem now is that "context" is issued via WM_CONTEXT
+    on Windows after a WM_RBUTTONUP returns "not handled" and e.g. a "click" "nop" view will then steal the right-clicks
+    and WM_CONTEXT will never be issued.
+*/
+//  "left"          Left mouse button
+//  "right"         Right mouse button
+clickMask           <- typeMask ('+' modifierMask)*
+typeMask            <- 'click' / 'press' / 'release' / 'down' / 'up' / 'context'
+modifierMask        <- 'shift' / 'control' / 'alt' / 'command' / 'windows' / 'mac'
 
 /**
-	`nop` does nothing. Most useful to override default actions and stop clicks to pass through click view. May also be
-	used to force a choice to be disabled / checked etc (e.g. for testing).
+    Primitives
+**/
+<bool>              = 'false'|'true'
+<real>              = *floatExpr
+<int>               = *intExpr
+<string>            = %
+<rect>              = { *rectInt, *rectInt, *rectInt, *rectInt }
+<var>               = *identifier | %metaVariable
+<value>             = % | *floatLiteral | 'false' | 'true'
+<pixels>            = <real>
+<percent>           = <real>
+<fps>               = <real>
+<secs>              = <real>
+<degrees>           = <real>
+<clickMask>         = %clickMask
+<modifierMask>      = %modifierMask
+<action>            = \actions\action
+<params>            = \actions\params
+<metaText>          = %metaText
+<hex8>              = *hex8
+<hex32>             = *hex32
+<uint>              = *positiveIntLiteral
+<chars>             = %
+<char>              = %singleChar
+<cursorName>        = "arrow" | "iBeam" | "cross" | "hand" | "sizeWE" | "sizeNS"
+<cursorNameWin>     = <cursorName> | "wait" | "upArrow" | "sizeAll" | "sizeNWSE" | "sizeNESW" | "appStarting" | "help"
+                      | "no"
+<cursorNameMac>     = <cursorName> | "closedHand" | "openHand" | "sizeW" | "sizeE" | "sizeN" | "sizeS"
+<floatRect>         = { <pixels>, <pixels>, <pixels>, <pixels> }
+<cursor>            = <cursorName> | <var> | { [ windows: <cursorNameWin> ], [ mac: <cursorNameMac> ] }
+<pngFile>           = ?file:png
+<ivgfontFile>       = ?file:ivgfont
+<ivgFile>           = ?file:ivg
+<cushyFile>         = ?file:cushy
+<numericColor>      = %numericColor
+<clickThru>         = <bool> | <var>
+<hitMask>           = <image> | { image: <image>, [ visible: <bool> ] }
+<mousePosition>     = <var> | { [xy: <var>], [x: <var>], [y: <var>], [ integer: <bool> /* = true */ ] }
+<editSpec>          = <string> | { label: <string>, [color: <color>], [selectedColor: <color>], [grid: <int>] }
+
+<builtInAction>     = <nop>
+                      | <reload>
+                      | <set>
+                      | <assign>
+                      | <switch>
+                      | <batch>
+                      | <execute>
+                      | <alert>
+                      | <hint>
+                      | <popup>
+                      | <edit>
+                      | <launch>
+                      | <assert>
+
+/**
+    `nop` does nothing. Most useful to override default actions and stop clicks to pass through click view. May also be
+    used to force a choice to be disabled / checked etc (e.g. for testing).
 **/
 <nop> = {
-	action: "nop"
-	[ params: {
-		[ enabled: <bool> ]	// = true
-		[ checked: <bool> ] // = false
-	} ]
+    action: "nop"
+    [ params: {
+        [ enabled: <bool> ] // = true
+        [ checked: <bool> ] // = false
+    } ]
 }
 
 /**
-	"reload" and reinitiate entire layout from disk.
+    "reload" and reinitiate entire layout from disk.
 **/
 <reload> = {
-	action: "reload"
-	[ params: "reset" ]								// attempt to reset all global variables as if the windows is
-													// re-opened from scratch (mainly for testing during development).
+    action: "reload"
+    [ params: "reset" ]                             // attempt to reset all global variables as if the windows is
+                                                    // re-opened from scratch (mainly for testing during development).
 }
 
 /**
-	`set` will be checked if `<var>` is (already) exactly `<value>`
+    `set` will be checked if `<var>` is (already) exactly `<value>`
 **/
 <set> = {
-	action: "set"
-	params: { <var>, <value> }
+    action: "set"
+    params: { <var>, <value> }
 }
 
 /**
-	`assign` will be checked if `<var>` is (already) exactly `<var>`
+    `assign` will be checked if `<var>` is (already) exactly `<var>`
 **/
 <assign> = {
-	action: "assign"
-	params: { <var>, <var> }
+    action: "assign"
+    params: { <var>, <var> }
 }
 
 /**
-	`switch` action
+    `switch` action
 **/
 <switch> = {
-	action: "switch"
-	params: {
-		variable: <var>
-		cases: {
-			*: { <action>, [ <params> ] }
-		}
-		[ default: { <action>, [ <params> ] } ]
-		[ checked: { <value>, ... } ] 				// will be checked if variable is any of the values in the list
-	}
+    action: "switch"
+    params: {
+        variable: <var>
+        cases: {
+            *: { <action>, [ <params> ] }
+        }
+        [ default: { <action>, [ <params> ] } ]
+        [ checked: { <value>, ... } ]               // will be checked if variable is any of the values in the list
+    }
 }
 
 /**
-	Normally a "batch" action will be enabled if any of its actions can be performed, but it will only be checked if all
-	of its actions report checked state. This behavior can be overriden with ignoreChecked and ignoreEnabled.
+    Normally a "batch" action will be enabled if any of its actions can be performed, but it will only be checked if all
+    of its actions report checked state. This behavior can be overriden with ignoreChecked and ignoreEnabled.
 **/
 <batch> = {
-	action: "batch"
-	params: {
-		{ <action>, [ <params> ], [ { [ ignoreChecked: <bool> /* false */ ], [ ignoreEnabled: <bool> /* false */ ] } ] }
-		...
-	}
+    action: "batch"
+    params: {
+        { <action>, [ <params> ], [ { [ ignoreChecked: <bool> /* false */ ], [ ignoreEnabled: <bool> /* false */ ] } ] }
+        ...
+    }
 }
 
 /**
-	Indirect execution of an action, action and / or params will be [var] expanded or may be retrieved from gui
-	variables.
+    Indirect execution of an action, action and / or params will be [var] expanded or may be retrieved from gui
+    variables.
 **/
 <execute> = {
-	action: "execute"
-	params: {
-		( action: (<action> | <metaText>) | actionVariable: <var> )
-		[ params: (<params> | <metaText>) | paramsVariable: <var> ]
-	}
+    action: "execute"
+    params: {
+        ( action: (<action> | <metaText>) | actionVariable: <var> )
+        [ params: (<params> | <metaText>) | paramsVariable: <var> ]
+    }
 }
 
 /**
-	`alert` action
+    `alert` action
 **/
 <alert> = {
-	action: "alert"
-	params: {
-		[								 			// Default = "plain"
-			type: "plain" | "question" | "warning"
-			      | "info" | "error"
-		]
-		[ 											// Default = "ok"
-			buttons: "ok" | "ok cancel"
-				     | "retry cancel" | "yes no"
-				     | "yes no cancel"
-				     | "abort retry ignore"
-		]
-		[ 											// Default = "ok"
-			default: "ok" | "cancel" | "retry"
-					 | "yes" | "no" | "abort"
-					 | "ignore"
-		]
-		[ title: <metaText> ] 						// Window title, default = product name.
-		text: <metaText>
-		[ reactions: {
-			*: { <action>, [ <params> ] }			// One for each button (see above).
-		} ]
-	} | <metaText>
+    action: "alert"
+    params: {
+        [                                           // Default = "plain"
+            type: "plain" | "question" | "warning"
+                  | "info" | "error"
+        ]
+        [                                           // Default = "ok"
+            buttons: "ok" | "ok cancel"
+                     | "retry cancel" | "yes no"
+                     | "yes no cancel"
+                     | "abort retry ignore"
+        ]
+        [                                           // Default = "ok"
+            default: "ok" | "cancel" | "retry"
+                     | "yes" | "no" | "abort"
+                     | "ignore"
+        ]
+        [ title: <metaText> ]                       // Window title, default = product name.
+        text: <metaText>
+        [ reactions: {
+            *: { <action>, [ <params> ] }           // One for each button (see above).
+        } ]
+    } | <metaText>
 }
 
 /**
-	`hint` action
+    `hint` action
 **/
 <hint> = {
-	action: "hint"
-	params: {
-		[
-			offset: { <int>, <int> }				// Disregards custom UI scale (standard settings would be { 0, 22 })
+    action: "hint"
+    params: {
+        [
+            offset: { <int>, <int> }                // Disregards custom UI scale (standard settings would be { 0, 22 })
 
-			| position: { <int>, <int> } 			// Parent cushy-view coordinates.
-		]
-		[
-			extent: <int>							// Max mouse travel in pixels for hint to stay up, default is 5
-													// (disregarding custom UI scale).
+            | position: { <int>, <int> }            // Parent cushy-view coordinates.
+        ]
+        [
+            extent: <int>                           // Max mouse travel in pixels for hint to stay up, default is 5
+                                                    // (disregarding custom UI scale).
 
-			| area: <rect>							// Absolute area in parent cushy-view coordinates ($ etc are full
-													// parent cushy bounds).
+            | area: <rect>                          // Absolute area in parent cushy-view coordinates ($ etc are full
+                                                    // parent cushy bounds).
 
-			| stick: 'true'							// No boundaries for staying up.
-		]
-		[ duration: <secs> ]						// Seconds (default is indefinitely).
-		text: <metaText>							// empty text removes hint
-	} | <metaText>									// empty text removes hint
+            | stick: 'true'                         // No boundaries for staying up.
+        ]
+        [ duration: <secs> ]                        // Seconds (default is indefinitely).
+        text: <metaText>                            // empty text removes hint
+    } | <metaText>                                  // empty text removes hint
 }
 
 /**
-	`assert` action
+    `assert` action
 **/
 <assert> = {
-	action: "assert"
-	params: {
-		(
-			variable: <var>
-			( is: <value>
-			| isNot: <value>
-			| sameAs: <var>
-			| differsFrom: <var>
-			)
-		)
-		|
-		(
-			action: <action>
-			[ params: <params> ]
-			[ enabled: <bool> ]
-			[ checked: <bool> ]
-		)
-	}
+    action: "assert"
+    params: {
+        (
+            variable: <var>
+            ( is: <value>
+            | isNot: <value>
+            | sameAs: <var>
+            | differsFrom: <var>
+            )
+        )
+        |
+        (
+            action: <action>
+            [ params: <params> ]
+            [ enabled: <bool> ]
+            [ checked: <bool> ]
+        )
+    }
 }
 
 /**
-	`popup` action
+    `popup` action
 **/
 <popup> = {
-	action: "popup"
-	params: {
-		[
-			offset: { <int>, <int> }				// Disregards custom UI scale.
+    action: "popup"
+    params: {
+        [
+            offset: { <int>, <int> }                // Disregards custom UI scale.
 
-			| position: { <int>, <int> } 			// Parent cushy-view coordiates.
-		]
-		items: {
-			{ <metaText>, <action>, [ <params> ] }	// Notice: items with empty captions will be excluded from popup
-													// (but still counted by autoDisable and autoCheck). Use & in text
-													// to designate shortcut letters (e.g. "Re&name"). Use && to insert
-													// a single & instead.
+            | position: { <int>, <int> }            // Parent cushy-view coordiates.
+        ]
+        items: {
+            { <metaText>, <action>, [ <params> ] }  // Notice: items with empty captions will be excluded from popup
+                                                    // (but still counted by autoDisable and autoCheck). Use & in text
+                                                    // to designate shortcut letters (e.g. "Re&name"). Use && to insert
+                                                    // a single & instead.
 
-			| '-'									// For divider.
-			...
-		}
-		[ storeAction: <var> ] 						// Stores the chosen action into <var>, e.g. for use with "execute"
-													// action to repeat last command.
-		[ storeParams: <var> ]
-		[ storeCaption: <var> ]						// Stores the chosen menu caption (e.g. for repetition hints).
+            | '-'                                   // For divider.
+            ...
+        }
+        [ storeAction: <var> ]                      // Stores the chosen action into <var>, e.g. for use with "execute"
+                                                    // action to repeat last command.
+        [ storeParams: <var> ]
+        [ storeCaption: <var> ]                     // Stores the chosen menu caption (e.g. for repetition hints).
 
-		[ autoDisable: <bool> ]						// Will disable this action if all item actions are unavailable
-													// (i.e. grayed out), default = false.
+        [ autoDisable: <bool> ]                     // Will disable this action if all item actions are unavailable
+                                                    // (i.e. grayed out), default = false.
 
-		[ autoCheck: <bool> ] 						// Will check this action if any item is checked, default = false.
-	}
+        [ autoCheck: <bool> ]                       // Will check this action if any item is checked, default = false.
+    }
 }
 
 /**
-	`edit` action
+    `edit` action
 **/
 <edit> = {
-	action: "edit"
-	params: {
-		/*
-			TODO: title: <window title>
-		*/
-		text: <metaText> 							// [var] expanded
-		variable: <var>
-		[ default: <metaText> ] 					// =[var]variable[/var], [var] expanded
-		[ reaction: { <action>, [ <params> ] } ]	// run on ok
-	}
+    action: "edit"
+    params: {
+        /*
+            TODO: title: <window title>
+        */
+        text: <metaText>                            // [var] expanded
+        variable: <var>
+        [ default: <metaText> ]                     // =[var]variable[/var], [var] expanded
+        [ reaction: { <action>, [ <params> ] } ]    // run on ok
+    }
 }
 
 /**
-	`launch` action
+    `launch` action
 **/
 <launch> = {
-	action: "launch"
-	params: <metaText> 								// file or url, [var] expanded, utf8 expected
+    action: "launch"
+    params: <metaText>                              // file or url, [var] expanded, utf8 expected
 }
 
 /**
-	Color Spec
+    Color Spec
 **/
 <color> = "aqua" | "black" | "blue" | "fuchsia"
-		  | "gray" | "green" | "lime" | "maroon"
-		  | "navy" | "olive" | "purple" | "red"
-		  | "silver" | "teal" | "white" | "yellow"
-		  | "transparent"
-		  | <hex32>									// pre-multiplied alpha (0xAARRGGBB), e.g. 0x80808080 is full white
-		  											// with 50% transparency
-		  | <numericColor>
+          | "gray" | "green" | "lime" | "maroon"
+          | "navy" | "olive" | "purple" | "red"
+          | "silver" | "teal" | "white" | "yellow"
+          | "transparent"
+          | <hex32>                                 // pre-multiplied alpha (0xAARRGGBB), e.g. 0x80808080 is full white
+                                                    // with 50% transparency
+          | <numericColor>
 
 /**
-	Pen Style
+    Pen Style
 **/
 <penStyle> =
-	<color> // stroke: 1, caps: butt, joints: bevel, quality: 1.0, no dashing
-	|
-	{
-		color: <color>
-		[ stroke: <pixels> ] 						// default might differ, but usually 1
-		[ caps: "butt" | "round" | "square" ]
-		[ (
-			joints: "bevel" | "curve"
-		) | (
-			joints: "miter", [ miterLimit: <real> ]
-		) ]
-		[ quality: <real> ]							// default 1.0
-		[ dash: "none"|<pixels> ]
-		[ gap: <pixels> ]							// default = dash
-		[ dashOffset: <pixels> ]					// must be < dash + gap
-		/*
-			TODO: implement gamma
-		*/
-	}
+    <color> // stroke: 1, caps: butt, joints: bevel, quality: 1.0, no dashing
+    |
+    {
+        color: <color>
+        [ stroke: <pixels> ]                        // default might differ, but usually 1
+        [ caps: "butt" | "round" | "square" ]
+        [ (
+            joints: "bevel" | "curve"
+        ) | (
+            joints: "miter", [ miterLimit: <real> ]
+        ) ]
+        [ quality: <real> ]                         // default 1.0
+        [ dash: "none"|<pixels> ]
+        [ gap: <pixels> ]                           // default = dash
+        [ dashOffset: <pixels> ]                    // must be < dash + gap
+        /*
+            TODO: implement gamma
+        */
+    }
 
 /**
-	Image spec
-	==========
+    Image spec
+    ==========
 
-	Each unique image specification means a unique image in memory. The optional transformation specifiers (such as
-	`gamma` and `opacity`, but not `clip`) are "burned" into the image in memory. With the gamma tag you specify the
-	desired *target* gamma. I.e. 2.2 is good for PC. If source gamma value is found in image-file it will be used,
-	otherwise a source gamma of 2.2 will be assumed. If no gamma tag specified, no gamma conversion will be done.
+    Each unique image specification means a unique image in memory. The optional transformation specifiers (such as
+    `gamma` and `opacity`, but not `clip`) are "burned" into the image in memory. With the gamma tag you specify the
+    desired *target* gamma. I.e. 2.2 is good for PC. If source gamma value is found in image-file it will be used,
+    otherwise a source gamma of 2.2 will be assumed. If no gamma tag specified, no gamma conversion will be done.
 
-	The `rle` variants (short for "run length encoded") are optimizations only. Bigger images with lots of transparency
-	or spans with identical pixel values will draw faster if the `rle` format is used. However, certain views (such as
-	the slider view) cannot use rle encoded images.
+    The `rle` variants (short for "run length encoded") are optimizations only. Bigger images with lots of transparency
+    or spans with identical pixel values will draw faster if the `rle` format is used. However, certain views (such as
+    the slider view) cannot use rle encoded images.
 
-	`mask` (or `rlemask`) loads the image as an 8-bit alpha-channel-only image. Saving memory if the image is just used
-	as a hit mask for example.
+    `mask` (or `rlemask`) loads the image as an 8-bit alpha-channel-only image. Saving memory if the image is just used
+    as a hit mask for example.
 
-	If `trim` is true the transparent pixels around the picture will be trimmed away (as a last step after scaling etc).
-	It will improve performance but it will also change the boundaries of the image and may affect image alignment.
+    If `trim` is true the transparent pixels around the picture will be trimmed away (as a last step after scaling etc).
+    It will improve performance but it will also change the boundaries of the image and may affect image alignment.
 
-	If `clip` and/or `offset` is specified, at least one instance of the full picture will be loaded into memory (but
-	possibly shared). To calculate on the full source picture bounds you may use simple math expressions with the
-	following variables: '$', 'l', 't', 'w', 'h', 'r', 'b'. Notice that in case of UI scaling the loaded image will be
-	scaled before cropping and in case the clip rectangle is "unaligned" with the scaling factor this will cause
-	misaligment and "bleeding".
+    If `clip` and/or `offset` is specified, at least one instance of the full picture will be loaded into memory (but
+    possibly shared). To calculate on the full source picture bounds you may use simple math expressions with the
+    following variables: '$', 'l', 't', 'w', 'h', 'r', 'b'. Notice that in case of UI scaling the loaded image will be
+    scaled before cropping and in case the clip rectangle is "unaligned" with the scaling factor this will cause
+    misaligment and "bleeding".
 
-	`slices` (and `index`) is the way to go to get a single slice out of a "vertical film strip" (that has `slices`
-	number of frames). In this case, if UI scaling is active there will be no misalignment as with `clip`.
+    `slices` (and `index`) is the way to go to get a single slice out of a "vertical film strip" (that has `slices`
+    number of frames). In this case, if UI scaling is active there will be no misalignment as with `clip`.
 
-	(`clip` and `offset` cannot be used when specifying images for "films".)
+    (`clip` and `offset` cannot be used when specifying images for "films".)
 **/
 
 <image> = <pngFile> | {
-	(
-		name: <pngFile>
-		[ gamma: <real> ]
-	) | (
-		(											// notice, no access to cushy variables in this ivg-code, use vector
-			ivgCode: <string>						// view for that
-			| ivgFile: <ivgFile>
-		)
-		[ defines: { *: <string> } ]
-	)
-	[ format: "rle"|"mask"|"rlemask" ]
-	[ opacity: <percent> ]
-	[ scale: <percent> ]
-	[ slices: <int>, index: <int> ]
-	[ trim: <bool> ]								// = false
-	[ clip: <rect> ]
-	[ offset: { <int>, <int> } ]
+    (
+        name: <pngFile>
+        [ gamma: <real> ]
+    ) | (
+        (                                           // notice, no access to cushy variables in this ivg-code, use vector
+            ivgCode: <string>                       // view for that
+            | ivgFile: <ivgFile>
+        )
+        [ defines: { *: <string> } ]
+    )
+    [ format: "rle"|"mask"|"rlemask" ]
+    [ opacity: <percent> ]
+    [ scale: <percent> ]
+    [ slices: <int>, index: <int> ]
+    [ trim: <bool> ]                                // = false
+    [ clip: <rect> ]
+    [ offset: { <int>, <int> } ]
 }
 
 /**
-	$width and $height will contain integer width and height of drawing area or desired shape (e.g. cap size for knobs
-	and sliders)
+    $width and $height will contain integer width and height of drawing area or desired shape (e.g. cap size for knobs
+    and sliders)
 **/
 <ivg> = {
-	( code: <string> | variable: <var> | file: <ivgFile> )
-	[ guiVariables: <bool> ]						// = false
-	[ scale: <percent> ] 							// = 100
-	[ blend: "add" | "multiply" | "normal" ]		// = normal
-	[ opacity: <percent> ]							// = 100
+    ( code: <string> | variable: <var> | file: <ivgFile> )
+    [ guiVariables: <bool> ]                        // = false
+    [ scale: <percent> ]                            // = 100
+    [ blend: "add" | "multiply" | "normal" ]        // = normal
+    [ opacity: <percent> ]                          // = 100
 
-	[ defines: { *: <string> } ]					// Constant definitions.
+    [ defines: { *: <string> } ]                    // Constant definitions.
 
-	[ bindings: { *: <var> } ]						// Looks up <var>.
+    [ bindings: { *: <var> } ]                      // Looks up <var>.
 
-	[ clip: <rect> ]								// Defining a clip rect might improve drawing and invalidation
-													// performance (ivg bounds instruction cannot be used since this
-													// rect must be known before executing the ivg).
+    [ clip: <rect> ]                                // Defining a clip rect might improve drawing and invalidation
+                                                    // performance (ivg bounds instruction cannot be used since this
+                                                    // rect must be known before executing the ivg).
 } | <ivgFile>
 
 <builtInFont> = "serif" | "sans-serif" | "monospace"
 
 <font> = {
-	ivgfont: <ivgfontFile> | <builtInFont>
-	[ size: <real> ]								// = 10
-	[ color: <color> ] 								// = "black"
-	[ gamma: <real> ]
-	[ unknown: <char>|"" ]							// = ""
-	[ curveQuality: <real> ] 						// = 1
-	[ cacheResolution: <int> ]						// = tricky
-	[ outlineWidth: <pixels> ]						// = 0.0
-	[ outlineColor: <color> ]						// = "black"
+    ivgfont: <ivgfontFile> | <builtInFont>
+    [ size: <real> ]                                // = 10
+    [ color: <color> ]                              // = "black"
+    [ gamma: <real> ]
+    [ unknown: <char>|"" ]                          // = ""
+    [ curveQuality: <real> ]                        // = 1
+    [ cacheResolution: <int> ]                      // = tricky
+    [ outlineWidth: <pixels> ]                      // = 0.0
+    [ outlineColor: <color> ]                       // = "black"
 } | {
-	film: <image>
-	advance: <int>
-	[ ascent: <int> ]								// = frame height
-	[ leading: <int> ]
-	[
-		(chars: <int>, first: <int>)
-		| charset: <chars>
-	]
-	[ unknown: <char> | "" ]
+    film: <image>
+    advance: <int>
+    [ ascent: <int> ]                               // = frame height
+    [ leading: <int> ]
+    [
+        (chars: <int>, first: <int>)
+        | charset: <chars>
+    ]
+    [ unknown: <char> | "" ]
 }
 
 <textAlignment> = "left" | "center" | "right"
-		| "top" | "middle" | "bottom"
-		| "top left" | "top center" | "top right"
-		| "middle left" | "middle center" | "middle right"
-		| "bottom left" | "bottom center" | "bottom right"
+        | "top" | "middle" | "bottom"
+        | "top left" | "top center" | "top right"
+        | "middle left" | "middle center" | "middle right"
+        | "bottom left" | "bottom center" | "bottom right"
 
 <captionBoxSpec> = {
-	[ padding: { <int>, <int>, <int>, <int> } ]		// left, top, right, bottom padding of entire view (text, rectangle
-													// and vector)
+    [ padding: { <int>, <int>, <int>, <int> } ]     // left, top, right, bottom padding of entire view (text, rectangle
+                                                    // and vector)
 
-	[ inset: { <int>, <int>, <int>, <int> } ]		// left, top, right, bottom shrinking of rectangle bounds
-													// (not vector)
-	[ fill: <color> ]
-	[ rounded: { <pixels>, <pixels> } ]
-	[ frame: <penStyle> ]
-	[ opacity: <percent> ]
-	[ vector: <ivg> ]								// vector is drawn under the rectangle
+    [ inset: { <int>, <int>, <int>, <int> } ]       // left, top, right, bottom shrinking of rectangle bounds
+                                                    // (not vector)
+    [ fill: <color> ]
+    [ rounded: { <pixels>, <pixels> } ]
+    [ frame: <penStyle> ]
+    [ opacity: <percent> ]
+    [ vector: <ivg> ]                               // vector is drawn under the rectangle
 }
 
 <transition> = {
-	[ restart: <bool> ]								// default = false which means the transition will not start from
-													// zero if another transition is running
-	[ time: <secs> ]
-	[ updateRate: <fps> ]							// default = 50.0
-	[ opacity: <percent> ]
-	[ opacityCurve: <real> ]						// curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-													// > 0.5 = quick start
-	[ scale: <percent> ]
-	[ scaleCurve: <real> ]							// curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-													// > 0.5 = quick start
-	[ offset: { <pixels>, <pixels> } ]
-	[ offsetCurve: <real> ]							// curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-													// > 0.5 = quick start
-	[ rotation: <degrees> ]
-	[ rotationCurve: <real>	]						// curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-													// > 0.5 = quick start
+    [ restart: <bool> ]                             // default = false which means the transition will not start from
+                                                    // zero if another transition is running
+    [ time: <secs> ]
+    [ updateRate: <fps> ]                           // default = 50.0
+    [ opacity: <percent> ]
+    [ opacityCurve: <real> ]                        // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+    [ scale: <percent> ]
+    [ scaleCurve: <real> ]                          // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+    [ offset: { <pixels>, <pixels> } ]
+    [ offsetCurve: <real> ]                         // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+    [ rotation: <degrees> ]
+    [ rotationCurve: <real> ]                       // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
 }
 
 <root> = {
-	[ translations: {								// `translations` inside a sub-cushy are only active when the cushy
-		*: <string>									// is open, but actual text translations are always performed
-	} ]												// "globally" with all active translation tables. Therefore it is a
-													// good idea to prefix text keys with the cushy's name, e.g. 
-													// "mySubCushy:translateThis".
+    [ translations: {                               // `translations` inside a sub-cushy are only active when the cushy
+        *: <string>                                 // is open, but actual text translations are always performed
+    } ]                                             // "globally" with all active translation tables. Therefore it is a
+                                                    // good idea to prefix text keys with the cushy's name, e.g. 
+                                                    // "mySubCushy:translateThis".
 
-	[ bounds: <rect> ]								// Main cushy file needs bounds.
-	[ edit: <editSpec> ]
-	[ autoexecs: {
-		{
-			action: <action>
-			[ params: <params> ]
-			(
-				onChanged: <var> | { <var>, ... }
-				[ onInit: <bool> ]	// = true
-			) | (
-				onClose: 'true'
-				[ onReload: <bool> ] // = true
-			) | (
-				[ onClose: 'false' ]
-				[ onReload: <bool> ] // = true
-				[ delay: <secs> ]
-				[ repeat: <secs> ]
-			)
-		}
-		...
-	} ]
-	[ transitions: {
-		[ default: <transition> ]
-		[ open: <transition> ]
-		[ close: <transition> ]
-		[ swapIn: <transition> ]
-		[ swapOut: <transition> ]
-	} ]
-	[ hints: {
-		font: <font>
-		[ offset: { <int>, <int> } ]				// text offset
-		[ margins: { <int>, <int>, <int>, <int> } ]	// left, top, right, bottom margins against window edges
-		[ box: <captionBoxSpec> ]
-	} ]
-	views: {
-		<view>
-		...
-	}
+    [ bounds: <rect> ]                              // Main cushy file needs bounds.
+    [ edit: <editSpec> ]
+    [ autoexecs: {
+        {
+            action: <action>
+            [ params: <params> ]
+            (
+                onChanged: <var> | { <var>, ... }
+                [ onInit: <bool> ]  // = true
+            ) | (
+                onClose: 'true'
+                [ onReload: <bool> ] // = true
+            ) | (
+                [ onClose: 'false' ]
+                [ onReload: <bool> ] // = true
+                [ delay: <secs> ]
+                [ repeat: <secs> ]
+            )
+        }
+        ...
+    } ]
+    [ transitions: {
+        [ default: <transition> ]
+        [ open: <transition> ]
+        [ close: <transition> ]
+        [ swapIn: <transition> ]
+        [ swapOut: <transition> ]
+    } ]
+    [ hints: {
+        font: <font>
+        [ offset: { <int>, <int> } ]                // text offset
+        [ margins: { <int>, <int>, <int>, <int> } ] // left, top, right, bottom margins against window edges
+        [ box: <captionBoxSpec> ]
+    } ]
+    views: {
+        <view>
+        ...
+    }
 }
 
 <builtInView> = <subCushy>
-		| <group>
-		| <paged>
-		| <transformed>
-		| <caption>
-		| <click>
-		| <hover>
-		| <cluster>
-		| <rectangle>
-		| <gradient>
-		| <raster>
-		| <vector>
-		| <animation>
-		| <button>
-		| <slider>
-		| <knob>
-		| <bubble>
-		| <marker>
-		| <console>
-		| <dragArea>
+        | <group>
+        | <paged>
+        | <transformed>
+        | <caption>
+        | <click>
+        | <hover>
+        | <cluster>
+        | <rectangle>
+        | <gradient>
+        | <raster>
+        | <vector>
+        | <animation>
+        | <button>
+        | <slider>
+        | <knob>
+        | <bubble>
+        | <marker>
+        | <console>
+        | <dragArea>
 
 /**
-	`cushy` can be used to dynamically inject a variable .cushy layout file
+    `cushy` can be used to dynamically inject a variable .cushy layout file
 **/
 <subCushy> = {
-	type: "cushy"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ layout: <cushyFile> | layoutVariable: <var> ]
-	[ transitions: <bool> ]							// = true
-	[ uiScaling: <bool> ]							// = true
+    type: "cushy"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ layout: <cushyFile> | layoutVariable: <var> ]
+    [ transitions: <bool> ]                         // = true
+    [ uiScaling: <bool> ]                           // = true
 }
 
 /**
-	 `group` can be used to simply group views together and offset them, or with the `varExpansion` option to create
-	 arbitrary view configurations in run-time
+     `group` can be used to simply group views together and offset them, or with the `varExpansion` option to create
+     arbitrary view configurations in run-time
 
-	 TODO: position and zOrder like in dragArea. Perhaps deprecate offset?
+     TODO: position and zOrder like in dragArea. Perhaps deprecate offset?
 **/
 <group> = {
-	type: "group"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ visibility: <bool>|<var> ]					// <var> should evaluate to "true" or "false" and shows / hides all
-													// sub-views (does not recreate views on change)
+    type: "group"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ visibility: <bool>|<var> ]                    // <var> should evaluate to "true" or "false" and shows / hides all
+                                                    // sub-views (does not recreate views on change)
 
-	[ offset: { <var>, <var> } ]					// Sub-views are offsetted by this, changes do not recreate views.
-	(
-		varExpansion: 'true'						// Can't check views when `varExpansion` is in effect.
-		views: ?
-	) | (
-		[ varExpansion: 'false' ]
-		views: { <view>, ... }
-	)
+    [ offset: { <var>, <var> } ]                    // Sub-views are offsetted by this, changes do not recreate views.
+    (
+        varExpansion: 'true'                        // Can't check views when `varExpansion` is in effect.
+        views: ?
+    ) | (
+        [ varExpansion: 'false' ]
+        views: { <view>, ... }
+    )
 }
 
 /**
-	`paged` can be used to group views into pages that are shown one at a time.
+    `paged` can be used to group views into pages that are shown one at a time.
 **/
 <paged> = {
-	type: "paged"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	index: <string>|<var>
-	pages: {										// Notice that all pages are created on init, then shown / hidden as
-		*: { <view>, ... }							// requested.
-	}
+    type: "paged"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    index: <string>|<var>
+    pages: {                                        // Notice that all pages are created on init, then shown / hidden as
+        *: { <view>, ... }                          // requested.
+    }
 }
 
 /**
-	 If you just want to offset views, it is more efficient to use a group view.
+     If you just want to offset views, it is more efficient to use a group view.
 
-	 If you just want to do transition animation, consider using the built-in transitions effects instead.
+     If you just want to do transition animation, consider using the built-in transitions effects instead.
 
-	 Also notice that transformed sub-views are actually rasterized first and then the resulting pixels are transformed.
+     Also notice that transformed sub-views are actually rasterized first and then the resulting pixels are transformed.
 
-	 Clicks on sub-views will be ignored (technical reason: we can't do reliable mouse-tracking coordinate conversion
-	 with current view-system), but mouse-over (hints etc) work	 
-**/			
-<transformed> =	{
-	type: "transformed"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ opacity: <percent> | <var> ]
-	[ scale: <percent> | <var> ]
-	[ offset: { <pixels> | <var>, <pixels> | <var> } ]
-	[ rotation: <degrees> | <var> ]
-	views: { <view>, ... }
+     Clicks on sub-views will be ignored (technical reason: we can't do reliable mouse-tracking coordinate conversion
+     with current view-system), but mouse-over (hints etc) work  
+**/         
+<transformed> = {
+    type: "transformed"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ opacity: <percent> | <var> ]
+    [ scale: <percent> | <var> ]
+    [ offset: { <pixels> | <var>, <pixels> | <var> } ]
+    [ rotation: <degrees> | <var> ]
+    views: { <view>, ... }
 }
 
-<caption> =	{
-	type: "caption"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	font: <font>
-	[
-		/*
-			TODO: add baseline alignment (putting text baseline at the bottom of the bounds, meaning we then need to use
-			`offset`, but will look nice if we mix different fonts and sizes on a row).
-		*/
-		align: <textAlignment>
-	]
-	[
-		ellipsis: "none" | "left" | "right" | "both" | "middle"
-		| ellipsis: { "none" | "left" | "right" | "both" | "middle", [<string>] }
-	]
-	[ offset: { <int>, <int> } ]
-	text: <metaText>
-	[ box: <captionBoxSpec> ]
+<caption> = {
+    type: "caption"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    font: <font>
+    [
+        /*
+            TODO: add baseline alignment (putting text baseline at the bottom of the bounds, meaning we then need to use
+            `offset`, but will look nice if we mix different fonts and sizes on a row).
+        */
+        align: <textAlignment>
+    ]
+    [
+        ellipsis: "none" | "left" | "right" | "both" | "middle"
+        | ellipsis: { "none" | "left" | "right" | "both" | "middle", [<string>] }
+    ]
+    [ offset: { <int>, <int> } ]
+    text: <metaText>
+    [ box: <captionBoxSpec> ]
 }
 
 <click> = {
-	type: "click"									// Default click mask takes right-clicks too!!
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	(
-	 	action: <action>
-	 	[ params: <params> ]
-		[ mask: <clickMask> ]
-		[ thru: <clickThru> ]						// If thru is true, only "click", "press" and "down" masks will be
-													// used.
-													// 20210419: Don't use <clickThru> on context-clicks. There is
-													// unexpected behavior when control-clicking on Mac (the action will
-													// be called twice, once in mMouseClicked() and once in
-													// ContextMenuClick(). Hard to avoid because how NEdLib is coded.)
-	) | (
-		actions: {
-			{ <clickMask>, <action>, [ <params> ], [ <clickThru> ] }
-			...
-	  	}
-	)
-	[ hint: <metaText> ]							// Empty hint ("") is different from not declaring a hint at all
-													// since an empty hint blocks other hints from showing.
+    type: "click"                                   // Default click mask takes right-clicks too!!
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    (
+        action: <action>
+        [ params: <params> ]
+        [ mask: <clickMask> ]
+        [ thru: <clickThru> ]                       // If thru is true, only "click", "press" and "down" masks will be
+                                                    // used.
+                                                    // 20210419: Don't use <clickThru> on context-clicks. There is
+                                                    // unexpected behavior when control-clicking on Mac (the action will
+                                                    // be called twice, once in mMouseClicked() and once in
+                                                    // ContextMenuClick(). Hard to avoid because how NEdLib is coded.)
+    ) | (
+        actions: {
+            { <clickMask>, <action>, [ <params> ], [ <clickThru> ] }
+            ...
+        }
+    )
+    [ hint: <metaText> ]                            // Empty hint ("") is different from not declaring a hint at all
+                                                    // since an empty hint blocks other hints from showing.
 
-	[ cursor: <cursor> ]							// Cursor is only shown if action is enabled.
+    [ cursor: <cursor> ]                            // Cursor is only shown if action is enabled.
 
-	[ mousePosition: <mousePosition> ] 				// Will be updated to mouse position on click and also continuously
-													// during mouse-tracking provided that there is an action defined.
-													// with a matching "click mask" (can be "nop") and `thru` is false.
+    [ mousePosition: <mousePosition> ]              // Will be updated to mouse position on click and also continuously
+                                                    // during mouse-tracking provided that there is an action defined.
+                                                    // with a matching "click mask" (can be "nop") and `thru` is false.
 
-	[ keyModifiers: <var> ]							// Will be updated to contain the currently held key modifiers
-													// ("shift", "control", "alt", "command") concatenated with '+'.
+    [ keyModifiers: <var> ]                         // Will be updated to contain the currently held key modifiers
+                                                    // ("shift", "control", "alt", "command") concatenated with '+'.
 
-	[ hitMask: <hitMask> ]							// Pixel >= 50% transparency means the mouse hits.
+    [ hitMask: <hitMask> ]                          // Pixel >= 50% transparency means the mouse hits.
 }
 
 <hover> = {
-	type: "hover"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[
-		(
-			variable: <var>					     	// Notice that if you have several layered hover views tied to the
-													// same variable, each will update the variable and the top-most
-													// view will update last. In other words, you should rarely "react"
-													// directly on these variable changes.
-			value: <value>
-	  	) | (
-			variables: {
-			  { <var>, <value> }
-			  ...
-			}
-	  	)
-	]
-	[ enterAction: <action>, [ enterParams: <params> ] ]
-	[ leaveAction: <action>, [ leaveParams: <params> ] ]
-	[ cursor: <cursor> ]
-	[ mousePosition: <mousePosition> ]				// Will be updated to mouse position continuously while hovering
-													// above this view.
+    type: "hover"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [
+        (
+            variable: <var>                         // Notice that if you have several layered hover views tied to the
+                                                    // same variable, each will update the variable and the top-most
+                                                    // view will update last. In other words, you should rarely "react"
+                                                    // directly on these variable changes.
+            value: <value>
+        ) | (
+            variables: {
+              { <var>, <value> }
+              ...
+            }
+        )
+    ]
+    [ enterAction: <action>, [ enterParams: <params> ] ]
+    [ leaveAction: <action>, [ leaveParams: <params> ] ]
+    [ cursor: <cursor> ]
+    [ mousePosition: <mousePosition> ]              // Will be updated to mouse position continuously while hovering
+                                                    // above this view.
 
-	[ keyModifiers: <var> ]							// Will be updated to contain the currently held key modifiers
-													// ("shift", "control", "alt", "command") concatenated with '+'.
+    [ keyModifiers: <var> ]                         // Will be updated to contain the currently held key modifiers
+                                                    // ("shift", "control", "alt", "command") concatenated with '+'.
 
-	[ hitMask: <hitMask> ]							// Pixel >= 50% transparency means the mouse hits.
+    [ hitMask: <hitMask> ]                          // Pixel >= 50% transparency means the mouse hits.
 
-	[ hint: <metaText> ]							// Empty hint ("") is different from not declaring a hint at all
-													// since an empty hint blocks other hints from showing.
+    [ hint: <metaText> ]                            // Empty hint ("") is different from not declaring a hint at all
+                                                    // since an empty hint blocks other hints from showing.
 }
 
 /**
@@ -802,561 +802,561 @@ modifierMask 		<- 'shift' / 'control' / 'alt' / 'command' / 'windows' / 'mac'
 array to "paint" values.
 **/
 <cluster> = {
-	type: "cluster"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ array: <var> ]								// The actual variable will be suffixed with the index like this:
-													// [index]. If not present, minimum value will always be used
-													// (useful if you are only interested in `index`).
+    type: "cluster"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ array: <var> ]                                // The actual variable will be suffixed with the index like this:
+                                                    // [index]. If not present, minimum value will always be used
+                                                    // (useful if you are only interested in `index`).
 
-	[ range: { <real>, <real> } ]					// Min max range (default is from 0.0 to max(image count - 1, 1.0)).
+    [ range: { <real>, <real> } ]                   // Min max range (default is from 0.0 to max(image count - 1, 1.0)).
 
-	[ hint: <metaText> ]							// Empty hint ("") is different from not declaring a hint at all
-													// since an empty hint blocks other hints from showing.
-	[ readonly: <bool> ]
-	[
-		(											// default paint is toggle method with max value
-			paintMethod: (
-				"set"								// Paint elements with `paintValue`.
+    [ hint: <metaText> ]                            // Empty hint ("") is different from not declaring a hint at all
+                                                    // since an empty hint blocks other hints from showing.
+    [ readonly: <bool> ]
+    [
+        (                                           // default paint is toggle method with max value
+            paintMethod: (
+                "set"                               // Paint elements with `paintValue`.
 
-				| "toggle"							// Paint with `paintValue` or minimum value if clicked item is
-													// already `paintValue`. (Default.)
+                | "toggle"                          // Paint with `paintValue` or minimum value if clicked item is
+                                                    // already `paintValue`. (Default.)
 
-				| "exclusive"						// Paint mouse item with `paintValue`, but reset all elements to
-													// minimum value first.
+                | "exclusive"                       // Paint mouse item with `paintValue`, but reset all elements to
+                                                    // minimum value first.
 
-				| "slide"							// Paint mouse item with `paintValue`, but reset to minimum value
-													// when "sliding" over rects.
-			) 
-			paintValue: <real>
-		) |
-		( paintValues: {							// In addition or alternative to a single
-													// `paintMethod` / `paintValue`.
-			{
-				<modifierMask>,
-				"set" | "toggle" | "exclusive"
-				| "slide",
-				<real>
-			}
-			...
-		} )
-	]
-	[ clickActions: {								// Click mask "up" will be used when rects are left, "down" when
-													// rects are entered, the other masks are as in <click>.
-													// `mouseIndex` will contain rect index for these actions.
-		{ <clickMask>, <action>, [ <params> ] }
-		...
-	} ]
-	[ mouseIndex: <var> ]							// `mouseIndex` will be updated to all rect indexes under the mouse
-													// and left at the topmost index (or empty string if none).
-	/*
-		TODO: [ interpolate: <bool> ]				// Variable values with fraction = interpolate.
-	*/
-	/*
-		TODO: [ animate: { up: <secs>, down: <secs>
-			, updateRate: <fps> } ]					// Automatically animates visual representation between states,
-													// up = time to fade from low to high value and vice versa.
-	*/
-	[ images: {										// All images should be same dimensions, they represent array
-													// elements values, minimum value is first image, <max> is last.
-		<image>
-		/*
-			TODO: | { up: <image spec>, down: <image spec> }
-		*/
-		...
-	} ]
-	rects: {
-		{
-			<int> /* index */						// `index` is the integer array element index.
+                | "slide"                           // Paint mouse item with `paintValue`, but reset to minimum value
+                                                    // when "sliding" over rects.
+            ) 
+            paintValue: <real>
+        ) |
+        ( paintValues: {                            // In addition or alternative to a single
+                                                    // `paintMethod` / `paintValue`.
+            {
+                <modifierMask>,
+                "set" | "toggle" | "exclusive"
+                | "slide",
+                <real>
+            }
+            ...
+        } )
+    ]
+    [ clickActions: {                               // Click mask "up" will be used when rects are left, "down" when
+                                                    // rects are entered, the other masks are as in <click>.
+                                                    // `mouseIndex` will contain rect index for these actions.
+        { <clickMask>, <action>, [ <params> ] }
+        ...
+    } ]
+    [ mouseIndex: <var> ]                           // `mouseIndex` will be updated to all rect indexes under the mouse
+                                                    // and left at the topmost index (or empty string if none).
+    /*
+        TODO: [ interpolate: <bool> ]               // Variable values with fraction = interpolate.
+    */
+    /*
+        TODO: [ animate: { up: <secs>, down: <secs>
+            , updateRate: <fps> } ]                 // Automatically animates visual representation between states,
+                                                    // up = time to fade from low to high value and vice versa.
+    */
+    [ images: {                                     // All images should be same dimensions, they represent array
+                                                    // elements values, minimum value is first image, <max> is last.
+        <image>
+        /*
+            TODO: | { up: <image spec>, down: <image spec> }
+        */
+        ...
+    } ]
+    rects: {
+        {
+            <int> /* index */                       // `index` is the integer array element index.
 
-			[ <rect> /* source */ ]					// Default `source` rect (e.g. { $, $, $, $ }) is full image bounds
-													// (or view bounds if no images are present).
+            [ <rect> /* source */ ]                 // Default `source` rect (e.g. { $, $, $, $ }) is full image bounds
+                                                    // (or view bounds if no images are present).
 
-			[ <rect> /* dest */ ]					// Default `dest` rect is source rect.
+            [ <rect> /* dest */ ]                   // Default `dest` rect is source rect.
 
-			[ <rect> /* click */ ]					// Default `click` rect is dest rect.
-		}
-		...
-	}
-	[ blend: "add" | "multiply" | "normal" ]
-	[ opacity: <percent> ]
+            [ <rect> /* click */ ]                  // Default `click` rect is dest rect.
+        }
+        ...
+    }
+    [ blend: "add" | "multiply" | "normal" ]
+    [ opacity: <percent> ]
 }
 
 <bubbleStyle> = {
-	font: <font>
-	[ offset: { <int>, <int> } ]
-	[
-		frame: <penStyle>
-		[ margin: <pixels> ]
-		[ padding: <pixels> ]
-	]
-	[ lineHeight: <int> ]
-	[
-		underline: <penStyle>
-		[ underlineOffset: <pixels> ]
-	]
-	[ typingRate: <real> ] 							// delay in secs per character
-	[ align: "left" | "center" | "right" ]			// = "left"
+    font: <font>
+    [ offset: { <int>, <int> } ]
+    [
+        frame: <penStyle>
+        [ margin: <pixels> ]
+        [ padding: <pixels> ]
+    ]
+    [ lineHeight: <int> ]
+    [
+        underline: <penStyle>
+        [ underlineOffset: <pixels> ]
+    ]
+    [ typingRate: <real> ]                          // delay in secs per character
+    [ align: "left" | "center" | "right" ]          // = "left"
 }
 
 <bubble> = {
-	type: "bubble"
-	[ bounds: <rect> ] 								// initial bounds, can be changed with <move> tag in text
-	[ edit: <editSpec> ]
-	[ fill: <color> ]
-	[ frame: <penStyle> ]
-	[ margins: <rect> ]								// use negative values for right and bottom
-	[ paddings: <rect> ]							// use negative values for right and bottom
-	[ minHeight: <int> ]
-	[ maxHeight: <int> ]
-	[ anchor: "top" | "bottom" ]					// default is "bottom"
-	[ corners: { <pixels>, <pixels> } ]
-	[ tailSize: { <pixels>, <pixels> } ]
-	[ tailPosition: <pixels> ]
-	[ moveResize: {
-		[ fps: <fps> ]
-		[ time: <secs> ]
-		[ curve: <real> ]
-	} ]
-	[												// Notice that context-clicks are always "swallowed" by bubbles,
-		clickAction: <action>						// standard clicks are not, so you need to specify
-		[ clickParams: <params> ]					// `clickAction: nop` if you want standard clicks to not
-	]												// "go through".
-	[ pageVariable: <int>|<var> ]
-	[ typingRateVariable: <real> | <var> ] 			// <var> != void -> force this typing rate
+    type: "bubble"
+    [ bounds: <rect> ]                              // initial bounds, can be changed with <move> tag in text
+    [ edit: <editSpec> ]
+    [ fill: <color> ]
+    [ frame: <penStyle> ]
+    [ margins: <rect> ]                             // use negative values for right and bottom
+    [ paddings: <rect> ]                            // use negative values for right and bottom
+    [ minHeight: <int> ]
+    [ maxHeight: <int> ]
+    [ anchor: "top" | "bottom" ]                    // default is "bottom"
+    [ corners: { <pixels>, <pixels> } ]
+    [ tailSize: { <pixels>, <pixels> } ]
+    [ tailPosition: <pixels> ]
+    [ moveResize: {
+        [ fps: <fps> ]
+        [ time: <secs> ]
+        [ curve: <real> ]
+    } ]
+    [                                               // Notice that context-clicks are always "swallowed" by bubbles,
+        clickAction: <action>                       // standard clicks are not, so you need to specify
+        [ clickParams: <params> ]                   // `clickAction: nop` if you want standard clicks to not
+    ]                                               // "go through".
+    [ pageVariable: <int>|<var> ]
+    [ typingRateVariable: <real> | <var> ]          // <var> != void -> force this typing rate
 
-	/*
-		Valid tags are:
-		
-		<(style-name)> </(style-name)>
-		<click action="(action)" params="(params)"
-			[auto=<bool>]> </click>					// if auto is true, the action will be performed once when the word
-													// is shown (just like "do").
-		<do action= params= /> 
-		<move bounds="{ l, t, w, h }" [time=secs]
-			[curve=] />								// curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-													// > 0.5 = quick start
-		<pause delay=secs />
-		<br>
-		
-		Valid special chars are:
-		
-		&lt;
-		&gt;
-		&nbsp;
-		&nbhp; (= no-break-hyphen)
-	*/
-	pages: {
-		<metaText>,									// will be processed by the standard meta-text tag processor
-		...
-	}
+    /*
+        Valid tags are:
+        
+        <(style-name)> </(style-name)>
+        <click action="(action)" params="(params)"
+            [auto=<bool>]> </click>                 // if auto is true, the action will be performed once when the word
+                                                    // is shown (just like "do").
+        <do action= params= /> 
+        <move bounds="{ l, t, w, h }" [time=secs]
+            [curve=] />                             // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+        <pause delay=secs />
+        <br>
+        
+        Valid special chars are:
+        
+        &lt;
+        &gt;
+        &nbsp;
+        &nbhp; (= no-break-hyphen)
+    */
+    pages: {
+        <metaText>,                                 // will be processed by the standard meta-text tag processor
+        ...
+    }
 
-	styles: {
-		default: <bubbleStyle>
-		*: <bubbleStyle>
-	}
-	/*
-		TODO: option to refresh bubble if any [var] changes
-	*/
+    styles: {
+        default: <bubbleStyle>
+        *: <bubbleStyle>
+    }
+    /*
+        TODO: option to refresh bubble if any [var] changes
+    */
 }
 
 <marker> = {
-	type: "marker"
-	[ gamma: <real> ]
-	center: { <pixels>, <pixels> }
-	size: { <pixels>, <pixels> }
-	pen: <penStyle>
-	[ rotation: <degrees> ]
-	[ random: <real> ] 								// default = 0.0
-	[ quality: <real> ] 							// default = 1.0
-	[ updateRate: <fps> ] 							// default = 50.0
-	[ time: <secs> ] 								// default = 1.0 secs
-	[ start: <degrees> ]
-	[ sweep: <degrees> ] 							// default = 360
-	[ outlineWidth: <pixels> ] 						// default = 0.0
-	[ outlineMix: <real> ] 							// default = 0.0
-	[ seed: <int> | seedVariable: <var> ]			// changing seed renimates the marker
+    type: "marker"
+    [ gamma: <real> ]
+    center: { <pixels>, <pixels> }
+    size: { <pixels>, <pixels> }
+    pen: <penStyle>
+    [ rotation: <degrees> ]
+    [ random: <real> ]                              // default = 0.0
+    [ quality: <real> ]                             // default = 1.0
+    [ updateRate: <fps> ]                           // default = 50.0
+    [ time: <secs> ]                                // default = 1.0 secs
+    [ start: <degrees> ]
+    [ sweep: <degrees> ]                            // default = 360
+    [ outlineWidth: <pixels> ]                      // default = 0.0
+    [ outlineMix: <real> ]                          // default = 0.0
+    [ seed: <int> | seedVariable: <var> ]           // changing seed renimates the marker
 }
 
 /**
-	Minor shortcoming: input cursor position and input history index cannot be preserved at reload.
+    Minor shortcoming: input cursor position and input history index cannot be preserved at reload.
 **/
 <console> = {
-	type: "console"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ background: <color> ] 						// Console is often used temporarily for tracing, so as a
-													// convenience it has a background field.
+    type: "console"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ background: <color> ]                         // Console is often used temporarily for tracing, so as a
+                                                    // convenience it has a background field.
 
-	[ dimensions: { <int>, <int> } ]				// default = 80x40
-	[ font: <font> ]
-	[ margins: { <int>, <int> } ]
-	[ cursor: {
-		character: <char>
-		/*
-			TODO:	| ( image: <image spec>, offset: { <x>, <y> }) )
-		*/
-		[ blinkRate: <secs> ]
-	} ]
-	[ tabSize: <int> ] // = 8
-	(
-		outputVariable: <var>						// Connect the console to a variable to output text everytime the
-													// variable changes. Use invisible character tricks to force changes
-													// if you want several identical lines. LF at the end is not
-													// expected. Start the string with '\f' (clear screen) to replace
-													// terminal contents with the string instead of appending it.
-		
-		| outputArray: <var>  						// Output array + '[' + y + ']' contains output lines. Output array
-													// + '.n' (integer) is checked for changes and every string between
-													// last update and '.n' - 1 is written to the console. LF at the end
-													// is expected. Keep at least <rows> number of lines available from
-													// the end.
-	)
-	[												// This action is called when the user presses enter. The input data
-		inputAction: <action>						// can be found in `inputVariable`.
-		[ inputParams: <params> ]
-	]
-	[ inputVariable: <var> ]						// Continuously updated with the user input string. Any changes will
-													// be reflected in the terminal.
-	
-	[ prompt: <string> | promptVariable: <var> ]	// Displayed (at the start of it's own line) before the user input
-													// string.
-	
-	[ historySize: <int> ]							// Number of entries in command history. Default is 100. 0 disables
-													// history.
-	
-	[ historyVariable: <var> ]						// Will be updated when command history changes. One entry per line
-													// (delimited with LF). Will be looked up only once on setup, so no
-													// continuous synchronization.
-	[ hint: <metaText> ]
+    [ dimensions: { <int>, <int> } ]                // default = 80x40
+    [ font: <font> ]
+    [ margins: { <int>, <int> } ]
+    [ cursor: {
+        character: <char>
+        /*
+            TODO:   | ( image: <image spec>, offset: { <x>, <y> }) )
+        */
+        [ blinkRate: <secs> ]
+    } ]
+    [ tabSize: <int> ] // = 8
+    (
+        outputVariable: <var>                       // Connect the console to a variable to output text everytime the
+                                                    // variable changes. Use invisible character tricks to force changes
+                                                    // if you want several identical lines. LF at the end is not
+                                                    // expected. Start the string with '\f' (clear screen) to replace
+                                                    // terminal contents with the string instead of appending it.
+        
+        | outputArray: <var>                        // Output array + '[' + y + ']' contains output lines. Output array
+                                                    // + '.n' (integer) is checked for changes and every string between
+                                                    // last update and '.n' - 1 is written to the console. LF at the end
+                                                    // is expected. Keep at least <rows> number of lines available from
+                                                    // the end.
+    )
+    [                                               // This action is called when the user presses enter. The input data
+        inputAction: <action>                       // can be found in `inputVariable`.
+        [ inputParams: <params> ]
+    ]
+    [ inputVariable: <var> ]                        // Continuously updated with the user input string. Any changes will
+                                                    // be reflected in the terminal.
+    
+    [ prompt: <string> | promptVariable: <var> ]    // Displayed (at the start of it's own line) before the user input
+                                                    // string.
+    
+    [ historySize: <int> ]                          // Number of entries in command history. Default is 100. 0 disables
+                                                    // history.
+    
+    [ historyVariable: <var> ]                      // Will be updated when command history changes. One entry per line
+                                                    // (delimited with LF). Will be looked up only once on setup, so no
+                                                    // continuous synchronization.
+    [ hint: <metaText> ]
 }
 
 <rectangle> = {
-	type: "rectangle"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ fill: <color> ]
-	[
-		rounded: <percent>							// 100 percent = full ellipse form, default = 0
-		| { <pixels>, <pixels> }
-	]
-	[ blend: "add" | "multiply" | "normal" ]
-	[ opacity: <percent> ]
-	[ frame: <penStyle> ]
+    type: "rectangle"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ fill: <color> ]
+    [
+        rounded: <percent>                          // 100 percent = full ellipse form, default = 0
+        | { <pixels>, <pixels> }
+    ]
+    [ blend: "add" | "multiply" | "normal" ]
+    [ opacity: <percent> ]
+    [ frame: <penStyle> ]
 }
 
 <gradient> = {
-	type: "gradient"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	(
-		start: { <pixels>, <pixels> }
-		end: { <pixels>, <pixels> }
-	) | (
-		center: { <pixels>, <pixels> }
-		(
-			size: <pixels>
-			| (width: <pixels>, height: <pixels>)
-		)
-	)
-	stops: { { <real>, <color> }, ... }
-	[ frame: <penStyle> ]
-	[ rounded: <percent> | { <pixels>, <pixels> } ]	// 100 percent = full ellipse form, default = 0
-	[ blend: "add" | "multiply" | "normal" ]
-	[ opacity: <percent> ]
+    type: "gradient"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    (
+        start: { <pixels>, <pixels> }
+        end: { <pixels>, <pixels> }
+    ) | (
+        center: { <pixels>, <pixels> }
+        (
+            size: <pixels>
+            | (width: <pixels>, height: <pixels>)
+        )
+    )
+    stops: { { <real>, <color> }, ... }
+    [ frame: <penStyle> ]
+    [ rounded: <percent> | { <pixels>, <pixels> } ] // 100 percent = full ellipse form, default = 0
+    [ blend: "add" | "multiply" | "normal" ]
+    [ opacity: <percent> ]
 }
 
 <raster> = {
-	type: "raster"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	image: <image>
-	[ blend: "add" | "multiply" | "normal" ]
-	[ opacity: <percent> ]
-	[ frame: <penStyle> ]
+    type: "raster"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    image: <image>
+    [ blend: "add" | "multiply" | "normal" ]
+    [ opacity: <percent> ]
+    [ frame: <penStyle> ]
 }
 
 /**
-	$width and $height will contain integer width and height of drawing area
+    $width and $height will contain integer width and height of drawing area
 **/
 <vector> = {
-	type: "vector"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	( code: <string>								// For backwards compatibility "source" is also accepted.
-	| variable: <var>								// Notice that $ expansion in IMPD can be recursive, e.g.
-													// `x=[$x]; $x`. Thus, `code: $var` cannot be "safe" against
-													// arbitrary variable access by $var, but `variable: var` can be.
+    type: "vector"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    ( code: <string>                                // For backwards compatibility "source" is also accepted.
+    | variable: <var>                               // Notice that $ expansion in IMPD can be recursive, e.g.
+                                                    // `x=[$x]; $x`. Thus, `code: $var` cannot be "safe" against
+                                                    // arbitrary variable access by $var, but `variable: var` can be.
 
-	| file: <ivgFile>								// No extension.
-	)
-	[ guiVariables: <bool> ] 						// Allow access to GUI variables from IVG source (with standard
-													// $<variable-name>)? Will automatically refresh on change to any of
-													// variable accessed during last re-paint. Default is false.
-	[ scale: <percent> ] 
-	[ blend: "add" | "multiply" | "normal" ]
-	[ opacity: <percent> ]
-	[ defines: { *: <string> } ]					// Constant definitions.
+    | file: <ivgFile>                               // No extension.
+    )
+    [ guiVariables: <bool> ]                        // Allow access to GUI variables from IVG source (with standard
+                                                    // $<variable-name>)? Will automatically refresh on change to any of
+                                                    // variable accessed during last re-paint. Default is false.
+    [ scale: <percent> ] 
+    [ blend: "add" | "multiply" | "normal" ]
+    [ opacity: <percent> ]
+    [ defines: { *: <string> } ]                    // Constant definitions.
 
-	[ bindings: { *: <var> } ]						// Looks up <var>.
+    [ bindings: { *: <var> } ]                      // Looks up <var>.
 
-	[ clip: <rect> ]								// Defining a clip rect might improve drawing and invalidation
-													// performance (ivg bounds instruction cannot be used since this
-													// rect must be known before executing the ivg).
-	/*
-		TODO: animation support
-	*/
+    [ clip: <rect> ]                                // Defining a clip rect might improve drawing and invalidation
+                                                    // performance (ivg bounds instruction cannot be used since this
+                                                    // rect must be known before executing the ivg).
+    /*
+        TODO: animation support
+    */
 }
 
 <animation> = {
-	type: "animation"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	variable: <var>
-	[ range: { <real>, <real> } ] 					// max = frame count
-	[ curve: <real> ] 								// curve value is from 0.0 to 1.0, 0.5 (default) = linear,
-													// < 0.5 = slow start, > 0.5 = quick start
-	film: {
-		image: <image>
-		frames: <int>
-		[ interpolate: <bool> ]
-	}
-	[ blend: "add" | "multiply" | "normal" ]
-	[ opacity: <percent> ]
-	/*
-		TODO: opacity=<var> ?
-	*/
+    type: "animation"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    variable: <var>
+    [ range: { <real>, <real> } ]                   // max = frame count
+    [ curve: <real> ]                               // curve value is from 0.0 to 1.0, 0.5 (default) = linear,
+                                                    // < 0.5 = slow start, > 0.5 = quick start
+    film: {
+        image: <image>
+        frames: <int>
+        [ interpolate: <bool> ]
+    }
+    [ blend: "add" | "multiply" | "normal" ]
+    [ opacity: <percent> ]
+    /*
+        TODO: opacity=<var> ?
+    */
 }
 
 /**
-	`dragArea` lets the user click and drag the parent view (i.e. the enclosing group or the current cushy).
+    `dragArea` lets the user click and drag the parent view (i.e. the enclosing group or the current cushy).
 
-	`clamp` modes are:
+    `clamp` modes are:
 
-		`none`: group can be dragged outside "grandparent view" (and window).
-		`mouse` (default): group can be partially dragged outside, but mouse is limited to its "grandparent view".
-		`dragArea`: constrain position to ensure that the drag area is fully visible in its "grandparent view".
-		`full`: same as `dragArea` but for entire group and not just the drag area.
+        `none`: group can be dragged outside "grandparent view" (and window).
+        `mouse` (default): group can be partially dragged outside, but mouse is limited to its "grandparent view".
+        `dragArea`: constrain position to ensure that the drag area is fully visible in its "grandparent view".
+        `full`: same as `dragArea` but for entire group and not just the drag area.
 
-	`bringToFront` options are:
+    `bringToFront` options are:
 
-		`false` (default): will not change z order when dragging.
-		`true`: will move the parent view topmost within its parent view.
-		`auto`: will bring to front if not command key (Mac) or control key (Windows) is held.
+        `false` (default): will not change z order when dragging.
+        `true`: will move the parent view topmost within its parent view.
+        `auto`: will bring to front if not command key (Mac) or control key (Windows) is held.
 
-	`positionVariable` will be updated *and* looked up, so you can implement custom clamping and storing / restoring
-	position etc (just giving it a name may be sufficient for the latter). Value format is `<x>,<y>`. If the lookup
-	results in an empty string, the view is not moved.
+    `positionVariable` will be updated *and* looked up, so you can implement custom clamping and storing / restoring
+    position etc (just giving it a name may be sufficient for the latter). Value format is `<x>,<y>`. If the lookup
+    results in an empty string, the view is not moved.
 
-	`zOrderVariable` will also be updated and looked up. The top-most view has the z order of 0.
+    `zOrderVariable` will also be updated and looked up. The top-most view has the z order of 0.
 
-	`dragArea` will consume all clicks (also right-clicks) so it can be used instead of a "nop" `click` view stop clicks
-	from passing through. To have it also block hints: add `hint: ""`
+    `dragArea` will consume all clicks (also right-clicks) so it can be used instead of a "nop" `click` view stop clicks
+    from passing through. To have it also block hints: add `hint: ""`
 **/
 <dragArea> = {
-	type: "dragArea"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ clamp: "none" | "mouse" | "dragArea" | "full" ]
-	[ bringToFront: "false" | "true" | "auto" ]
-	[ hint: <metaText> ]
-	[ cursor: <cursor> ]
-	[ positionVariable: <var> ]
-	[ zOrderVariable: <var> ]
-	[ hitMask: <hitMask> ]
+    type: "dragArea"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ clamp: "none" | "mouse" | "dragArea" | "full" ]
+    [ bringToFront: "false" | "true" | "auto" ]
+    [ hint: <metaText> ]
+    [ cursor: <cursor> ]
+    [ positionVariable: <var> ]
+    [ zOrderVariable: <var> ]
+    [ hitMask: <hitMask> ]
 }
 
 <buttonStyle> = {
-	[ image: <image> ]
-	[ fill: <color> ]
-	[ frame: <penStyle> ]
-	[ font: <font> ]
-	[ icon: <image> ]
-	[ rect: <floatRect> ]
+    [ image: <image> ]
+    [ fill: <color> ]
+    [ frame: <penStyle> ]
+    [ font: <font> ]
+    [ icon: <image> ]
+    [ rect: <floatRect> ]
 }
 
-<button> = {										// Default click mask is the standard button behavior,
-													// i.e. action on mouse-release within hit-box.
-	type: "button"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	(
-		action: <action>
-		[ params: <params> ]
-		[ mask: <clickMask> ]						// See above
-	) | (
-		actions: {
-			{ <clickMask>, <action>, [ <params> ] }
-			...
-		}
-	)
-	[
-		caption: <metaText>
-		| {
-			text: <metaText>,
-			offset: { <int>, <int> }
-		}
-	]
-	[ hint: <metaText> ]							// Empty hint ("") is different from not declaring a hint at all
-													// since an empty hint blocks other hints from showing.
-	[ rounded: <percent> | { <pixels>, <pixels> } ]	// 100 percent = full ellipse form, default = 0
-	[ cursor: <cursor> ]							// Cursor is only shown if action is enabled.
-	[ standard: <buttonStyle> ] 					// "rect" adjusts the click rect and framed outline.
-	[ checked: <buttonStyle> ] 						// Omitted attributes are "inherited" from "standard".
-	[ down: <buttonStyle> ] 						// Omitted attributes are "inherited" from "standard".
-	[ checkedDown: <buttonStyle> ] 					// Omitted attributes are "inherited" from "checked".
-	[ disabled: <buttonStyle> ] 					// Omitted attributes are "inherited" from "standard".
-	[ vector: <ivg> ]								// vector is drawn on top of ordinary button graphics. $down,
-													// $checked and $disabled will be yes or no. $caption will be the
-													// meta-text expanded caption text.
-	[ hitMask: <hitMask> ]							// if present will override built-in logic
+<button> = {                                        // Default click mask is the standard button behavior,
+                                                    // i.e. action on mouse-release within hit-box.
+    type: "button"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    (
+        action: <action>
+        [ params: <params> ]
+        [ mask: <clickMask> ]                       // See above
+    ) | (
+        actions: {
+            { <clickMask>, <action>, [ <params> ] }
+            ...
+        }
+    )
+    [
+        caption: <metaText>
+        | {
+            text: <metaText>,
+            offset: { <int>, <int> }
+        }
+    ]
+    [ hint: <metaText> ]                            // Empty hint ("") is different from not declaring a hint at all
+                                                    // since an empty hint blocks other hints from showing.
+    [ rounded: <percent> | { <pixels>, <pixels> } ] // 100 percent = full ellipse form, default = 0
+    [ cursor: <cursor> ]                            // Cursor is only shown if action is enabled.
+    [ standard: <buttonStyle> ]                     // "rect" adjusts the click rect and framed outline.
+    [ checked: <buttonStyle> ]                      // Omitted attributes are "inherited" from "standard".
+    [ down: <buttonStyle> ]                         // Omitted attributes are "inherited" from "standard".
+    [ checkedDown: <buttonStyle> ]                  // Omitted attributes are "inherited" from "checked".
+    [ disabled: <buttonStyle> ]                     // Omitted attributes are "inherited" from "standard".
+    [ vector: <ivg> ]                               // vector is drawn on top of ordinary button graphics. $down,
+                                                    // $checked and $disabled will be yes or no. $caption will be the
+                                                    // meta-text expanded caption text.
+    [ hitMask: <hitMask> ]                          // if present will override built-in logic
 }
 
 <slewSpec> = <secs> | {
-	[ time: <secs> ]								// = 0.0
-	[ updateRate: <fps> ]							// = 50
-	[ tracking: <bool> ]							// = false, whether to also filter slider that is being changed with
-													// the mouse
-	[ variable: <var> ]								// gets updated to the current visual filtered position
+    [ time: <secs> ]                                // = 0.0
+    [ updateRate: <fps> ]                           // = 50
+    [ tracking: <bool> ]                            // = false, whether to also filter slider that is being changed with
+                                                    // the mouse
+    [ variable: <var> ]                             // gets updated to the current visual filtered position
 }
 
 <slider> = {
-	type: "slider"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ hint: <metaText> ]							// Empty hint ("") is different from not declaring a hint at all
-													// since an empty hint blocks other hints from showing.
-	variable: <var>
-	[ readonly: <bool> ]							// also depends on whether gui-variable is editable or not
-	[ range: { <real>, <real> } ]					// = 0.0 to 1.0
-	[ default: <real> | defaultVariable: <var> ]
-	[ cap: {
-		[ size: { <pixels>, <pixels> } ]			// = { 10, 10 } or image height and width if present ]
-		[ rounded: <percent> ]						// = 0% 
-		/*
-			TODO: | { <pixels>, <pixels> } ]		// 100 percent = full ellipse form
-		*/
-		[ color: <color> ]							// = 0
-		[ frame: <penStyle> ]
-		[ image: <image>, [ scale: <percent> ] ]
-	} ]
-	[ film: {										// film frame (corresponding to the current value) is drawn beneath
-													// the cap (but above the slit)
-		image: <image>
-		frames: <int>
-		[ interpolate: <bool>]
-		[ offset: { <int>, <int> } ]
-	} ]
-	slit: {
-		(											// linear slider
-			start: { <pixels>, <pixels> }
-			end: { <pixels>, <pixels> }
-		) | (										// arced slider
-			center: { <pixels>, <pixels> }
-			radius: <pixels>
-			sweep: { <degrees>, <degrees> }			// 2nd <degrees> = length in angles
-		)
-		[ thickness: <pixels> ]						// = 4
-		[ color: <color> ]							// = black
-		/*
-			TODO: [ fill: <color>=0 ]				// fills "up to" the cap
-		*/
-	}
-	[ vector: <ivg> ]								// vector is drawn on top of any image, automatically positioned
-													// (0,0 is center), in IVG you can access the variable name through
-													// $variable and it's value with $value. $position will contain the
-													// slewed position value and $snapped will be 'yes' if position is
-													// within snap area.
-	[ snap: <bool> | {
-		[ value: <real> ]							// = default
-		[ area: <pixels> ]							// = 4 pixels
-		[ color: <color> ]
-		[ image: <image> ]
-	} ]
-	/*
-		TODO: [ quickJump: <bool>=true ]			// support for optional "quick jump" = click outside cap to move
-													// slider directly to that position
-	*/
-	[ fineRatio: <real> ]							// shift-dragging precision, default = 10%
-	[ slew: <slewSpec> ]
-	[ clickActions: {
-		{ <clickMask>, <action>, [ <params> ], [ <clickThru> ] }
-		...
-	} ]
+    type: "slider"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ hint: <metaText> ]                            // Empty hint ("") is different from not declaring a hint at all
+                                                    // since an empty hint blocks other hints from showing.
+    variable: <var>
+    [ readonly: <bool> ]                            // also depends on whether gui-variable is editable or not
+    [ range: { <real>, <real> } ]                   // = 0.0 to 1.0
+    [ default: <real> | defaultVariable: <var> ]
+    [ cap: {
+        [ size: { <pixels>, <pixels> } ]            // = { 10, 10 } or image height and width if present ]
+        [ rounded: <percent> ]                      // = 0% 
+        /*
+            TODO: | { <pixels>, <pixels> } ]        // 100 percent = full ellipse form
+        */
+        [ color: <color> ]                          // = 0
+        [ frame: <penStyle> ]
+        [ image: <image>, [ scale: <percent> ] ]
+    } ]
+    [ film: {                                       // film frame (corresponding to the current value) is drawn beneath
+                                                    // the cap (but above the slit)
+        image: <image>
+        frames: <int>
+        [ interpolate: <bool>]
+        [ offset: { <int>, <int> } ]
+    } ]
+    slit: {
+        (                                           // linear slider
+            start: { <pixels>, <pixels> }
+            end: { <pixels>, <pixels> }
+        ) | (                                       // arced slider
+            center: { <pixels>, <pixels> }
+            radius: <pixels>
+            sweep: { <degrees>, <degrees> }         // 2nd <degrees> = length in angles
+        )
+        [ thickness: <pixels> ]                     // = 4
+        [ color: <color> ]                          // = black
+        /*
+            TODO: [ fill: <color>=0 ]               // fills "up to" the cap
+        */
+    }
+    [ vector: <ivg> ]                               // vector is drawn on top of any image, automatically positioned
+                                                    // (0,0 is center), in IVG you can access the variable name through
+                                                    // $variable and it's value with $value. $position will contain the
+                                                    // slewed position value and $snapped will be 'yes' if position is
+                                                    // within snap area.
+    [ snap: <bool> | {
+        [ value: <real> ]                           // = default
+        [ area: <pixels> ]                          // = 4 pixels
+        [ color: <color> ]
+        [ image: <image> ]
+    } ]
+    /*
+        TODO: [ quickJump: <bool>=true ]            // support for optional "quick jump" = click outside cap to move
+                                                    // slider directly to that position
+    */
+    [ fineRatio: <real> ]                           // shift-dragging precision, default = 10%
+    [ slew: <slewSpec> ]
+    [ clickActions: {
+        { <clickMask>, <action>, [ <params> ], [ <clickThru> ] }
+        ...
+    } ]
 }
 
 <knob> = {
-	type: "knob"
-	[ bounds: <rect> ]
-	[ edit: <editSpec> ]
-	[ hint: <metaText> ]							// Empty hint ("") is different from not declaring a hint at all
-													// since an empty hint blocks other hints from showing.
-	variable: <var>
-	[ readonly: <bool> ]							// also depends on whether gui-variable is editable or not
-	[ range: { <real>, <real> } ]					// = 0.0 to 1.0
-	/*
-		TODO: [ wrap: <bool> ]
-	*/
-	[ default: <real> | defaultVariable: <var> ]
-	[ sweep: { <degrees>, <degrees> } ]				// 2nd <degrees> = length in angles, default is -135 + 270
-	[ cap: {
-		[ size: <pixels> ]							// default is minimum of bounds width & height
-		[ offset: { <pixels>, <pixels> } ]
-		[ color: <color> ]
-		[ frame: <penStyle> ]
-		[ dial: <penStyle> ]
-		[
-			image: <image>
-			[ scale: <percent> ]
-			[ angle: <degrees> ]					// default = 0
-		]
-	} ]
-	[ film: {										// film frame (corresponding to the current value) is drawn beneath
-													// the cap
-		image: <image>
-		frames: <int>
-		[ range: { <real>, <real> } ] 				// Define min and max angle in film. Default matches "sweep".
-		[ interpolate: <bool> ]
-		[ offset: { <int>, <int> } ]
-	} ]
-	[ vector: <ivg> ]								// vector is drawn on top of all other graphics (0,0 is center). In
-													// IVG you can access the variable name through $variable and it's
-													// value with $value. $position will contain the slewed position
-													// value and $snapped will be 'yes' if position is within snap area.
-	[ snap: <bool> | {
-		[ value: <real> ]							// = default
-		[ area: <pixels> ]							// = 4 pixels
-		[ color: <color> ]
-		[ frame: <penStyle> ]
-		[ dial: <penStyle> ]
-		[ image: <image> ]
-	} ]
-	[ transmission: {
-		[ resolution: <pixels> ] 					// smallest mouse movement counted
-		/*
-			TODO: snapping is kind of broken now if you have diff horizontal and vertical transmission, e.g. slow
-			horizontal transmission compared to vertical means it will stay at snapping point much longer.
-		*/
-		[ vertical: <pixels> ] 						// number of pixels for full range, 0 = vertical movement ignored,
-													// default = 200
+    type: "knob"
+    [ bounds: <rect> ]
+    [ edit: <editSpec> ]
+    [ hint: <metaText> ]                            // Empty hint ("") is different from not declaring a hint at all
+                                                    // since an empty hint blocks other hints from showing.
+    variable: <var>
+    [ readonly: <bool> ]                            // also depends on whether gui-variable is editable or not
+    [ range: { <real>, <real> } ]                   // = 0.0 to 1.0
+    /*
+        TODO: [ wrap: <bool> ]
+    */
+    [ default: <real> | defaultVariable: <var> ]
+    [ sweep: { <degrees>, <degrees> } ]             // 2nd <degrees> = length in angles, default is -135 + 270
+    [ cap: {
+        [ size: <pixels> ]                          // default is minimum of bounds width & height
+        [ offset: { <pixels>, <pixels> } ]
+        [ color: <color> ]
+        [ frame: <penStyle> ]
+        [ dial: <penStyle> ]
+        [
+            image: <image>
+            [ scale: <percent> ]
+            [ angle: <degrees> ]                    // default = 0
+        ]
+    } ]
+    [ film: {                                       // film frame (corresponding to the current value) is drawn beneath
+                                                    // the cap
+        image: <image>
+        frames: <int>
+        [ range: { <real>, <real> } ]               // Define min and max angle in film. Default matches "sweep".
+        [ interpolate: <bool> ]
+        [ offset: { <int>, <int> } ]
+    } ]
+    [ vector: <ivg> ]                               // vector is drawn on top of all other graphics (0,0 is center). In
+                                                    // IVG you can access the variable name through $variable and it's
+                                                    // value with $value. $position will contain the slewed position
+                                                    // value and $snapped will be 'yes' if position is within snap area.
+    [ snap: <bool> | {
+        [ value: <real> ]                           // = default
+        [ area: <pixels> ]                          // = 4 pixels
+        [ color: <color> ]
+        [ frame: <penStyle> ]
+        [ dial: <penStyle> ]
+        [ image: <image> ]
+    } ]
+    [ transmission: {
+        [ resolution: <pixels> ]                    // smallest mouse movement counted
+        /*
+            TODO: snapping is kind of broken now if you have diff horizontal and vertical transmission, e.g. slow
+            horizontal transmission compared to vertical means it will stay at snapping point much longer.
+        */
+        [ vertical: <pixels> ]                      // number of pixels for full range, 0 = vertical movement ignored,
+                                                    // default = 200
 
-		[ horizontal: <pixels> ] 					// number of pixels for full range, 0 = horizontal movement ignored,
-													// default = 200
+        [ horizontal: <pixels> ]                    // number of pixels for full range, 0 = horizontal movement ignored,
+                                                    // default = 200
 
-		[ fine: <percent> ] 						// the fine rate (in percent) for shift-key adjustements,
-													// default = 10%
+        [ fine: <percent> ]                         // the fine rate (in percent) for shift-key adjustements,
+                                                    // default = 10%
 
-		[ fineResolution: <pixels> ]				// smallest mouse movement when shift-key is held down,
-													// default = resolution
-	} ]
-	[ slew: <slewSpec> ]
-	[ clickActions: {
-		{
-			<clickMask>
-			<action>
-			[ <params> ]
-			[ <clickThru> ]
-		}
-		...
-	} ]
+        [ fineResolution: <pixels> ]                // smallest mouse movement when shift-key is held down,
+                                                    // default = resolution
+    } ]
+    [ slew: <slewSpec> ]
+    [ clickActions: {
+        {
+            <clickMask>
+            <action>
+            [ <params> ]
+            [ <clickThru> ]
+        }
+        ...
+    } ]
 }
