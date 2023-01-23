@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Makaron Documentation</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <style>
+    body {
+      max-width: 50em;
+    }
+    pre {
+      background-color: #E0E0F0;
+      padding-left: 2em;
+    }
+    code {
+      color: #3030A0;
+    }
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Makaron Documentation</h1>
+</header>
+<h1 id="makaron">Makaron</h1>
+<p><em>Makaron</em> is a macro expansion language designed to simplify
+and streamline your code. Makaron allows you to define and use macros
+for text substitution in your code, making it more readable and
+maintainable. The language includes features for defining string macros
+with <a href="#define"><code>@define</code></a>, parametric macros with
+<a href="#begin"><code>@begin</code></a> and <code>@end</code>, and
+conditional output macros with <a href="#if"><code>@if</code></a>. These
+macros can be <a href="#invocation">invoked</a> by prefixing the macro
+name with “@” in the text.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#define"><span class="citation"
+data-cites="define">@define</span></a></li>
+<li><a href="#redefine"><span class="citation"
+data-cites="redefine">@redefine</span></a></li>
+<li><a href="#begin"><span class="citation"
+data-cites="begin">@begin</span></a></li>
+<li><a href="#if"><span class="citation"
+data-cites="if">@if</span></a></li>
+<li><a href="#include"><span class="citation"
+data-cites="include">@include</span></a></li>
+<li><a href="#invocation">invocation</a></li>
+<li><a href="#indirect-invocation">indirect invocation</a></li>
+<li><a href="#literal">literal @</a></li>
+<li><a href="#raw-value">raw value</a></li>
+</ul>
+<h2 id="define"><span class="citation"
+data-cites="define">@define</span></h2>
+<p>Define a macro that expands to a string.</p>
+<p>Syntax:</p>
+<pre><code>@define &lt;macro&gt; = &lt;value&gt;</code></pre>
+<ul>
+<li><code>&lt;macro&gt;</code>: name of the macro to define</li>
+<li><code>&lt;value&gt;</code>: the macro will expand to this
+string</li>
+</ul>
+<p>Example:</p>
+<pre><code>@define color = red</code></pre>
+<p>Any instance of <code>@color</code> will thereafter expand to
+<code>red</code>.</p>
+<p>Macro names can begin with <code>a</code> to <code>z</code>,
+<code>$</code> or <code>_,</code> but the rest may also contain
+<code>0</code> to <code>9</code>. You should not start the name with
+<code>@</code>. It is an error to define a macro with the same name
+twice. Use <a href="#redefine"><code>@redefine</code></a> if you want to
+reassign the value of a macro.</p>
+<p>The <code>&lt;value&gt;</code> definition will include everything
+until the end of the line unless you use a <a href="#raw-value"><em>raw
+value</em></a> (<code>@&lt;</code> <code>@&gt;</code>). This can lead to
+unexpected results if you have a comment at the end of the line. For
+example, suppose we define <code>viewWidth</code> like this:</p>
+<pre><code>@define viewWidth = 5 // end of line comment</code></pre>
+<p>If we later use <code>viewWidth</code>, for example in the expression
+<code>@viewWidth+100</code> it will expand to:</p>
+<pre><code>5 // end of line comment+100</code></pre>
+<p>Obviously, this is different from what you want. To avoid this
+situation, you can define the macro with a <a href="#raw-value"><em>raw
+value</em></a> value like this:</p>
+<pre><code>@define viewWidth = @&lt;5@&gt; // end of line comment</code></pre>
+<h2 id="redefine"><span class="citation"
+data-cites="redefine">@redefine</span></h2>
+<p>Redefine a macro that you have already defined.</p>
+<p>Syntax:</p>
+<pre><code>@redefine &lt;macro&gt; = &lt;value&gt;</code></pre>
+<ul>
+<li><code>&lt;macro&gt;</code>: name of the macro to define</li>
+<li><code>&lt;value&gt;</code>: the macro will expand to this
+string</li>
+</ul>
+<p>Example:</p>
+<pre><code>@redefine color = green</code></pre>
+<p>You cannot redefine a macro that has not already been defined.
+Furthermore, it is only possible to redefine <em>string macros</em>
+defined with <a href="#define"><code>@define</code></a>. It is not
+possible to redefine a <em>parametric macro</em> that you have defined
+with <a href="#begin"><code>@begin</code></a>.</p>
+<h2 id="begin"><span class="citation"
+data-cites="begin">@begin</span></h2>
+<p>Defines a <em>parametric macro</em>.</p>
+<p>Syntax:</p>
+<pre><code>@begin &lt;macro&gt;[ &#39;(&#39; &lt;param&gt;[,&lt;param&gt;,...] &#39;)&#39; ]
+    &lt;body&gt;
+@end</code></pre>
+<ul>
+<li><code>&lt;macro&gt;</code>: name of the macro to define</li>
+<li><code>&lt;param&gt;</code>: names of the parameters (optional)</li>
+<li><code>&lt;body&gt;</code>: the macro definition</li>
+</ul>
+<p>Example:</p>
+<pre><code>@begin captionView(bounds, text)
+    {
+        type: &quot;caption&quot;
+        bounds: @bounds
+        text: @text
+    }
+@end</code></pre>
+<p>Macro names can begin with a to z, $ or _, but the rest may also
+contain 0 to 9. You should not start the name with <code>@</code>. It is
+an error to define a macro with the same name twice. Unlike <em>string
+macros</em> created with <a href="#define"><code>@define</code></a> you
+are <em>not</em> allowed to redefine <em>parametric macros</em> with <a
+href="#redefine"><code>@redefine</code></a>.</p>
+<p>You are allowed to declare a <em>parametric macro</em> without
+parameters, effectively creating a <em>string macro</em>. It is useful
+for creating macros that span several lines. The alternative is to use
+<a href="#define"><code>@define</code></a> with a <a
+href="#raw-value"><em>raw value</em></a>. E.g. the following two
+examples are equivalent:</p>
+<pre><code>@begin macro1
+expand
+to
+many
+lines
+@end
+
+@define macro2=@&lt;expand
+to
+many
+lines
+@&gt;</code></pre>
+<p>It is also possible to declare a macro with <code>@begin</code> and
+<code>@end</code> on a single line like this:</p>
+<pre><code>@begin myMacro() contents of the macro here @end</code></pre>
+<p>Notice that <code>()</code> is optional when you declare a macro
+without parameters.</p>
+<p>See <a href="#invocation">invocation</a> for information on how to
+invoke <em>parametric macros</em>.</p>
+<h2 id="if"><span class="citation" data-cites="if">@if</span></h2>
+<p>Conditional output.</p>
+<p>Syntax:</p>
+<pre><code>@if &#39;(&#39; &lt;value&gt; (==/!=) &lt;value&gt; &#39;)&#39;
+    &lt;main-body&gt;
+[@elif &#39;(&#39; &lt;value&gt; (==/!=) &lt;value&gt; &#39;)&#39;
+    &lt;elif-body&gt;
+]
+[@elif &#39;(&#39; &lt;value&gt; (==/!=) &lt;value&gt; &#39;)&#39;
+    &lt;elif-body&gt;
+]
+...
+[@else
+    &lt;else-body&gt;
+]
+@endif</code></pre>
+<ul>
+<li><code>&lt;value&gt;</code>: the two values to compare</li>
+<li><code>==/!=</code>: condition to test, <em>equal</em>
+<code>==</code> or <em>not equal</em> <code>!=</code></li>
+<li><code>&lt;main-body&gt;</code>: the body to include if the condition
+is true</li>
+<li><code>&lt;elif-body&gt;</code>: output for additional tests, if the
+main condition is false</li>
+<li><code>&lt;else-body&gt;</code>: output to include if all conditions
+are false</li>
+</ul>
+<p>Example:</p>
+<pre><code>@if (@index != 0)
+    @if (@color == red)
+        pen: #FF2244
+    @elif (@color == green)
+        pen: #22FF44
+    @else
+        pen: #888888
+    @endif
+@endif</code></pre>
+<p>Comparison always compares strings, character by character. E.g.,
+<code>5.0</code> and <code>5</code> are <em>not</em> considered
+equal.</p>
+<p>Don’t forget to prefix <em>Makaron variables</em> and
+<em>parameters</em> with <code>@</code> inside the condition. Also,
+remember that literal strings in <em>Makaron</em> are not enclosed in
+quotes, but you can use <a href="#raw-value"><em>raw value</em></a>
+syntax (<code>@&lt;</code> <code>@&gt;</code>).</p>
+<h2 id="include"><span class="citation"
+data-cites="include">@include</span></h2>
+<p>Include and process another file.</p>
+<p>Syntax:</p>
+<pre><code>@include &lt;name&gt;</code></pre>
+<ul>
+<li><code>&lt;name&gt;</code>: the name of the file to include</li>
+</ul>
+<p>Example:</p>
+<pre><code>@include anotherFile.makaron</code></pre>
+<p>The file can be an external file or an “asset” provided by the
+hosting application. Notice that you specify <code>&lt;name&gt;</code>
+using a regular <em>Makaron value</em>. This means you do not enclose it
+in quotes, but you are allowed to use <a href="#raw-value"><em>raw
+value</em></a> syntax (<code>@&lt;</code> <code>@&gt;</code>).</p>
+<h2 id="invocation">invocation</h2>
+<p>Call on a macro and include its output.</p>
+<p>Syntax:</p>
+<pre><code>@&lt;macro&gt;[ &#39;(&#39; &lt;argument&gt;[,&lt;argument&gt;,...] &#39;)&#39; ]</code></pre>
+<ul>
+<li><code>&lt;argument&gt;</code>: list of arguments provided for
+<em>parametric macros</em></li>
+</ul>
+<p>Example:</p>
+<pre><code>@captionView({ 40,20,100,50 }, &quot;The color is @color&quot;)</code></pre>
+<p>In the above example, <code>@captionView</code> is a <em>parametric
+macro</em> and <code>@color</code> is a <em>string macro</em>.</p>
+<p>An argument can be empty. If you want to pass a single empty
+argument, you use this syntax:</p>
+<pre><code>@macroExpectingOneParam()</code></pre>
+<p>To invoke a macro that expects zero parameters, you need to exclude
+<code>()</code>, e.g.:</p>
+<pre><code>@macroExpectingZeroParams</code></pre>
+<p><em>Makaron</em> expects certain characters to be properly “balanced”
+when used in arguments. The characters are:</p>
+<ul>
+<li><code>(</code> and <code>)</code></li>
+<li><code>[</code> and <code>]</code></li>
+<li><code>{</code> and <code>}</code></li>
+<li><code>"</code> and <code>"</code></li>
+<li><code>'</code> and <code>'</code></li>
+</ul>
+<p>E.g., the following line is invalid because it misses a terminating
+<code>}</code> character in the first argument:</p>
+<pre><code>@captionView({ 40,20,100,50, &quot;The color is @color&quot;)</code></pre>
+<p>If you need to include unbalanced characters, use a <a
+href="#raw-value"><em>raw value</em></a> string like this:</p>
+<pre><code>@captionView({ 40,20,100,50 }, @&lt;[@&gt;)</code></pre>
+<h2 id="indirect-invocation">indirect invocation</h2>
+<p>Interpret a <em>Makaron value</em> and use the output to call on a
+macro.</p>
+<p>Syntax:</p>
+<pre><code>@ &#39;(&#39; &lt;value&gt; &#39;)&#39;</code></pre>
+<ul>
+<li><code>&lt;value&gt;</code>: the value to interpret as the name of a
+macro</li>
+</ul>
+<p>Example:</p>
+<pre><code>@define rgb_red=#FF0000
+@define rgb_green=#00FF00
+@define rgb_blue=#0000FF
+@define color=red
+pen: @(rgb_@color)</code></pre>
+<p><code>rgb_@color</code> will evaluate to <code>rgb_red</code> which
+in turn will be invoked to output <code>#FF0000</code>.</p>
+<h2 id="literal">literal @</h2>
+<p>Output one <em>at character</em> (<code>@</code>).</p>
+<p>Syntax:</p>
+<pre><code>@@</code></pre>
+<p>Example:</p>
+<pre><code>E-mail me at johndoe@@acme.com</code></pre>
+<p>Because <code>@</code> is used for executing <em>Makaron</em>
+statements, you need to use <code>@@</code> for any <code>@</code> that
+you want to preserve in the output.</p>
+<h2 id="raw-value">raw value</h2>
+<p>Use an exact (possibly multi-line) string as a <em>Makaron
+value</em>.</p>
+<p>Syntax:</p>
+<pre><code>@&lt; ... @&gt;</code></pre>
+<p>Example:</p>
+<pre><code>@define multiLineMacro=@&lt;
+    this
+    macro
+    expands
+    to
+    many
+    lines
+@&gt;</code></pre>
+<p>Notice that macro expansion is still performed inside <em>raw
+values</em>. To include <em>at characters</em>, you need to use
+<code>@@</code> just like everywhere else.</p>
+</body>
+</html>

@@ -1,0 +1,767 @@
+#! /usr/local/bin/PikaCmd
+
+/*
+	Future:
+
+	*)	Allow complex sequences (alts, opts etc) inside arrays too.
+
+	*)	Allow a rule to be a key-value sequence, not only value (and complete structs) (for "inserts").
+
+	*)	Checkpoint logic is kind of broken... tag groups are global, so we need checkpoints e.g.
+		before entering alts (or a failed checkpoint could break the first alt path). If tag groups
+		where per structural level of the schema this would not be a problem I think.
+
+		So this doesn't work right now:
+
+		    params: {
+		        ( action: <action> | actionVariable: <var> )
+		        [ params: <params> | paramsVariable: <var> ]
+		    }
+
+	*)	Include exact offset for error (not just node begin), e.g. for peg's
+
+	*)	Allow .schema file to specify include dirs (and possibly other options)
+*/
+
+// include('debug.pika');
+include('build/systools.pika');
+include('stdlib.pika');
+include('include/initPPEG.pika');
+include('include/objects.pika');
+
+if (PLATFORM === "UNIX") {
+	MAKARON_SOURCE_PATH = ::run.root # 'support/MakaronCmd.cpp';
+	MAKARON_EXE_PATH = ::run.root # 'build/MakaronCmd';
+	BUILD_MAKARON_PATH = ::run.root # 'support/buildMakaron.sh';
+} else {
+	MAKARON_SOURCE_PATH = ::run.root # 'support\MakaronCmd.cpp';
+	MAKARON_EXE_PATH = ::run.root # 'build\MakaronCmd.exe';
+	BUILD_MAKARON_PATH = ::run.root # 'support\buildMakaron.cmd';
+};
+
+calcLineAndColumn = function {
+	args(@source, @offset, @line, @column);
+	l = 0;
+	lb = 0;
+	for (i = 0; i <= offset; i += find(source{i:}, "\n") + 1) {
+		lb = i;
+		++l;
+	};
+	[line] = l;
+	[column] = (offset - lb) + 1;
+};
+
+printExcerpt = function {
+	args(@source, @offset, @zoom);
+	print(repeat('-', 40));
+	s = (if (offset - zoom > 0) '...' else '')
+		# source{offset - zoom:zoom}
+		# ' <!!!!> '
+		# source{offset:zoom}
+		# (if (offset + zoom < length(source)) '...' else '');
+	print(s);
+	print(repeat('-', 40));
+};
+
+printError = function {
+	args(@filename, @source, @offset, @message);
+	calcLineAndColumn(source, offset, @line, @column);
+//	( bake("Line: {line}, column: {column} (@{offset}) {message}") )
+	print(bake("\n!!!! {message}\nFile: {filename}, line: {line}, column: {column} (@{offset})"));
+	printExcerpt(source, offset, 25);
+};
+
+validateFileReference = function {
+	args(@node, @rule, @score, @arg);
+	if (node == void) {
+		( createMissingValueError(score) )
+	} else if ([node].type !== 'string') {
+		( createError(bake("expected {TYPE_DESCS.string} for file reference (got {TYPE_DESCS[[node].type]})"), node, [score]) )
+	} else {
+		filename_x1 = [node].value # '.' # arg;
+		filename_x2 = [node].value # '_x2.' # arg;
+		filename_x4 = [node].value # '_x4.' # arg;
+		filename = filename_x1;
+		if (filename{0} === '/') {
+			if (arg === 'png' && !pathExists(filename)) {
+				filename = filename_x2;
+			};
+			if (arg === 'png' && !pathExists(filename)) {
+				filename = filename_x4;
+			};
+			if (!pathExists(filename)) {
+				( createError(bake(
+					if (arg === 'png') "missing external file: \"{filename_x1}\", \"{filename_x2}\", or \"{filename_x4}\""
+					else "missing external file: \"{filename_x1}\""
+				), node, [score]) )
+			} else {
+				( NO_ERROR )
+			}
+		} else {
+			r = @::existingFiles[undotify(lower(filename))];
+			if (arg === 'png' && !exists(r)) {
+				filename = filename_x2;
+				r = @::existingFiles[undotify(lower(filename))];
+			};
+			if (arg === 'png' && !exists(r)) {
+				filename = filename_x4;
+				r = @::existingFiles[undotify(lower(filename))];
+			};
+			if (!exists(r)) {
+				( createError(bake(
+					if (arg === 'png') "missing file: \"{filename_x1}\", \"{filename_x2}\", or \"{filename_x4}\""
+					else "missing file: \"{filename_x1}\""
+				), node, [score]) )
+			} else if ([r] !== filename) {
+				( createError(bake("filename case mismatch: filename is \"{[r]}\", cushy has \"{filename}\""), node, [score]) )
+			} else {
+				( NO_ERROR )
+			}
+		}
+	}
+};
+
+map(@REFERENCE_TABLES, 'rule', 'rules', 'peg', 'pegs', 'func', 'funcs');
+
+recursiveFileMapper = function {
+	args(@m, @rootDir, @subDir, @subDirForwardSlash);
+	dir(rootDir # subDir, >{
+		fn = $0;
+		fnNoSlash = removeDirSlash(fn);
+		if (fnNoSlash != fn) {
+			recursiveFileMapper(m, rootDir, subDir # fn, subDirForwardSlash # fnNoSlash # '/');
+			fn = fnNoSlash # '/';
+		};
+		[m][undotify(lower(subDirForwardSlash # fn))] = subDirForwardSlash # fn;
+	});
+};
+
+normalizePath = function {
+	p = '';
+	tokenize($0, >{
+		if ($0 === '.') { }
+		else if ($0 === '..') p = p{:rfind(p, '/')}
+		else if ($0 !== '') p #= (if (p !== '') '/' else '') # $0;
+	}, '/\');
+	if (find('/\', $0{0}) < 2) p = '/' # p;
+	if (find('/\', right($0, 1)) < 2 && p !== '/') p #= '/';
+	( p )
+};
+
+fullPath = function {
+	if ((i = find($1, ':')) < length($1)) {
+		++i;
+		( $1{:i} # normalizePath($1{i:}) )
+	} else {
+		i = (if ((i = find($0, ':')) < length($0)) i + 1 else 0);
+		( $0{:i} # normalizePath((if (find('/\', $1{0}) == 2) appendDirSlash($0{i:})) # $1) )
+	};
+};
+
+addUniqueToList = function {
+	args(@list, @path);
+	for (i = 0; i < [list].n && [list][i] !== path; ++i) ;
+	if (i >= [list].n) {
+		print(bake('adding {path} to {list}'));
+		append(list, path)
+	}
+};
+
+configure = function {
+	$this = this();
+	args(@key, @value, @offset);
+	path = fullPath([$this].path, value);
+	if (key === 'include') list = @::schemaFiles
+	else if (key === 'resources') {
+		list = @::fileRefsRoots;
+		path = appendDirSlash(path)
+	} else throw(bake('({offset}) Unrecognized configuration key: {key}'));
+	addUniqueToList(list, path)
+};
+
+createSchemaParser = function {
+	::errorCount = 0;
+	::schema = void;
+
+	print('Compiling Schema parser...');
+	cushySchemaPPEGSource = load(bake('{::run.root}include{DIR_SLASH}cushySchema.ppeg'));
+	ok = ppeg.compileFunction(cushySchemaPPEGSource, @schemaParser, @offset);
+	if (!ok) {
+		printError('cushySchema.ppeg', cushySchemaPPEGSource, offset, "Error compiling Cushy Schema parser");
+		++::errorCount;
+	};
+
+	parseSchema = >{
+		args(@$path, @$filename);
+		print(bake('Parsing {$filename}...'));
+		$src = load($path # $filename);
+		schemaSources[undotify($filename)] = $src;
+		[::schema].filename = $filename;
+		[::schema].path = $path;
+		ok = schemaParser($src, @::schema, @$offset);
+		if (!ok) {
+			printError($filename, $src, $offset, "Error parsing schema");
+			++::errorCount;
+		};
+		gc();
+	};
+
+	makeDir(bake('{::run.root}build'), false);
+	buildPath = bake('{::run.root}build{DIR_SLASH}cushy.schema.pika');
+	if (isFileNewer(bake('{::run.root}cushy.schema'), buildPath)) {
+		freezable = (coalesce(@::_alloc, 0) == 0);
+		if (!freezable) {
+			print("Warning! Cannot freeze Cushy schema unless it is created first on the heap.");
+		};
+		::schema = new(Container
+				, 'configure', ::configure
+				, 'rules', new(Container)
+				, 'pegs', new(Container)
+				, 'refs', new(Array));
+		parseSchema(::run.root, 'cushy.schema');
+		if (::errorCount == 0 && freezable) {
+			frozen = '';
+			for (i = 0; i < ::_alloc; ++i) frozen #= sourceFor(@::[i]);
+			frozen #= sourceFor(@::_alloc);
+			frozen #= sourceFor(@::schema);
+			save(buildPath, frozen);
+			print("Updated cushy.schema.pika");
+		};
+	} else {
+		print("Defrosting cushy.schema.pika");
+		run(buildPath);
+	};
+
+	// Not using iterate since we might grow the list while we parse more schema files. First entry is always cushy.schema.
+	for (i = 1; i < ::schemaFiles.n; ++i) {
+		$p = ::schemaFiles[i];
+		parseSchema(dirOfPath($p), filenameOfPath($p));
+	};
+
+	if (::fileRefsRoots.n == 0) {
+		print(bake('No resource directories specified, adding {::inputPath}'));
+		append(@::fileRefsRoots, ::inputPath);
+	};
+	
+	[::schema].funcs = new(Container, 'file', ::validateFileReference);
+	iterate(@::fileRefsRoots, >recursiveFileMapper(@::existingFiles, $2, '', ''));
+
+	if (::errorCount == 0) {
+		print('Compiling PEGs...');
+		pegSource = '';
+		foreach([::schema].pegs, >pegSource #= $1 # ' <- ' # $2 # LF);
+		ok = ppeg.compileFunction(pegSource, @[::schema].pegParsers, @offset);
+		if (!ok) throw(bake("Error parsing Schema PEGs"));
+
+		print('Checking Schema references...');
+		iterate([::schema].refs, >{
+			$ref = $2;
+			container = [::schema][::REFERENCE_TABLES[[$ref].kind]];
+			if (!exists(@[container][[$ref].name])) {
+				$fn = coalesce(@[$ref].fn, 'cushy.schema');
+				$source = @schemaSources[undotify($fn)];
+				if (!exists($source)) [$source] = load(::run.root # 'cushy.schema');
+				printError($fn, [$source], [$ref].at, bake("{[$ref].kind} {[$ref].name} is missing"));
+				++::errorCount;
+			}
+		});
+	};
+
+	gc();
+};
+
+NO_ERROR = void;
+createError = function { ( new(Array, new(Container, 'message', $0, 'node', $1, 'score', $2)) ) };
+createEmptyError = function { new(Array) };
+createMissingValueError = function { createError('missing value', void, $0) };
+
+joinErrors = function {
+	args(@prior, @current);
+	if ([prior].n == 0) ( current )
+	else if ([[current][0]].score > [[prior][0]].score) ( current )
+	else if ([[current][0]].score < [[prior][0]].score) ( prior )
+	else {
+		joined = new(Array);
+		inject(prior, 0, [prior].n, joined, 0);
+		inject(current, 0, [current].n, joined, [joined].n);
+		( joined )
+	}
+};
+
+countMembers = function { n = 0; foreach($0, >++n); ( n ) };
+
+checkpoint = function {
+	clone(@::tagGroups, @myTagGroups);
+	prune(@::tagGroups);
+	error = NO_ERROR;
+	foreach(@myTagGroups, >{
+		if (error == NO_ERROR) {
+			group = $1;
+			tg = $2;
+			groupScore = [tg].score;
+			error = validateValue(tg, [[schema].rules][group], @groupScore);
+			if (error == NO_ERROR) error = checkpoint();
+		}
+	});
+// foreach(@::tagGroups, >assert(false));
+	( error )
+};
+
+// crossList will contain every property *found* and checked in the validating struct, false = key was found, but not included in the successful branch
+validateKVAlts = function {
+	args(@node, @elem, @crossList, @score);
+
+	// FIX: Q & D, must resolve checkpoint errors first
+	error = checkpoint();
+	if (error == NO_ERROR) {
+		error = createEmptyError();
+		alts = [elem].seqs;
+		bestCount = 0;
+		for ({ i = 0; n = [alts].n }; i < n && error != NO_ERROR; ++i) {
+			foreach(@altCrossList, >[$0] = false);	// all found properties from last attempt is now considered invalid (but still found for slightly better error reports)
+			altScore = [score];
+			altError = validateKVSequence(node, [alts][i], @altCrossList, @altScore);
+			if (altError == NO_ERROR) altError = checkpoint();
+			error = (if (altError == NO_ERROR) NO_ERROR else joinErrors(error, altError));
+		};
+		clone(@altCrossList, crossList);
+		[score] = altScore;
+	};
+	( error )
+};
+
+validateKVOpt = function {
+	args(@node, @elem, @crossList, @score);
+	optScore = [score];
+	error = validateKVSequence(node, [elem].seq, @optCrossList, @optScore);
+	if (error == NO_ERROR) {
+		clone(@optCrossList, crossList);
+		[score] = optScore;
+	} else if (countMembers(@optCrossList) == 0) {
+		error = NO_ERROR;
+	};
+	( error )
+};
+
+validateUnmatched = function {
+	args(@node, @elem, @crossList, @score);
+
+	error = NO_ERROR;
+	foreach([node].value, >if (error == NO_ERROR && !exists(@[crossList][$1])) {
+		[crossList][$1] = true;
+		++[score];
+		error = validateValue($2, [elem].template, score);
+	});
+	( error )
+};
+
+validateKV = function {
+	args(@node, @elem, @crossList, @score);
+
+	key = [elem].key;
+	value = [elem].value;
+	if (!exists(r = @[[node].value][key])) {
+		error = createError(bake("missing '{key}' property"), node, [score]);
+	} else {
+		[crossList][key] = true;
+		++[score];
+		error = validateValue([r], value, score);
+	};
+	( error )
+};
+
+map(@KV_SEQ_VALIDATORS
+		, 'kv', validateKV
+		, 'opt', validateKVOpt
+		, 'alts', validateKVAlts
+		, 'unmatched', validateUnmatched);
+
+validateKVSequence = function {
+	args(@node, @sequence, @crossList, @score);
+	error = NO_ERROR;
+	for ({ i = 0; n = [sequence].n }; i < n && error == NO_ERROR; ++i) {
+		elem = [sequence][i];
+		error = KV_SEQ_VALIDATORS[[elem].kind](node, elem, crossList, score);
+	};
+	( error )
+};
+
+validateStruct = function {
+	args(@node, @rule, @score);
+	if (node == void) ( createMissingValueError(score) )
+	else if ([node].type !== 'struct') {
+		error = createError(bake("expected struct (got {TYPE_DESCS[[node].type]})"), node, [score]);
+	} else {
+		error = validateKVSequence(node, [rule].seq, @crossList, score);
+		if (error == NO_ERROR) {
+			foreach([node].value, >{
+				if (error == NO_ERROR && (!exists(@crossList[$1]) || !crossList[$1])) {
+					error = createError(bake("invalid property: '{$1}'"), $2, [score]);
+				}
+			})
+		};
+		if (error == NO_ERROR) error = checkpoint();
+	};
+	( error )
+};
+
+validateList = function {
+	args(@node, @rule, @score);
+	if (node == void) ( createMissingValueError(score) )
+	else if ([node].type !== 'array') {
+		error = createError(bake("expected array (got {TYPE_DESCS[[node].type]})"), node, [score]);
+	} else {
+		a = [node].value;
+		v = [rule].values;
+		n = [v].n;
+		if ([a].n > n) {
+			error = createError(bake("expected max {n} array elements (got {[a].n})"), node, [score]);
+		} else {
+			error = NO_ERROR;
+			for (i = 0; i < n && error == NO_ERROR; ++i) {
+				e = [v][i];
+				if (i >= [a].n) {
+					if (validateValue(void, e, score) != NO_ERROR) {
+						error = createError(bake("missing array element(s)"), node, [score]);
+					}
+				} else {
+					error = validateValue([a][i], e, score)
+				}
+			};
+			if (error == NO_ERROR) error = checkpoint();
+		};
+	};
+	( error )
+};
+
+validateArray = function {
+	args(@node, @rule, @score);
+	if (node == void) ( createMissingValueError(score) )
+	else if ([node].type !== 'array') {
+		error = createError(bake("expected array (got {TYPE_DESCS[[node].type]})"), node, [score]);
+	} else {
+		a = [node].value;
+		t = [rule].template;
+		error = NO_ERROR;
+		for ({ i = 0; n = [a].n }; i < n && error == NO_ERROR; ++i) {
+			error = validateValue([a][i], t, score);
+			if (error == NO_ERROR) error = checkpoint();
+		};
+	};
+	( error )
+};
+
+validateRule = function { ( validateValue($0, [[schema].rules][[$1].name], $2) ) };
+
+validatePeg = function {
+	args(@node, @rule, @score);
+	if (node == void) ( createMissingValueError(score) )
+	else if ([node].type !== [rule].type) {
+		( createError(bake("expected {TYPE_DESCS[[rule].type]} (got {TYPE_DESCS[[node].type]})"), node, [score]) )
+	} else if ([rule].peg == void
+			|| ([schema].pegParsers([node].value, @dummy, @offset, [rule].peg)
+			&& offset >= length([node].value))) {
+		( NO_ERROR )
+	} else {
+		( createError(bake("expected valid '{[rule].peg}' (got '{truncateLong([node].value)}')"), node, [score]) )
+	}
+};
+
+validateOpt = function {
+	args(@node, @rule, @score);
+	(if (node == void) NO_ERROR else validateValue(node, [rule].value, score))
+};
+
+validateAlts = function {
+	args(@node, @rule, @score);	
+	
+	// FIX: Q & D, must resolve checkpoint errors first
+	error = checkpoint();
+	if (error == NO_ERROR) {
+		alts = [rule].values;
+		error = createEmptyError();
+		for ({ i = 0; n = [alts].n }; i < n && error != NO_ERROR; ++i) {
+			altScore = [score];
+			altError = validateValue(node, [alts][i], @altScore);
+			if (altError == NO_ERROR) altError = checkpoint();
+			if (altError == NO_ERROR) {
+				[score] = altScore;
+				error = NO_ERROR;
+			} else {
+				error = joinErrors(error, altError);
+			}
+		}
+	};
+	( error )
+};
+
+truncateLong = function { if (length($0) <= 100) ( $0 ) else ( $0{:97} # '...' ) };
+
+map(@TYPE_DESCS, 'string','quoted string', 'text','unquoted value', 'struct','struct'
+		, 'array','array', 'void','void / no value');
+
+validateLiteral = function {
+	args(@node, @rule, @score);
+	if (node == void) ( createMissingValueError(score) )
+	else if ([node].type !== [rule].type) {
+		( createError(bake("expected {TYPE_DESCS[[rule].type]} (got {TYPE_DESCS[[node].type]})"), node, [score]) )
+	} else if ([node].value !== [rule].literal) {
+		( createError(bake("expected '{[rule].literal}' (got '{truncateLong([node].value)}')"), node, [score]) )
+	} else {
+		( NO_ERROR )
+	}
+};
+
+validateAny = function {
+	args(@node, @rule, @score);
+	if (node == void) ( createMissingValueError(score) )
+	else ( NO_ERROR )
+};
+
+validateFunc = function {
+	args(@node, @rule, @score);
+	( [[::schema].funcs][[rule].func](node, rule, score, [rule].arg) )
+};
+
+validateTag = function {
+	args(@node, @rule, @score);
+	if (node == void) ( createMissingValueError(score) )
+	else {
+		error = NO_ERROR;
+		group = [rule].group;
+		tag = [rule].tag;
+		tg = coalesce(@::tagGroups[group]);
+		if (tg != void && [tg].opener === tag) {
+			error = checkpoint();
+			tg = void;
+		};
+		if (error == NO_ERROR) {
+			if (tg == void) {
+				tg = new(Container, 'type', 'struct', 'opener', tag, 'score', [score]
+						, 'begin', [node].begin, 'end', [node].end, 'value', new(Container));
+				::tagGroups[group] = tg;
+			};
+			[tg].begin = min([tg].begin, [node].begin);
+			[tg].end = max([tg].end, [node].end);
+			[[tg].value][tag] = node;
+		};
+
+		( error )
+	}
+};
+
+/*
+#	Value =
+#		{ kind: 'struct', seq: KVSequence }			// numbstrict type must be struct
+#		| { kind: 'array', template: Value }		// numbstrict type must be array (0 or more matches)
+#		| { kind: 'list', values: [ Value, ... ] }	// numbstrict type must be array (exact length or less if last items are optional)
+#		| { kind: 'rule', name: string }
+#		| { kind: 'literal', literal: string }		// numbstrict type must be string or text
+#		| { kind: 'text', peg: peg|void }			// numbstrict type must be text, void = match any
+#		| { kind: 'string', peg: peg|void }			// numbstrict type must be string, void = match any
+#		| { kind: 'opt', value: Value }
+#		| { kind: 'alts', values: [ Value, ... ] }
+#		| { kind: 'any' }							// anything goes!
+#		| { kind: 'func', func: string, arg: string }				// validate against special validator function 'func' with argument 'arg'
+#		| { kind: 'tag', group: string, tag: string }				// collect value and check against group rule
+*/
+
+
+map(@VALIDATORS
+		, 'struct', validateStruct
+		, 'array', validateArray
+		, 'list', validateList
+		, 'rule', validateRule
+		, 'literal', validateLiteral
+		, 'peg', validatePeg
+		, 'opt', validateOpt
+		, 'alts', validateAlts
+		, 'any', validateAny
+		, 'func', validateFunc
+		, 'tag', validateTag
+		);
+
+validateValue = function { ( VALIDATORS[[$1].kind]($0, $1, $2) ) };
+
+reportErrorPosition = function {
+	args(@filename, @source, @excerptSourceIsMakaroned, @excerptSource, @offsetMap, @errorOffset);
+	print("");
+	lastMatchOffset = void;
+	tokenize(offsetMap, >{
+		entry = $0;
+		// <output start>:<output end> (<input start>+|<span begin>:<span end>)
+		if (wildmatch(entry, "{[0-9]?*}:{[0-9]?*} {[0-9]?*}:{[0-9]?*}", @outputStart, @outputEnd, @spanBegin, @spanEnd)) {
+			;
+		} else if (wildmatch(entry, "{[0-9]?*}:{[0-9]?*} {[0-9]?*}+", @outputStart, @outputEnd, @inputStart)) {
+			spanBegin = inputStart + errorOffset - outputStart;
+			spanEnd = spanBegin + 1;
+		} else {
+			throw("Bad syntax in map file");
+		};
+		if (errorOffset >= outputStart && errorOffset < outputEnd) {
+			lastMatchOffset = spanBegin;
+			calcLineAndColumn(source, spanBegin, @line, @column);
+			if (spanEnd === spanBegin + 1) {
+				print(bake("File: {filename}, line: {line}, column: {column} (@{spanBegin})"));
+			} else {
+				calcLineAndColumn(source, spanEnd, @endLine, @endColumn);
+				print(bake("File: {filename}, line: {line}, column: {column} -> line: {endLine}, column: {endColumn} (@{spanBegin}..@{spanEnd})"));
+			}
+		}
+	});
+	if (!excerptSourceIsMakaroned) {
+		if (lastMatchOffset != void) {
+			printExcerpt(excerptSource, lastMatchOffset, 25);
+		}
+	} else {
+		printExcerpt(excerptSource, errorOffset, 25);
+	}
+};
+
+checkOneFile = function {
+	args(@filename);
+	print("");
+	print(filename);
+	print(repeat('=', length(filename)));
+	sourceCode = load(::inputPath # filename);
+	// print('Makaroning...');
+	mapFilePath = tempDir # randomFilename();
+	makaronedPath = tempDir # randomFilename();
+	stderrPath = tempDir # randomFilename();
+
+	includePaths = '';
+	// remove dir-slash to avoid infamous Windows command line parser bug with trailing \"
+	iterate(@::fileRefsRoots, >includePaths #= bake('-i {quotePath(removeDirSlash($2))} '));
+	cmd = bake('{quotePath(MAKARON_EXE_PATH)} -m {quotePath(mapFilePath)} {includePaths} {quotePath(::inputPath # filename)} {quotePath(makaronedPath)} 2>{quotePath(stderrPath)}');
+	// print(cmd);
+	rc = shell(cmd, false);
+	stderr = load(stderrPath);
+	makaroned = load(makaronedPath);
+	
+	excerptSource = void;
+	excerptSourceIsMakaroned = false;
+	errorOffset = void;
+	if (rc != 0) {
+		if (wildmatch(stderr, "{*\n*}\n*", @first2Lines)) print(first2Lines);
+		excerptSource = sourceCode;
+		excerptSourceIsMakaroned = false;
+		errorOffset = length(makaroned);
+	};
+
+	if (errorOffset == void) {
+		// print("Parsing Numbstrict...");
+		x = try(>ok = numbstrictParser(makaroned, @parsedCushy, @offset));
+		if (x !== void) {
+			if (!wildmatch(x, "({[0-9]?*}) {*}", @errorOffset, @errorString)) {
+				errorString = x;
+				excerptSource = makaroned;
+				excerptSourceIsMakaroned = true;
+				errorOffset = 0;
+			};
+			print(bake("\n!!!! {errorString}"));
+		} else if (!ok) {
+			print("\n!!!! Failed parsing Numbstrict");
+			excerptSource = makaroned;
+			excerptSourceIsMakaroned = true;
+			errorOffset = offset;
+		};
+		gc();
+	};
+
+	offsetMap = load(mapFilePath);
+
+	if (errorOffset != void) {
+		reportErrorPosition(filename, sourceCode, excerptSourceIsMakaroned, excerptSource, offsetMap, errorOffset);
+		++::errorCount;
+	} else {
+		// print("Validating...");
+		score = 0;
+		error = validateValue(parsedCushy, [[schema].rules].root, @score);
+		if (error != NO_ERROR) {
+			offsets.n = 0;
+			iterate(error, >{
+				offset = [[$2].node].begin;
+				if (!exists(@errByOffsets[offset].n)) append(@offsets, offset);
+				append(@errByOffsets[offset], $2);
+			});
+			sort(@offsets);
+			isFirst = true;
+			iterate(@offsets, >{
+				offset = $2;
+				prune(@got);
+				iterate(@errByOffsets[offset], >{
+					m = [$2].message;
+					if (!exists(@got[m])) {
+						got[m] = true;
+						print((if (isFirst) "\n!!!! " else "  or ") # m);
+						isFirst = false;
+					}
+				});
+				reportErrorPosition(filename, sourceCode, true, makaroned, offsetMap, offset);
+			});
+			++::errorCount;
+		} else {
+			print('Validation OK');
+		};
+		gc();
+	};
+	eraseFile(mapFilePath);
+	eraseFile(makaronedPath);
+	eraseFile(stderrPath);
+};
+
+if ($n < 2) {
+	print("CushyLint (<file>|<path>) [(<resource dir>|<.schema file>) ...]\n\nIf <resource dir> are omitted, the parent dir of <file> or <path> will be used instead.");
+} else {
+	/* I HAVE DISABLED THE GC. SORRY. IT IS TOO SLOW. MAX MEMORY CONSUMPTION SEEM TO BE AROUND 32MB ANYHOW! */
+	gc = function {};
+	pwd = currentDir();
+	::run.root = fullPath(pwd, ::run.root);
+
+	if (isFileNewer(MAKARON_SOURCE_PATH, MAKARON_EXE_PATH)) {
+		shell(quotePath(BUILD_MAKARON_PATH));
+	};
+
+	::inputPath = fullPath(pwd, $1);
+	if (appendDirSlash(::inputPath) !== ::inputPath) {
+		filename = filenameOfPath(::inputPath);
+		::inputPath = dirOfPath(::inputPath);
+	} else {
+		filename = void;
+	};
+
+	::fileRefsRoots.n = 0;
+	::schemaFiles.n = 0;
+
+	addUniqueToList(@schemaFiles, ::run.root # 'cushy.schema');
+	dir(::inputPath # '*.schema', >addUniqueToList(@::schemaFiles, ::inputPath # $0));
+
+	for (i = 2; i < $n; ++i) {
+		arg = fullPath(pwd, $[i]);
+		if (right(arg, 7) === '.schema') addUniqueToList(@::schemaFiles, arg)
+		else addUniqueToList(@::fileRefsRoots, appendDirSlash(arg));
+	};
+
+	createSchemaParser();
+
+	if (errorCount == 0) {
+		print('Compiling Numbstrict parser...');
+		numbstrictSource = load(bake('{::run.root}include{DIR_SLASH}numbstrictMeta.ppeg'));
+		ok = ppeg.compileFunction(numbstrictSource, @numbstrictParser, @offset);
+		if (!ok) {
+			printError('numbstrictMeta.ppeg', numbstrictSource, offset, "Error compiling Numbstrict parser");
+			++errorCount;
+		} else {
+			tempDir = makeTempDir();
+			if (filename != void) checkOneFile(filename)
+			else dir(::inputPath # '*.cushy', checkOneFile);
+			wipeTempDir(tempDir);
+		}
+	};
+
+	print("");
+	if (errorCount > 0) {
+		print("Error count: " # errorCount);
+		::exitCode = 255
+	};
+};

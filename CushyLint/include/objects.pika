@@ -1,0 +1,71 @@
+
+// TODO : add Queue
+
+Array = function { this = this(); [this].n = $n; for (i = 0; i < $n; ++i) if (exists(@$[i])) [this][i] = $[i] };
+Clone = function { this = this(); if (exists(@[$0].clone)) [$0].clone(this) else clone($0, this) };
+Container = function { this = this(); for (i = 0; i + 2 <= $n; i += 2) [this][$[i]] = $[i + 1] };
+Map = function {
+	this = this();
+	construct(this, Set);
+	for (i = 0; i + 2 <= $n; i += 2) [this].elements[$[i]] = $[i + 1];
+	delete(@[this].add);
+	map(this
+		, 'get',function { [this()].elements[$0] }
+		, 'set',function { [this()].elements[$0] = $1 });
+};
+Set = function {
+	this = this();
+	for (i = 0; i < $n; ++i) [this].elements[$[i]] = true;
+	map(this
+		, 'add',function { [this()].elements[$0] = true }
+		, 'contains',function { exists(@[this()].elements[$0]) }
+		, 'foreach',function { foreach(@[this()].elements, $0) }
+		, 'remove',function { delete(@[this()].elements[$0]) });
+};
+Value = function { this = this(); [this] = $0 };
+Vector = function {
+	this = this();
+	for (i = 0; i < $n; ++i) if (exists(@$[i])) [this].elements[i] = $[i];
+	[this].elements.n = $n;
+	map(this
+		, 'append',function { e = @[this()].elements; inject(@$, 0, $n, e, [e].n) }
+		, 'contains',function { ($0 >= 0 && $0 < [this()].elements.n) }
+		, 'copy',function { copy(@[$0].elements, $1, $2, @[this()].elements, $3) }
+		, 'decompose',function { this = this(); for (i = 0; i < $n; ++i) if (exists(@$[i])) [$[i]] = [this].elements[i] }
+		, 'equal',function { equal(@[this()].elements, @[$0].elements) }
+		, 'fill',function { fill(@[this()].elements, $0, $1, $2) }
+		, 'foreach',function { iterate(@[this()].elements, $0) }
+		, 'get',function { [this()].elements[$0] }
+		, 'insert',function { inject(@$, 1, $n - 1, @[this()].elements, $0) }
+		, 'remove',function { remove(@[this()].elements, $0, coalesce(@$1, 1)) }
+		, 'rsort',function { rsort(@[this()].elements) }
+		, 'set',function { e = @[this()].elements; [e][~~$0] = $1; [e].n = max([e].n, $0 + 1) }
+		, 'size',function { [this()].elements.n }
+		, 'sort',function { sort(@[this()].elements) });
+};
+deepDump = function {
+	vargs(, @var, @indent, @indentString, @maxDepth, @useCustomToSource);
+	defaults(@var, @^, @indent, 0, @indentString, "\t", @maxDepth, 20, @useCustomToSource, false);
+
+	customToSource = function {
+		if ((c = classify($0)) === 'void') ( c )
+		else if (c === 'string' || c === 'function') ( escape($0) )
+		else if (c === 'reference') if ($0{0:2} === '::') ( '@' # $0 ) else ( escape($0) )
+		else ( $0 )
+	};
+
+	stringify = (if (useCustomToSource) customToSource else toSource);
+	output = >{ print(repeat(indentString, $0) # limitLength(singleLine($1), CONSOLE_COLS - length(var) - 3)) };
+	printOne = >{
+		output($0, $1 # ' = ' # stringify($2));
+		if (classify($2) === 'reference') deepDump($2, $0 + 1, indentString, maxDepth, useCustomToSource);
+	};
+	if (indent >= maxDepth) output(indent, '!!!! TOO DEEP')
+	else {
+		if (exists(var)) printOne(indent, var, [var]);
+		foreach(var, >printOne(indent, $1, $2))
+	};
+	( void )
+};
+
+void;

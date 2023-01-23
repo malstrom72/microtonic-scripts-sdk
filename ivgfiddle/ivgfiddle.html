@@ -1,0 +1,72 @@
+<html>
+	<head>
+		<script type="text/javascript" src="./ace/ace.js"></script>
+		<script type="text/javascript" src="./setupModule.js"></script>
+		<script type="text/javascript" src="./rasterizeIVG.js"></script>
+		<title>ivgfiddle</title>
+	</head>
+	<style>
+		.flex-row {
+			display: flex;
+			flex-direction: row;
+		}
+		.flex-col {
+			display: flex;
+			flex-direction: column;
+		}
+		.grow { flex-grow: 1; }
+		#stage { height: 100%; }
+		#traceDiv {
+			height: 25%;
+			min-height: 50px;
+			max-height: 150px;
+			overflow-y: scroll;
+			background:black;
+			color:lime;
+			padding-left: 5px
+		}
+		#leftRightSplit {
+			width: 3px;
+			background: green;
+			cursor: ew-resize;
+		}
+		#leftPanel {
+			width: 50%;
+			min-width: 250px;
+		}
+		#rightPanel {
+			flex-grow: 1;
+			overflow: auto;
+			background-color: #444;
+		    background-image:
+		        linear-gradient(45deg, #888 25%, transparent 25%),
+		        linear-gradient(-45deg, #888 25%, transparent 25%),
+		        linear-gradient(45deg, transparent 75%, #888 75%),
+		        linear-gradient(-45deg, transparent 75%, #888 75%);
+		    background-size: 20px 20px;
+		    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+		}
+		/*#ivgCanvas {
+			border: 0.5px dashed rgba(255, 255, 255, 0.5);
+		}*/
+	</style>
+	<body style="background:black">
+		<div id="stage" class="flex-row">
+			<div id="leftPanel" class="flex-col">
+				<div id="editor" class="grow"></div>  
+				<div id="traceDiv" class="grow">
+					<pre id="trace"></pre>
+				</div>
+			</div>
+			<div id="leftRightSplit"></div>
+			<div id="rightPanel" class="flex-col">
+				<div id="screen">
+					<canvas id="ivgCanvas">
+						This text is displayed if your browser does not support HTML5 Canvas.
+					</canvas>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="./ivgfiddle.js"></script>
+</html>

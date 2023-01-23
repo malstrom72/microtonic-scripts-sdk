@@ -1,0 +1,195 @@
+#	KVSequence = [
+#		{ kind: 'kv', key: string, value: Value }
+#		| { kind: 'opt', seq: KVSequence }
+#		| { kind: 'alts', seqs: [ KVSequence, ... ] }
+#		...
+#		[ { kind: 'unmatched', template: Value } ]	// unmatched keys must match (can only be one, no 'unmatched' = no unmatched keys allowed)	]
+#	]
+#	
+#	Value =
+#		{ kind: 'struct', seq: KVSequence }							// numbstrict type must be struct
+#		| { kind: 'array', template: Value }						// numbstrict type must be array (0 or more matches)
+#		| { kind: 'list', values: [ Value, ... ] }					// numbstrict type must be array (exact length or less if last items are optional)
+#		| { kind: 'rule', name: string }
+#		| { kind: 'literal', type: text|string, literal: string }	// numbstrict type must be text or string
+#		| { kind: 'peg', type: text|string, peg: peg|void }			// numbstrict type must be text or string, void peg = match any
+#		| { kind: 'string', peg: peg|void }							// numbstrict type must be string, void = match any
+#		| { kind: 'opt', value: Value }
+#		| { kind: 'alts', values: [ Value, ... ] }
+#		| { kind: 'any' }											// anything goes!
+#		| { kind: 'func', func: string, arg: string }				// validate against special validator function 'func' with argument 'arg'
+#		| { kind: 'tag', group: string, tag: string }				// collect value and check against group rule
+
+
+
+{
+	$$parser.fail = function {
+		args(@message, @$offset);
+		throw(bake('({$offset}) {message}'))
+	};
+	$$parser.define = >{	// access to $$parser requires > type function when compiling parser as a single function
+		args(@$container, @$label, @$definition, @$offset, @$error);
+		if (exists(r = @[[$$parser.schema][$container]][$label])) $$parser.fail(bake($error), $offset);
+		[r] = $definition;
+	};
+	$$parser.addRef = >{
+		$ref = new(Container, 'kind', $0, 'name', $1, 'at', $2);
+		if (exists($r = @[$$parser.schema].filename)) [$ref].fn = [$r];
+		append([$$parser.schema].refs, $ref)
+	}
+}
+
+root                <-  												{ $$parser.schema = $$ }
+						_lf definitions_ !.								{ $$ = $$parser.schema }
+
+definitions_		<-	( (definition_ (next_ definition_)* _lf
+						/ pegDefinition+ _lf
+						/ configLine_+)									{ gc() }
+						) *
+
+definition_			<-													{ $offset = $$i }
+						l:label _lf '=' _lf d:valueSeq_					{ $$parser.define('rules', $l, $d, $$i, 'Duplicate rule: <{$label}>') }
+
+configLine_			<-													{ $offset = $$i }
+						k=identifier _ ':' _ v=((![\r\n] . )*) _lf		{ [$$parser.schema].configure($k, $v, $offset) }
+
+valueSeq_			<-	value_ (_lf '|' _lf v:value_ 					{ if ([$$].kind !== 'alts') $$ = new(Container, 'kind', 'alts', 'values', new(Array, $$)); append([$$].values, $v) }
+						)*
+
+value_				<-	(valueGroup / valueOptional / array / list
+						/ struct / rule / literal / peg / func / any
+						/ tag) _
+
+valueGroup          <-  '(' _lf valueSeq_ _lf ')'
+valueOptional       <-  '[' _lf valueSeq_ _lf ']'						{ $$ = new(Container, 'kind', 'opt', 'value', $$) }
+
+rule				<-													{ $offset = $$i }
+						l:label _ 										{
+																			$$ = new(Container, 'kind', 'rule', 'name', $l);
+																			$$parser.addRef('rule', $l, $offset)
+																		}
+
+literal 			<-	s=('"' ( escapeCode / !["\\\r\n] . )* '"'		{ $t = 'string' }
+						/ "'" ( escapeCode / !['\\\r\n] . )* "'"		{ $t = 'text' }
+						)												{ $$ = new(Container, 'kind', 'literal', 'type', $t, 'literal', unescape($s)) }
+
+peg 				<-													{ $offset = $$i; $id = void }
+						t=[%*] id=identifier? _ 						{
+																			$t = (if ($t === '%') 'string' else 'text');
+																			$$ = new(Container, 'kind', 'peg', 'type', $t, 'peg', $id);
+																			if ($id != void) $$parser.addRef('peg', $id, $offset)
+																		}
+
+tag					<-													{ $offset = $$i }
+						'\\' g=identifier '\\' t=identifier 			{
+																			$$ = new(Container, 'kind', 'tag', 'group', $g, 'tag', $t);
+																			$$parser.addRef('rule', $g, $offset)
+																		}
+
+func 				<-													{ $offset = $$i }
+						'?' f=identifier (':' _ a:funcArg)?				{
+																			$$ = new(Container, 'kind', 'func', 'func', $f, 'arg', $a);
+																			$$parser.addRef('func', $f, $offset)
+																		}
+
+funcArg				<-	$$=('"' ( escapeCode / !["\\\r\n] . )* '"'
+						/ "'" ( escapeCode / !['\\\r\n] . )* "'"
+						)												{ $$ = unescape($$) }
+						/ $$=identifier
+
+any 				<-	'?' _ 											{ $$ = new(Container, 'kind', 'any') }
+
+array 				<-	'{' _lf valueSeq_ next_ '...' _lf '}'			{ $$ = new(Container, 'kind', 'array', 'template', $$) }
+list 				<-	'{' _lf valueSeq_								{ $$ = new(Container, 'kind', 'list', 'values', new(Array, $$)) }
+						(next_ v:valueSeq_								{ append([$$].values, $v); }
+						)* _lf '}'
+
+struct 				<-	'{' _lf											{ $$ = new(Array) }
+						((unmatched
+						/ kvList_ (next_ unmatched)?)
+						) _lf '}'										{ $$ = new(Container, 'kind', 'struct', 'seq', $$) }
+
+kvList_             <-  kvSeq_ (next_ kvSeq_)*
+
+kvSeq_		        <-													{ $alts = new(Array); $kv = new(Array) }
+						kv:kvElem_										{ append($alts, $kv) }
+						(_lf '|' _lf									{ $kv = new(Array) }
+						kv:kvElem_										{ append($alts, $kv) }
+						)*												{
+																			if ([$alts].n == 1) inject([$alts][0], 0, [[$alts][0]].n, $$, [$$].n)
+																			else append($$, new(Container, 'kind', 'alts', 'seqs', $alts))
+																		}
+kvElem_				<-	kvGroup_ / kvOptional_ / keyValue_
+
+kvGroup_            <-  '(' _lf kvList_ _lf ')' _
+kvOptional_         <-  '[' _lf											{ $kv = new(Array) }
+						kv:kvList_ _lf ']' _ 							{ append($$, new(Container, 'kind', 'opt', 'seq', $kv)) }
+keyValue_ 			<-	k=identifier _ ':' _lf v:valueSeq_ 				{ append($$, new(Container, 'kind', 'kv', 'key', $k, 'value', $v)) }
+
+unmatched 			<-	'*' _ ':' _lf v:valueSeq_ _ 					{ append($$, new(Container, 'kind', 'unmatched', 'template', $v)) }
+
+label				<-	'<' $$=identifier '>'
+
+next_ 				<-	(["\r\n"] (_lf ',')? / _lf ',') _lf
+
+identifier			<-	[a-zA-Z0-9_]+
+
+_lf                 <-  (comment / [ \t\r\n])*
+_             		<-  (comment / [ \t])*
+
+comment             <-  singleLineComment / multiLineComment
+singleLineComment   <-  '//' (![\r\n] .)*
+multiLineComment    <-  '/*' (multiLineComment / !'*/' .)* '*/'
+
+escapeCode          <-  '\\x' hex2 / '\\u' hex4 / '\\l' hex8 / '\\' [0-9]+ / '\\' [nrt'"\\]
+hex8                <-  hex4 hex4
+hex4                <-  hex2 hex2
+hex2                <-  hex hex
+hex                 <-  [0-9A-Fa-f]
+
+
+
+###########
+#         #
+#   PEG   #
+#         #
+###########
+
+pegDefinition	<- 	id:pegIdentifier LEFTARROW x=pegExpression			{ $$parser.define('pegs', $id, $x, $$i, 'Duplicate peg: {$label}') }
+pegExpression	<- 	pegSequence (SLASH pegSequence)*
+pegSequence		<- 	pegPrefix*
+pegPrefix		<- 	(AND / NOT)? pegSuffix
+pegSuffix		<- 	pegPrimary (QUESTION / STAR / PLUS)?
+pegPrimary		<- 	pegIdentifier !LEFTARROW
+			 		/ OPEN pegExpression CLOSE
+			 		/ pegLiteral / pegClass / DOT
+
+# Lexical syntax
+pegIdentifier	<-	$$=(pegIdentStart pegIdentCont*) pegSpacing
+pegIdentStart	<-	[a-zA-Z_]
+pegIdentCont	<-	pegIdentStart / [0-9]
+
+pegLiteral		<-	['] (!['] pegChar)* ['] pegSpacing
+			 		/ ["] (!["] pegChar)* ["] pegSpacing
+pegClass		<-	'[' (!']' pegRange)* ']' pegSpacing
+pegRange		<-	pegChar '-' pegChar / pegChar
+pegChar			<-	'\\' [nrt'"\[\]\\]
+					/ '\\' [0-2][0-7][0-7]				# ML 20100501 : this can't be right, \277 is 191, must have meant [0-3][0-7][0-7]
+			 		/ '\\' [0-7][0-7]?
+			 		/ !'\\' .
+
+LEFTARROW		<- '<-' pegSpacing
+SLASH			<- '/' pegSpacing
+AND				<- '&' pegSpacing
+NOT				<- '!' pegSpacing
+QUESTION		<- '?' pegSpacing
+STAR			<- '*' pegSpacing
+PLUS			<- '+' pegSpacing
+OPEN			<- '(' pegSpacing
+CLOSE			<- ')' pegSpacing
+DOT				<- '.' pegSpacing
+
+pegSpacing		<- (pegSpace / pegComment)*
+pegComment		<- '#' (!pegEndOfLine .)* pegEndOfLine
+pegSpace		<- ' ' / '\t' / pegEndOfLine
+pegEndOfLine	<- !([\r\n] [ \t\r\n]* ('<' / '/*')) ('\r\n' / '\n' / '\r')

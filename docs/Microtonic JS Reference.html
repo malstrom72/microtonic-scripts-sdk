@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Microtonic Javascript Reference</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <style>
+    body {
+      max-width: 50em;
+    }
+    pre {
+      background-color: #F8F8FF;
+      padding-left: 2em;
+    }
+    code {
+      color: #101080;
+    }
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Microtonic Javascript Reference</h1>
+</header>
+<h1 id="microtonic-javascript-api-reference-v1.0">Microtonic JavaScript
+API Reference v1.0</h1>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#engine">Engine</a></li>
+<li><a href="#constants">Constants</a>
+<ul>
+<li><a href="#build-constants">Build Constants</a></li>
+<li><a href="#directory-constants">Directory Constants</a></li>
+<li><a href="#execution-constants">Execution Constants</a></li>
+<li><a href="#microtonic-constants">Microtonic Constants</a></li>
+<li><a href="#parameter-constants">Parameter Constants</a></li>
+</ul></li>
+<li><a href="#functions">Functions</a>
+<ul>
+<li><a href="#ask">ask</a></li>
+<li><a href="#browse">browse</a></li>
+<li><a href="#composenumbstrict">composeNumbstrict</a></li>
+<li><a href="#createelement">createElement</a></li>
+<li><a href="#dir">dir</a></li>
+<li><a href="#display">display</a></li>
+<li><a href="#editparam">editParam</a></li>
+<li><a href="#fullpath">fullPath</a></li>
+<li><a href="#getcushyvariable">getCushyVariable</a></li>
+<li><a href="#getelement">getElement</a></li>
+<li><a href="#getelementid">getElementId</a></li>
+<li><a href="#getparam">getParam</a></li>
+<li><a href="#ismarshaledformat">isMarshaledFormat</a></li>
+<li><a href="#load">load</a></li>
+<li><a href="#marshal">marshal</a></li>
+<li><a href="#paramtext">paramText</a></li>
+<li><a href="#paramvalue">paramValue</a></li>
+<li><a href="#parsearray">parseArray</a></li>
+<li><a href="#parsenumbstrict">parseNumbstrict</a></li>
+<li><a href="#parsestruct">parseStruct</a></li>
+<li><a href="#performcushyaction">performCushyAction</a></li>
+<li><a href="#print">print</a></li>
+<li><a href="#readclipboard">readClipboard</a></li>
+<li><a href="#run">run</a></li>
+<li><a href="#save">save</a></li>
+<li><a href="#saveundo">saveUndo</a></li>
+<li><a href="#select">select</a></li>
+<li><a href="#selected">selected</a></li>
+<li><a href="#setcushyvariable">setCushyVariable</a></li>
+<li><a href="#setelement">setElement</a></li>
+<li><a href="#setparam">setParam</a></li>
+<li><a href="#translate">translate</a></li>
+<li><a href="#triggerchannel">triggerChannel</a></li>
+<li><a href="#unmarshal">unmarshal</a></li>
+<li><a href="#writeclipboard">writeClipboard</a></li>
+</ul></li>
+<li><a href="#objects">Objects</a>
+<ul>
+<li><a href="#drumpatch-object">drumPatch object</a></li>
+<li><a href="#file-object">file object</a></li>
+<li><a href="#midiconfig-object">midiConfig object</a></li>
+<li><a href="#pattern-object">pattern object</a></li>
+<li><a href="#preset-object">preset object</a></li>
+<li><a href="#visuals-object">visuals object</a></li>
+</ul></li>
+<li><a href="#utilities">Utilities</a>
+<ul>
+<li><a href="#cbrt">cbrt</a></li>
+<li><a href="#clamp">clamp</a></li>
+<li><a href="#closecushy">closeCushy</a></li>
+<li><a href="#createclass">createClass</a></li>
+<li><a href="#cube">cube</a></li>
+<li><a href="#displaycushy">displayCushy</a></li>
+<li><a href="#fract">fract</a></li>
+<li><a href="#lerp">lerp</a></li>
+<li><a href="#scale">scale</a></li>
+<li><a href="#square">square</a></li>
+<li><a href="#unescape">unescape</a></li>
+<li><a href="#random">random</a></li>
+<li><a href="#stringbuilder">StringBuilder</a></li>
+<li><a href="#togglecushy">toggleCushy</a></li>
+</ul></li>
+<li><a href="#cushy-interface">Cushy Interface</a>
+<ul>
+<li><a href="#script-types">Script Types</a></li>
+<li><a href="#gui-script-startup">GUI Script Startup</a></li>
+<li><a href="#gui-variables">GUI Variables</a></li>
+<li><a href="#gui-actions">GUI Actions</a></li>
+</ul></li>
+</ul>
+<h2 id="engine">Engine</h2>
+<p>The JavaScript engine in Microtonic is a proprietary JavaScript
+engine written by Magnus Lidström. It was designed to be small, fast,
+and easy to integrate into existing products. It is fully EcmaScript 3
+compliant with partial EcmaScript 5 support.</p>
+<p>Ecmascript 3 was chosen because it was the first widely adopted
+standardized version of JavaScript. It is a version many programmers are
+familiar with, and it has everything you need from a scripting language.
+Naturally, more recent versions of Ecmascript offer improvements but at
+the cost of larger standard libraries and more complex
+compilers/interpreters.</p>
+<p>With that said, a few features from Ecmascript 5 were “retrofitted”
+into this engine. Most notably: using <code>[ ]</code> for reading
+individual characters from String objects and JSON support. Microtonic
+also sets up <code>Object.assign</code> and <code>Date.now</code> from
+ES6 using “polyfills”.</p>
+<p>Every instance of Microtonic runs in its own JavaScript environment,
+but different scripts share the same environment. The engine only works
+when the GUI window is open. The entire environment is destroyed and
+reset when the window is closed (all global variables are lost).</p>
+<p>While script code is running, the user interface will freeze. If a
+script runs for more than 20 seconds, it will be suspended, and the user
+gets the option of aborting it or continuing. There is a limit of around
+64MB memory per Microtonic instance (after garbage collection). If a
+script uses more memory than this, it is terminated.</p>
+<p>A console (<code>JSConsole</code>) is available for developing
+scripts. It runs inside Microtonic and allows you to enter JavaScript
+code interactively, see traces, reload all resources and see script
+performance (as frames per second).</p>
+<h2 id="constants">Constants</h2>
+<h3 id="build-constants">Build Constants</h3>
+<pre><code>PLATFORM = {
+    CPU:        string          // &#39;arm64&#39; | &#39;x86-64&#39;
+    OS:         string          // &#39;windows&#39; | &#39;mac&#39;
+}
+
+BUILD = {
+    COMPILER:   string
+    COPYRIGHT:  string          // e.g. &quot;2003-2022&quot;
+    DATE:       string          // e.g. &quot;Nov 25 2022&quot;
+    LIBS:       string
+    NUMBER:     number          // build number, e.g. 1048
+    TARGET:     string          // &#39;Debug&#39; | &#39;Beta&#39; | &#39;Release&#39;
+    TIME:       string          // e.g. &quot;21:33:48&quot;
+    VERSION:    string          // e.g. &quot;3.3.4&quot;
+}</code></pre>
+<h3 id="directory-constants">Directory Constants</h3>
+<pre><code>DIRS = {
+    DOCUMENTATION:  string
+    DRUM_PATCHES:   string
+    PRESETS:        string
+    SCRIPTS:        string
+    SKINS:          string
+}</code></pre>
+<p>Paths to various installation directories. These are always full
+absolute paths ending with a directory slash (<code>'/'</code> or
+<code>'\'</code>). <code>DIRS.SCRIPTS</code> is the default directory
+used when loading and saving files without specifying an absolute
+path.</p>
+<h3 id="execution-constants">Execution Constants</h3>
+<pre><code>isRepeating: boolean</code></pre>
+<p>If the global <code>isRepeating</code> is <code>true</code> the user
+is running the script by shift-clicking the script menu button. Usually
+this means you should rerun the algorithms using the same parameters as
+last time without interrupting to ask the user for input.</p>
+<h3 id="microtonic-constants">Microtonic Constants</h3>
+<pre><code>CHANNEL_COUNT =         8
+PATTERN_COUNT =         12
+PROGRAM_COUNT =         16
+PATTERN_STEP_COUNT =    16
+GLOBAL_PARAM_COUNT =    15
+FREQ_VALUE_C4 =         0.4725600599127338      // The frequency value for middle C (523.25 Hz) on &quot;OscFreq&quot;, &quot;NFilFrq&quot; and &quot;EQFreq&quot;.
+OCTAVE_STEP =           0.1003433318879937      // The parameter value step for a full octave on &quot;OscFreq&quot;, &quot;NFilFrq&quot; and &quot;EQFreq&quot;.</code></pre>
+<h3 id="parameter-constants">Parameter Constants</h3>
+<pre><code>PARAMS = [
+    {
+        NAME:   string              // e.g. &#39;NEnvAtk.8&#39;
+        STEPS:  number|null
+    } * 215
+]
+
+DRUM_PATCH_PARAMS = [
+    {
+        NAME:   string              // e.g. &#39;NEnvAtk&#39;
+        STEPS:  number|null
+    } * 25
+]</code></pre>
+<p>Drum patch and global parameters are usually accessed via their
+symbolic names (although some functions also take an index). The
+<code>PARAMS</code> and <code>DRUM_PATCH_PARAMS</code> arrays can be
+used to look up symbolic names for specific parameter indexes. Notice
+that the <code>PARAMS</code> array contains parameters for all eight
+drum patches as well as global parameters.</p>
+<p>If <code>STEPS</code> of a parameter element is not
+<code>null</code>, the parameter is “stepped”. Stepped parameters range
+from 0 to 1, just like all other parameters. To normalize a stepped
+parameter from integer to floating point, use the following formula:</p>
+<pre><code>paramValue = steppedInteger / (STEPS - 1)</code></pre>
+<p>To convert a normalized floating point value back to an unnormalized
+integer, use this formula:</p>
+<pre><code>steppedInteger = Math.min(Math.floor(paramValue * STEPS), STEPS - 1)</code></pre>
+<h2 id="functions">Functions</h2>
+<h3 id="ask">ask</h3>
+<pre><code>function ask(question: string, [defaultAnswer: string = &#39;&#39;]) : string|null</code></pre>
+<p>Asks a question and lets the user respond with a string through a
+simple text edit dialog. If the user clicks the cancel button,
+<code>null</code> is returned.</p>
+<p>See also: <a href="#display">display</a></p>
+<h3 id="browse">browse</h3>
+<pre><code>function browse([type: string], [fileTypes: string|array|null = null], [initialDir: string|null = null], [defaultFilename: string = &#39;&#39;]) : string|null</code></pre>
+<p>Opens a file browser window and returns the path browsed to.
+<code>type</code> can be <code>'open'</code> (default) or
+<code>'save'</code> (opens a “save as” file dialog).
+<code>fileTypes</code> can be a single string or an array of strings of
+file extensions that should be selectable in the file browser (only
+supported by <code>'open'</code> browsers at the moment). If omitted (or
+<code>null</code>), the user can select all file types.
+<code>initialDir</code> can be a path to the initial directory or
+<code>null</code> to use an appropriate default directory as determined
+by <code>fileTypes</code> (in case it is an array, the first element in
+the array). <code>defaultFilename</code> is only used for
+<code>'save'</code> browsers (you should not include the file
+extension). If the user presses cancel, <code>null</code> is returned,
+otherwise a full path string is returned.</p>
+<p>See also: <a href="#dir">dir</a>, <a href="#fullpath">fullPath</a>,
+<a href="#load">load</a>, <a href="#save">save</a></p>
+<h3 id="composenumbstrict">composeNumbstrict</h3>
+<pre><code>function composeNumbstrict(data: object|array|boolean|number|string, [multiLine: boolean = false], [brackets: boolean = true]) : string</code></pre>
+<p>Converts a JavaScript object, array, boolean, number, or string into
+a “Numbstrict” string. If <code>data</code> is an object and
+<code>multiLine</code> is <code>true</code>, the resulting string will
+have newlines and indentation for readability. If <code>data</code> is
+an object and <code>brackets</code> is <code>true</code>, the resulting
+string will have curly braces { } surrounding it. Numbstrict is the
+modern data format used in Sonic Charge products. It is similar to JSON
+but designed to be more user-friendly, with support for comments, hex
+values, and more.</p>
+<p>See also: <a href="#parsenumbstrict">parseNumbstrict</a></p>
+<h3 id="createelement">createElement</h3>
+<pre><code>function createElement(type: string) : object</code></pre>
+<p>Creates a new initialized preset, drum-patch, pattern or midi-config
+structure. <code>type</code> should be <code>'preset'</code>,
+<code>'drumPatch'</code>, <code>'pattern'</code> or
+<code>'midiConfig'</code>. See <a href="#objects">Objects</a> for
+descriptions of the different element data.</p>
+<p>See also: <a href="#getelement">getElement</a>, <a
+href="#setelement">setElement</a>, <a href="#objects">Objects</a></p>
+<h3 id="dir">dir</h3>
+<pre><code>function dir(path: string, [extensionFilter: string|array|null = null]): array</code></pre>
+<p>Returns a list of objects representing the files in the given
+directory. Each object has the following properties: <code>name</code>,
+<code>size</code>, <code>created</code>, <code>modified</code>,
+<code>isDirectory</code> and <code>isReadOnly</code>.
+<code>extensionFilter</code> can be a single string or an array of
+strings and if present, only files with the given extension(s) are
+returned. Forward slash (<code>'/'</code>) in paths work on both Windows
+and OS X, backward slash (<code>'\'</code>) only works on Windows. If
+the path is not an “absolute full path” it is considered relative to the
+script directory.</p>
+<p>See also: <a href="#file-object">File Object</a>, <a
+href="#browse">browse</a>, <a href="#fullpath">fullPath</a>, <a
+href="#load">load</a>, <a href="#save">save</a></p>
+<h3 id="display">display</h3>
+<pre><code>function display(message: string, [type: string = &#39;plain&#39;], [buttons: string = &#39;ok&#39;], [defaultButton: string = &#39;ok&#39;]) : string</code></pre>
+<p>Displays a message box (a so called “alert”) and returns the name of
+the button pressed. <code>type</code> can be any of
+<code>'plain'</code>, <code>'question'</code>, <code>'warning'</code>,
+<code>'info'</code> and <code>'error'</code>. <code>buttons</code> can
+be <code>'ok'</code>, <code>'ok cancel'</code>,
+<code>'retry cancel'</code>, <code>'yes no'</code>,
+<code>'yes no cancel'</code> or <code>'abort retry ignore'</code>.
+Naturally, <code>defaultButton</code> can be any of the buttons just
+listed.</p>
+<p>See also: <a href="#ask">ask</a>, <a href="#print">print</a></p>
+<h3 id="editparam">editParam</h3>
+<pre><code>function editParam(param: string|number, beginEdit: boolean)</code></pre>
+<p>Begins or ends user manipulation of a parameter. <code>param</code>
+is a string or number (e.g. <code>'ModRate.1'</code> and 20 are
+equivalent). Will notify the host that the user is controlling the
+parameter, e.g. to begin or end automation recording.</p>
+<p>See also: <a href="#setparam">setParam</a>, <a
+href="#getparam">getParam</a></p>
+<h3 id="fullpath">fullPath</h3>
+<pre><code>function fullPath(base: string|null, path: string) : string</code></pre>
+<p>Canonicalizes the relative <code>path</code> against the
+<code>base</code> path (i.e. returns a distinct full path
+specification). E.g., <code>fullPath('./', 'file')</code> returns the
+absolute path to <code>'file'</code> in the current working dir.
+<code>fullPath('file', '../')</code> returns the absolute path to the
+parent directory for <code>'file'</code>. Pass <code>null</code> for
+<code>base</code> to make a path relative to the script directory.</p>
+<p>See also: <a href="#browse">browse</a>, <a href="#dir">dir</a>, <a
+href="#load">load</a>, <a href="#save">save</a></p>
+<h3 id="getcushyvariable">getCushyVariable</h3>
+<pre><code>function getCushyVariable(identifier: string) : string</code></pre>
+<p>Retrieves the value of a “Cushy GUI variable”. Cushy variables are
+string variables created and used by the GUI layer in Microtonic. See <a
+href="#cushy-interface">Cushy Interface</a> for more information.</p>
+<p>See also: <a href="#cushy-interface">Cushy Interface</a>, <a
+href="#performcushyaction">performCushyAction</a>, <a
+href="#setcushyvariable">setCushyVariable</a></p>
+<h3 id="getelement">getElement</h3>
+<pre><code>function getElement(type: string) : object</code></pre>
+<p>Returns the current preset, drum-patch (of current channel), pattern
+(currently selected), midi-config or visuals. <code>type</code> should
+be <code>'preset'</code>, <code>'drumPatch'</code>,
+<code>'pattern'</code>, <code>'midiConfig'</code> or
+<code>'visuals'</code>. Returns an object containing the data for the
+requested element. See <a href="#objects">Objects</a> for descriptions
+of the different element data.</p>
+<p>See also: <a href="#createelement">createElement</a>, <a
+href="#setelement">setElement</a>, <a
+href="#getelementid">getElementId</a>, <a
+href="#objects">Objects</a></p>
+<h3 id="getelementid">getElementId</h3>
+<pre><code>function getElementId(type: string) : number</code></pre>
+<p>Returns the unique identifier integer of the preset, drum-patch (of
+current channel), pattern (currently selected) or midi-config.
+<code>type</code> should be <code>'preset'</code>,
+<code>'drumPatch'</code>, <code>'pattern'</code> or
+<code>'midiConfig'</code>. The identifier of an element is updated
+whenever any property of the element is changed. The id is always a
+unique number for this “session” (e.g. when the host is restarted the id
+counter will reset.). No two different element can ever share the same
+id. Calling this function is more efficient than calling
+<code>getElement</code> if you only need to read the <code>id</code>
+field.</p>
+<p>See also: <a href="#createelement">createElement</a>, <a
+href="#getelement">getElement</a>, <a href="#setelement">setElement</a>,
+<a href="#objects">Objects</a></p>
+<h3 id="getparam">getParam</h3>
+<pre><code>function getParam(param: string|number) : number</code></pre>
+<p>Retrieves the current setting of a single parameter.
+<code>param</code> is a string or number (e.g. <code>'ModRate.1'</code>
+and 20 are equivalent). The returned value is a floating point number
+between 0 and 1.</p>
+<p>See also: <a href="#getelement">getElement</a>, <a
+href="#paramtext">paramText</a>, <a href="#setparam">setParam</a></p>
+<h3 id="ismarshaledformat">isMarshaledFormat</h3>
+<pre><code>function isMarshaledFormat(type: string, string: string) : boolean</code></pre>
+<p>Returns <code>true</code> if <code>string</code> is valid Microtonic
+file / clipboard format. <code>type</code> should be
+<code>'preset'</code>, <code>'drumPatch'</code>, <code>'pattern'</code>
+or <code>'midiConfig'</code></p>
+<p>See also: <a href="#marshal">marshal</a>, <a
+href="#unmarshal">unmarshal</a></p>
+<h3 id="load">load</h3>
+<pre><code>function load(path: string) : string</code></pre>
+<p>Loads a text file (UTF-8 format). If <code>path</code> is not an
+“absolute full path” it is considered relative to the script directory.
+Alternatively, if the file does not exist and a built-in resource exists
+with the name, the resource is loaded instead. Forward slash
+(<code>'/'</code>) in paths work on both Windows and OS X, backward
+slash (<code>'\'</code>) only works on Windows.</p>
+<p>See also: <a href="#browse">browse</a>, <a href="#dir">dir</a>, <a
+href="#fullPath">fullPath</a>, <a href="#run">run</a>, <a
+href="#save">save</a></p>
+<h3 id="marshal">marshal</h3>
+<pre><code>function marshal(type: string, source: object) : string</code></pre>
+<p>Converts an object (in <code>source</code>) to Microtonic file /
+clipboard format (<code>type</code> should be <code>'preset'</code>,
+<code>'drumPatch'</code>, <code>'pattern'</code> or
+<code>'midiConfig'</code>).</p>
+<p>See also: <a href="#createelement">createElement</a>, <a
+href="#getelement">getElement</a>, <a
+href="#ismarshaledformat">isMarshaledFormat</a>, <a
+href="#unmarshal">unmarshal</a></p>
+<h3 id="paramtext">paramText</h3>
+<pre><code>function paramText(param: string|number, value: number, [highPrecision: boolean = false], [context: object = null]) : string</code></pre>
+<p>Converts a parameter value to a human readable string.
+<code>value</code> must be a floating point number between 0 and 1. If
+<code>highPrecision</code> is <code>true</code>, the returned text will
+have enough precision to preserve all the bits of the original
+floating-point value. <code>context</code> is optional and if present
+should reference a “drumPatch” object. Some parameter’s textual
+representation depend on other parameter settings (such as “ModRate”
+depending on “ModMode”), and <code>context</code> can be used to declare
+these settings. If <code>context</code> is omitted (or
+<code>null</code>), the currently active drum patch is used.</p>
+<p>See also: <a href="#getparam">getParam</a>, <a
+href="#paramvalue">paramValue</a></p>
+<h3 id="paramvalue">paramValue</h3>
+<pre><code>function paramValue(param: string|number, text: string, [context: object = null]) : number</code></pre>
+<p>Converts a human readable string to a parameter value.
+<code>paramValue</code> will return a default standard value (for the
+parameter) if it is not convertable. <code>context</code> is optional
+and if present should reference a “drumPatch” object. Some parameter’s
+textual representation depend on other parameter settings (such as
+“ModRate” depending on “ModMode”), and <code>context</code> can be used
+to declare these settings. If <code>context</code> is omitted (or
+<code>null</code>), the currently active drum patch is used.</p>
+<p>See also: <a href="#paramtext">paramText</a>, <a
+href="#setparam">setParam</a></p>
+<h3 id="parsearray">parseArray</h3>
+<pre><code>function parseArray(string: string) : array</code></pre>
+<p>Parses <code>string</code> that represents an array in “NumbStruck”
+format (the legacy data format used in Sonic Charge products). Returns
+the result as an array. Notice that “NumbStruck” parsing is very
+forgiving. Any string is considered valid “NumbStruck” format, although
+only correctly formatted strings will actually generate any data.</p>
+<p>See also: <a href="#parsestruct">parseStruct</a>, <a
+href="#parsenumbstrict">parseNumbstrict</a></p>
+<h3 id="parsenumbstrict">parseNumbstrict</h3>
+<pre><code>function parseNumbstrict(numbstrict: string) : object|array|boolean|number|string</code></pre>
+<p>Parses a “Numbstrict” string and returns the corresponding JavaScript
+object, array, boolean, number, or string. Numbstrict is the modern data
+format used in Sonic Charge products. It is similar to JSON but designed
+to be more user friendly with support for comments, hex values and
+more.</p>
+<p>See also: <a href="#composenumbstrict">composeNumbstrict</a></p>
+<h3 id="parsestruct">parseStruct</h3>
+<pre><code>function parseStruct(data: string) : object</code></pre>
+<p>Parses <code>data</code> that represents a struct / associative array
+in “NumbStruck” format (the legacy data format used in Sonic Charge
+products). Returns the result as an object. Notice that “NumbStruck”
+parsing is very forgiving. Any string is considered valid “NumbStruck”
+format, although only correctly formatted strings will actually generate
+any data.</p>
+<p>See also: <a href="#parsearray">parseArray</a></p>
+<h3 id="performcushyaction">performCushyAction</h3>
+<pre><code>function performCushyAction(action: string, [params: string = &#39;&#39;])</code></pre>
+<p>Performs a “Cushy GUI action” with optional parameter string. “Cushy
+GUI actions” are part of the GUI layer in Microtonic. See <a
+href="#cushy-interface">Cushy Interface</a> for more information.</p>
+<p>See also: <a href="#cushy-interface">Cushy Interface</a>, <a
+href="#getcushyvariable">getCushyVariable</a>, <a
+href="#setcushyvariable">setCushyVariable</a></p>
+<h3 id="print">print</h3>
+<pre><code>function print(string: string)</code></pre>
+<p>Prints to standard output (on Mac) or DebugView (on Windows). If you
+install <code>JSConsole.mtscript</code> it will replace this function to
+print to a built-in console inside Microtonic.</p>
+<p>See also: <a href="#display">display</a></p>
+<h3 id="readclipboard">readClipboard</h3>
+<pre><code>function readClipboard() : string</code></pre>
+<p>Reads a string from the clipboard. On Windows, CR LF
+(<code>'\r\n'</code>) are automatically translated to LF
+(<code>'\n'</code>).</p>
+<p>See also: <a href="#writeClipboard">writeClipboard</a></p>
+<h3 id="run">run</h3>
+<pre><code>function run(path: string)</code></pre>
+<p>Loads a JavaScript source file and executes it. If <code>path</code>
+is not an “absolute full path” it is considered relative to the script
+directory. Alternatively, if the file does not exist and a built-in
+resource exists with the name, the resource is loaded instead. Forward
+slash (<code>'/'</code>) in paths work on both Windows and OS X,
+backward slash (<code>'\'</code>) only works on Windows.</p>
+<p>See also: <a href="#fullpath">fullPath</a>, <a
+href="#load">load</a></p>
+<h3 id="save">save</h3>
+<pre><code>function save(path: string, contents: string)</code></pre>
+<p>Saves a file. If <code>path</code> is not an “absolute full path” it
+is considered relative to the script directory. Forward slash
+(<code>'/'</code>) in paths work on both Windows and OS X, backward
+slash (<code>'\'</code>) only works on Windows.</p>
+<p>See also: <a href="#browse">browse</a>, <a href="#dir">dir</a>, <a
+href="#fullpath">fullPath</a>, <a href="#load">load</a></p>
+<h3 id="saveundo">saveUndo</h3>
+<pre><code>function saveUndo(label: string, [collapse: boolean = false])</code></pre>
+<p>Stores a snapshot of the entire Microtonic state in the undo history.
+<code>label</code> should be a user-readable string (e.g. “Undo Mute
+Channel 1”). (A good idea is to call <code>translate</code> on the
+static part of the label text to support localization in the future.).
+If <code>collapse</code> is <code>true</code> and <code>label</code> is
+identical to the last element in the undo history, Microtonic will not
+create a new snapshot (use for repeated actions to avoid “spamming” the
+undo history). Notice that calling this function is rarely necessary for
+GUI-less scripts since they automatically save an undo snapshot when
+they detect a change of the Microtonic state.</p>
+<p>See also: <a href="#cushy-interface">Cushy Interface</a>, <a
+href="#translate">translate</a></p>
+<h3 id="select">select</h3>
+<pre><code>function select(type: string, index: number)</code></pre>
+<p>Selects the current program, drum channel or pattern.
+<code>type</code> should be <code>'program'</code>,
+<code>'channel'</code> or <code>'pattern'</code>. The range for programs
+are 0 to 15 (defined by <code>PROGRAM_COUNT</code>). The range for
+channels are 0 to 7 (defined by <code>CHANNEL_COUNT</code>). The range
+for patterns are 0 to 11 (defined by <code>PATTERN_COUNT</code>).</p>
+<p>See also: <a href="#selected">selected</a></p>
+<h3 id="selected">selected</h3>
+<pre><code>function selected(type: string) : number</code></pre>
+<p>Returns the currently selected program, drum channel or pattern.
+<code>type</code> should be <code>'program'</code>,
+<code>'channel'</code> or <code>'pattern'</code>. The range for programs
+are 0 to 15 (defined by <code>PROGRAM_COUNT</code>). The range for
+channels are 0 to 7 (defined by <code>CHANNEL_COUNT</code>). The range
+for patterns are 0 to 11 (defined by <code>PATTERN_COUNT</code>).</p>
+<p>See also: <a href="#select">select</a></p>
+<h3 id="setcushyvariable">setCushyVariable</h3>
+<pre><code>function setCushyVariable(identifier: string, value: string)</code></pre>
+<p>Updates or creates a new “Cushy GUI variable”. Cushy variables are
+string variables created and used by the GUI layer in Microtonic. See <a
+href="#cushy-interface">Cushy Interface</a> for more information.</p>
+<p>See also: <a href="#cushy-interface">Cushy Interface</a>, <a
+href="#getcushyvariable">getCushyVariable</a>, <a
+href="#performcushyaction">performCushyAction</a></p>
+<h3 id="setelement">setElement</h3>
+<pre><code>function setElement(type: string, source: object)</code></pre>
+<p>Updates current preset, drum-patch (for current channel), pattern
+(currently selected) or midi-config from <code>source</code>.
+<code>type</code> should be <code>'preset'</code>,
+<code>'drumPatch'</code>, <code>'pattern'</code> or
+<code>'midiConfig'</code>. See <a href="#objects">Objects</a> for
+descriptions of the different element data.</p>
+<p>See also: <a href="#createelement">createElement</a>, <a
+href="#getelement">getElement</a>, <a
+href="#getelementid">getElementId</a>, <a
+href="#objects">Objects</a></p>
+<h3 id="setparam">setParam</h3>
+<pre><code>function setParam(param: string|number, value: number)</code></pre>
+<p>Updates a single parameter immediately. <code>param</code> is a
+string or number (e.g. <code>'ModRate.1'</code> and 20 is equivalent).
+<code>value</code> must be a floating point number between 0 and 1.</p>
+<p>See also: <a href="#setelement">setElement</a>, <a
+href="#editparam">editParam</a>, <a href="#getparam">getParam</a>, <a
+href="#paramvalue">paramValue</a></p>
+<h3 id="translate">translate</h3>
+<pre><code>function translate(text: string) : string</code></pre>
+<p>Translates a string through the currently active translation table.
+Used mainly for GUI localization. See <a href="#cushy-interface">Cushy
+Interface</a> for more information.</p>
+<p>See also: <a href="#cushy-interface">Cushy Interface</a></p>
+<h3 id="triggerchannel">triggerChannel</h3>
+<pre><code>function triggerChannel(channel: number, velocity: number)</code></pre>
+<p>Triggers a Microtonic drum channel (0 to 7). <code>velocity</code>
+should be an integer between 0 and 127. 127 is equivalent to accented
+steps in the Microtonic sequencer, and 64 is equivalent to unaccented
+steps. Calling this function will never change the selected channel,
+regardless if “Select channel with MIDI” is active.</p>
+<h3 id="unmarshal">unmarshal</h3>
+<pre><code>function unmarshal(type: string, string: string) : object</code></pre>
+<p>Converts Microtonic file / clipboard format to an object (type should
+be <code>'preset'</code>, <code>'drumPatch'</code>,
+<code>'pattern'</code> or <code>'midiConfig'</code>). Returns the
+resulting object.</p>
+<p>See also: <a href="#ismarshaledformat">isMarshaledFormat</a>, <a
+href="#marshal">marshal</a>, <a href="#setelement">setElement</a></p>
+<h3 id="writeclipboard">writeClipboard</h3>
+<pre><code>function writeClipboard(string: string)</code></pre>
+<p>Puts a string to the clipboard. On Windows, LF (<code>'\n'</code>)
+are automatically translated to CR LF (<code>'\r\n'</code>).</p>
+<p>See also: <a href="#readclipboard">readClipboard</a></p>
+<h2 id="objects">Objects</h2>
+<h3 id="drumpatch-object">drumPatch object</h3>
+<pre><code>{
+    id:         number                              // Unique identifier integer (incremented automatically on write).
+    modified:   boolean
+    name:       string
+    path:       string|null                         // Notice that this path may be relative to factory drum patch directory (in which case on Windows, forward slashes `/` are used instead of backward slashes `\`).
+    Choke:      number                              // 0 | 1
+    DistAmt:    number                              // 0 .. 1
+    EQFreq:     number                              // 0 .. 1
+    EQGain:     number                              // 0 .. 1
+    Level:      number                              // 0 .. 1
+    Mix:        number                              // 0 .. 1
+    ModAmt:     number                              // 0 .. 1
+    ModMode:    number                              // 0 | 0.5 | 1: decay | sine | noise
+    ModRate:    number                              // 0 .. 1
+    ModVel:     number                              // 0 .. 1
+    NEnvAtk:    number                              // 0 .. 1
+    NEnvDcy:    number                              // 0 .. 1
+    NEnvMod:    number                              // 0 | 0.5 | 1: exponential | linear | modulated
+    NFilFrq:    number                              // 0 .. 1
+    NFilMod:    number                              // 0 | 0.5 | 1: lp | bp | hp
+    NFilQ:      number                              // 0 .. 1
+    NStereo:    number                              // 0 | 1
+    NVel:       number                              // 0 .. 1
+    OscAtk:     number                              // 0 .. 1
+    OscDcy:     number                              // 0 .. 1
+    OscFreq:    number                              // 0 .. 1
+    OscVel:     number                              // 0 .. 1
+    OscWave:    number                              // 0 | 0.5 | 1: sine | triangle | sawtooth
+    Output:     number                              // 0 | 1
+    Pan:        number                              // 0 .. 1
+}</code></pre>
+<h3 id="file-object">file object</h3>
+<pre><code>{
+    name:           strings                         // including any extension
+    size:           number                          // in bytes
+    created:        Date
+    modified:       Date
+    isDirectory:    boolean
+    isReadOnly:     boolean
+}</code></pre>
+<h3 id="midiconfig-object">midiConfig object</h3>
+<pre><code>{
+    id:                         number              // Unique identifier integer (incremented automatically on write).
+    improvedCCScaling:          boolean
+    midiCCAutomates:            boolean
+    midiCCOnSelectedChannel:    boolean
+    midiNotesSelectChannel:     boolean
+    midiReceiveChannel:         number              // null | 1 .. 16
+    midiTransmitChannel:        number              // null | 1 .. 16
+    patternNoteMode:            string              // &#39;SwitchNext&#39; | &#39;SwitchNow&#39; | &#39;Retrigger&#39; | &#39;RetriggerGated&#39;
+    patternsSendMidi:           boolean
+    pitchedMode:                boolean
+    pitchWheelRange:            number              // 1 | 2 | 3 | 4 | 7 | 12 | 19 | 24
+    sendMidiCC:                 boolean
+    supportMidiNoteOff:         boolean
+    supportMidiProgramChange:   boolean
+    globalCC: {
+        FillRate:               number              // null | 0 .. 127
+        MastVol:                number              // null | 0 .. 127
+        Morph:                  number              // null | 0 .. 127
+        Pattern:                number              // null | 0 .. 127
+        PlayStop:               number              // null | 0 .. 127
+        StepRate:               number              // null | 0 .. 127
+        Swing:                  number              // null | 0 .. 127
+    },
+    channelCC: [
+        {
+            Choke:              number              // null | 0 .. 127
+            DistAmt:            number              // null | 0 .. 127
+            EQFreq:             number              // null | 0 .. 127
+            EQGain:             number              // null | 0 .. 127
+            Level:              number              // null | 0 .. 127
+            Mix:                number              // null | 0 .. 127
+            ModAmt:             number              // null | 0 .. 127
+            ModMode:            number              // null | 0 .. 127
+            ModRate:            number              // null | 0 .. 127
+            ModVel:             number              // null | 0 .. 127
+            NEnvAtk:            number              // null | 0 .. 127
+            NEnvDcy:            number              // null | 0 .. 127
+            NEnvMod:            number              // null | 0 .. 127
+            NFilFrq:            number              // null | 0 .. 127
+            NFilMod:            number              // null | 0 .. 127
+            NFilQ:              number              // null | 0 .. 127
+            NStereo:            number              // null | 0 .. 127
+            NVel:               number              // null | 0 .. 127
+            OscAtk:             number              // null | 0 .. 127
+            OscDcy:             number              // null | 0 .. 127
+            OscFreq:            number              // null | 0 .. 127
+            OscVel:             number              // null | 0 .. 127
+            OscWave:            number              // null | 0 .. 127
+            Output:             number              // null | 0 .. 127
+            Pan:                number              // null | 0 .. 127
+        } * 8
+    ],
+    muteCC: array,                                  // [ (null | 0 .. 127) * 8 ]
+    patternCC: [
+        {
+            triggers:           number              // null | 0 .. 127,
+            accents:            number              // null | 0 .. 127,
+            fills:              number              // null | 0 .. 127
+        } * 8
+    ],
+    notes: {
+        start:                  number              // null | 0 .. 127,
+        stop:                   number              // null | 0 .. 127,
+        mutes:                  array               // [ (null | 0 .. 127) * 8 ]
+        patterns:               array               // [ (null | 0 .. 127) * 12 ]
+        programs:               array               // [ (null | 0 .. 127) * 16 ]
+        triggers:               array               // [ (null | 0 .. 127) * 8 ]
+    }
+}</code></pre>
+<h3 id="pattern-object">pattern object</h3>
+<pre><code>{
+    id:                 number                      // Unique identifier integer (incremented automatically on write).
+    steps:              number                      // 1 .. 16
+    channels: [
+        {
+            triggers:   array                       // [ boolean * 16 ]
+            accents:    array                       // [ boolean * 16 ]
+            fills:      array                       // [ boolean * 16 ]
+        } * 8
+    ]
+}</code></pre>
+<h3 id="preset-object">preset object</h3>
+<pre><code>{
+    id:             number                          // Unique identifier integer (incremented automatically on write).
+    modified:       boolean
+    name:           string
+    path:           string|null                     // Notice that this path will always be a full path with native directory slashes (`\` on Windows, `/` on Mac).
+    tempo:          number|null                     // 1 .. 999
+    Pattern:        number                          // 0 .. 1 in 1 / 12 steps
+    PlayStop:       number                          // 0 | 1/3 | 2/3 | 1: forced stop | stop | play | forced play
+    StepRate:       number                          // 0 | 0.25 | 0.5 | 0.75 | 1: 1/8 | 1/8T | 1/16 | 1/16T | 1/32
+    Swing:          number                          // 0 .. 1
+    FillRate:       number                          // 0 .. 1
+    MastVol:        number                          // 0 .. 1
+    mutes:          array                           // [ (0 | 1) * 8 ]. Normally only 0 and 1 but host may set them to other values.
+    drumPatches:    array                           // [ drumPatch * 8 ]
+    patterns:       array                           // [ pattern * 12 ]
+}</code></pre>
+<h3 id="visuals-object">visuals object</h3>
+<pre><code>{
+    isPlaying:         boolean
+    currentPattern:    number                       // 0 .. 11
+    currentStep:       number                       // 0 .. 15
+    lastTriggers:      parseArray                   // [ null|number * 8 ]. Timestamps when channel was last triggered (epoch milliseconds, as with `Date.now()`). Will initially be null.
+}</code></pre>
+<h2 id="utilities">Utilities</h2>
+<h3 id="cbrt">cbrt</h3>
+<pre><code>function cbrt(x: number) : number</code></pre>
+<p>Returns the cube root of <code>x</code> (i.e. <code>x ^ 1/3</code>).
+Negative root is returned for negative <code>x</code>.</p>
+<h3 id="clamp">clamp</h3>
+<pre><code>function clamp(x: number, min: number, max: number) : number</code></pre>
+<p>Returns the value <code>x</code>, clamped between <code>min</code>
+and <code>max</code>
+(i.e. <code>Math.min(Math.max(x, min), max)</code>).</p>
+<h3 id="closecushy">closeCushy</h3>
+<pre><code>function closeCushy()</code></pre>
+<p>Close the currently open “Cushy window”. See <a
+href="#cushy-interface">Cushy Interface</a></p>
+<h3 id="createclass">createClass</h3>
+<pre><code>function createClass(definition: object, [inherit: object])</code></pre>
+<p>Utility for class creation with inheritance. Use like this:</p>
+<pre><code>MyClass = createClass({
+    constructor: function(x) { this.field = x },
+    getField: function() { return this.field }
+})</code></pre>
+<p><code>super</code> can be used to access inherited prototype:</p>
+<pre><code>MySubClass = createClass({
+    // no constructor defined = will use MyClass constructor
+    getField: function() { return this.super.getField.call(this) * 100 }
+}, MyClass)</code></pre>
+<h3 id="cube">cube</h3>
+<pre><code>function cube(x: number) : number</code></pre>
+<p>Returns <code>x</code> * <code>x</code> * <code>x</code>.</p>
+<h3 id="displaycushy">displayCushy</h3>
+<pre><code>function displayCushy(name: string)</code></pre>
+<p>Opens a “Cushy window”. See <a href="#cushy-interface">Cushy
+Interface</a></p>
+<h3 id="fract">fract</h3>
+<pre><code>function fract(x: number) : number</code></pre>
+<p>Returns the fractional part of <code>x</code>
+(i.e. <code>x - Math.floor(x)</code>).</p>
+<h3 id="lerp">lerp</h3>
+<pre><code>function lerp(y0: number, y1: number, x: number) : number</code></pre>
+<p>Linearly interpolates <code>x</code> between <code>y0</code> (for
+<code>x == 0</code>) and <code>y1</code> (for <code>x == 1</code>).</p>
+<h3 id="scale">scale</h3>
+<pre><code>function scale(x: number, x0: number, x1: number, y0: number, y1: number) : number</code></pre>
+<p>Linearly interpolates <code>x</code> from <code>x0</code> to
+<code>x1</code> into <code>y0</code> (for <code>x == x0</code>) to
+<code>y1</code> (for <code>x == x1</code>).</p>
+<h3 id="square">square</h3>
+<pre><code>function square(x: number) : number</code></pre>
+<p>Returns <code>x</code> * <code>x</code>.</p>
+<h3 id="unescape">unescape</h3>
+<pre><code>function unescape(s: string) : string</code></pre>
+<p>If <code>s</code> is enclosed in single-quotes (<code>'</code>) or
+double-quotes (<code>"</code>) it will be parsed as a Numbstrict-style
+string constant (virtually the same as a C string constant). If
+<code>s</code> is not enclosed in quotes it will be returned as is.</p>
+<h3 id="random">random</h3>
+<pre><code>random = {
+    uniform: function
+    integer: function
+    normal: function
+}
+
+function random.uniform() : number</code></pre>
+<p>Same as <code>Math.random</code>.</p>
+<pre><code>function random.integer([ceiling: number]) : number</code></pre>
+<p>Returns a random integer between 0 and <code>ceiling - 1</code>. If
+<code>ceiling</code> is omitted, a random integer in the full 32-bit
+range is returned.</p>
+<pre><code>function random.normal([mu: number = 0], [sigma: number = 1]) : number</code></pre>
+<p>Returns a random number with normal distribution around mean
+<code>mu</code> with standard deviation <code>sigma</code>.</p>
+<h3 id="stringbuilder">StringBuilder</h3>
+<pre><code>constructor StringBuilder(init: string): object</code></pre>
+<p><code>StringBuilder</code> is a class that can be used to improve
+performance when building very long strings. Use like this:</p>
+<pre><code>var builder = new StringBuilder(&quot;init string&quot;);
+while (/* loop making big string */) {
+    builder.append(&quot;lots of string data here&quot;);
+}
+var finalString = builder.build();</code></pre>
+<h3 id="togglecushy">toggleCushy</h3>
+<pre><code>function toggleCushy(cushyName: string)</code></pre>
+<p>If the “Cushy window” with <code>cushyName</code> is already open,
+close it. Otherwise, open it. See <a href="#cushy-interface">Cushy
+Interface</a></p>
+<h2 id="cushy-interface">Cushy Interface</h2>
+<h3 id="script-types">Script Types</h3>
+<p>There are two types of Microtonic scripts, classic GUI-less scripts
+and modern scripts with GUIs. A GUI-less script is a single JavaScript
+(or PikaScript) file in the <code>Microtonic Scripts</code> directory.
+It provides no way to interact with the user except for displaying
+alerts and getting user input through a simple text input dialog. To
+provide a more sophisticated user interface, you need to create a GUI
+script with JavaScript and “Cushy.”</p>
+<p>Cushy is the GUI / layout engine used in all Sonic Charge products. A
+full description of the Cushy system is beyond the scope of this
+document, but <code>.cushy</code> files define the layout of views and
+configure how the user can interact with the plug-in through “GUI
+variables” and “GUI actions.”</p>
+<p>Note: Microtonic 3.x is still not fully ported to Cushy. Most of the
+standard knobs and buttons are legacy “hard-wired” GUI elements, but on
+top of this, there is a layer of Cushy.</p>
+<h3 id="gui-script-startup">GUI Script Startup</h3>
+<p>A GUI script is installed as a sub-directory with the extension
+<code>.mtscript</code> under the <code>Microtonic Scripts</code>
+directory. Inside this directory, you need one <code>.js</code> file
+with the same filename as the directory and script. This
+<code>.js</code> is used to start up the script and open a “Cushy
+window” for the script. It could look something like this:</p>
+<pre><code>if (BUILD.NUMBER &lt; 1048) {
+    display(translate(&quot;This script requires&quot;) + &quot; Microtonic v3.3.4&quot;, &quot;error&quot;);
+} else {
+    toggleCushy(&#39;MyScript.mtscript/MyScript_main&#39;);
+}</code></pre>
+<p>This script assumes a <code>MyScript_main.cushy</code> file is
+located under <code>MyScript.mtscript/</code>. It should contain the
+layout definition of the user interface. Most often, this
+<code>.cushy</code> will include common macros from
+<code>scriptSupport.makaron</code>, use the <code>@window</code> macro
+and define the window contents. Notice that you must include the
+<code>MyScript.mtscript/</code> path in the call to
+<code>toggleCushy</code>. It is necessary because the root directory for
+all scripts is the common <code>Microtonic Scripts</code> folder.</p>
+<p>This is how the folder structure might look:</p>
+<pre><code>Microtonic Scripts/
+├─ MyScript.mtscript/
+│  ├─ MyScript.js
+│  ├─ MyScript_main.cushy
+│  ├─ MyScript_main.js</code></pre>
+<p>When the GUI engine opens a Cushy file, it will first look for a
+<code>.js</code> file with the same name as the <code>.cushy</code> file
+and run it if it exists. In the above example, this would be
+<code>MyScript.mtscript/MyScript_main.js</code>. This JavaScript file
+sets up all the functions necessary to run the script. Notice that Cushy
+runs this Javascript every time the user opens the script and when a
+“rebuild” of the GUI is performed, e.g., when choosing a different zoom
+scale. You should therefore avoid resetting global variables if they
+already exist.</p>
+<p>Since all scripts share the same JavaScript global variable space,
+putting functions and variables under a single JavaScript object with
+the same name as the script is good practice. Doing so prevents
+littering the variable space and you minimize the risk of colliding with
+other scripts. If you run your script with the <code>JSConsole</code>
+open, it will alert every time a global variable is created. This helps
+you catch mistakes such as missing the <code>var</code> keyword when
+declaring a variable.</p>
+<h3 id="gui-variables">GUI Variables</h3>
+<p>The GUI views in Cushy will interface with your script (and the
+Microtonic backend) through “GUI variables” and “GUI actions.” You
+might, for example, tie a knob view to a variable called
+<code>MyScript.myKnob</code>. The view will then attempt to synchronize
+its state with the scripting engine in both directions. It will update
+<code>MyScript.myKnob</code> when the user turns the knob, but it will
+also continuously read <code>MyScript.myKnob</code> to update its
+graphical knob position.</p>
+<p>All GUI variable values are of string type, but they may contain
+numbers in decimal text format (or, in rare cases, even arrays, and
+structures in Numbstrict text format). There are four different ways
+that Cushy will get and set GUI variables:</p>
+<ul>
+<li>If the GUI variable is an existing JS string variable, it will get
+and set it directly as a string.</li>
+<li>If the GUI variable is an existing JS function, it will be called
+continuously to get the current value (in this case, Cushy can never
+update the GUI variable).</li>
+<li>If the GUI variable is an existing JS object, it can contain a
+“setter” and a “getter” function aptly named <code>set</code> and
+<code>get</code>. The <code>set</code> function will receive a single
+string argument. The <code>get</code> function is expected to return a
+string value.</li>
+<li>Finally, if the variable name is not referring to an existing JS
+variable, Cushy will create a Cushy-only variable (not visible from
+Javascript). Never do this in a script, please!</li>
+</ul>
+<p>Here is an example of using a “setter” and “getter” function for a
+GUI variable that performs a transformation of the knob value to
+logarithmic scale:</p>
+<pre><code>//
+// First time run, myScript doesn&#39;t exist, set up initial state.
+//
+if (!myScript) {
+    myScript = {
+        myValue: 0.5
+    }
+}
+//
+// By assigning this every time the JS is run we can easily update the code by clicking &quot;reload&quot; in JSConsole.
+//
+myScript.myKnob = {
+    get: function() { return &#39;&#39; + ((Math.exp(myScript.myValue) - 1) / 10); },
+    set: function(s) { myScript.myValue = Math.log(1 + 10 * +s); }
+}</code></pre>
+<p>Besides <code>get</code> and <code>set</code>, there is a third
+function you may declare with the name <code>touch</code>. It will be
+called when the user begins and ends editing the GUI variable (e.g. when
+the knob is clicked and when the mouse button is released). A single
+boolean parameter is passed to the function: <code>true</code> when the
+user begins editing and <code>false</code> when the user ends.</p>
+<p>There are a few built-in Cushy-only variables in Microtonic. You
+should avoid using these names. This is the list:
+<code>'programsLocked'</code>, <code>'Morph'</code>,
+<code>'Morph.human'</code>, <code>'undo.description'</code>,
+<code>'redo.description'</code>, <code>'shortModifierKey'</code>,
+<code>'po32Mode'</code>, <code>'isRegistered'</code>,
+<code>'uiScale'</code>, and <code>'skinResourcesPath'</code>.</p>
+<h3 id="gui-actions">GUI Actions</h3>
+<p>When the user clicks a button or selects an item from a menu, a “GUI
+action” is performed (as configured by the <code>.cushy</code> file).
+The action can be a built-in action or one your script provides as a
+Javascript function. Cushy calls the actions with a single string
+parameter, but often these contain Numbstrict structures with key/value
+pairs. The parameter is passed to Javascript in its raw unparsed format.
+E.g., a string will contain its enclosing quotes (you can use <a
+href="#unescape">unescape</a> to remove them).</p>
+<p>When you implement an action with a JS function, you have two
+options:</p>
+<ul>
+<li>Use a function with the same name as the “action.” It will be called
+with the single string parameter as input.</li>
+<li>Use an object to define the action. It should contain an
+<code>execute</code> function and optionally an <code>enabled</code> and
+a <code>checked</code> function (both receiving the same parameter as
+input, and they are expected to return a boolean).</li>
+</ul>
+<p>In the latter case, you can use the <code>enabled</code> function to
+tell the GUI engine to indicate that an action is unavailable visually.
+E.g., if the action is tied to a menu item, it will be grayed out if
+<code>enabled</code> returns <code>false</code>. The
+<code>checked</code> function is similarly used to tell the GUI engine
+to visually indicate that the action is active and “in effect,” e.g., by
+inserting a checkmark before a menu item.</p>
+<p>Here is an example of an action:</p>
+<pre><code>myScript.resetMyValue = {
+    execute: function(p) { myScript.myValue = +unescape(p); }
+    checked: function(p) { return myScript.myValue == +unescape(p); }
+    enabled: function(p) { return myScript.canReset; }
+}</code></pre>
+<p>Besides getting called from user actions, a <code>.cushy</code> file
+can configure actions to be called by the following events:</p>
+<ul>
+<li>When the Cushy script is opened (right before setting up the
+views).</li>
+<li>When the Cushy script is closed (right before the views are
+removed).</li>
+<li>Regularly with a specific time interval.</li>
+<li>Whenever the value of a “GUI Variable” change.</li>
+</ul>
+<p>Cushy has a number of built-in actions. They are documented
+elsewhere, but this is the list: <code>'nop'</code>, <code>'set'</code>,
+<code>'switch'</code>, <code>'batch'</code>, <code>'execute'</code>,
+<code>'alert'</code>, <code>'hint'</code>, <code>'popup'</code>,
+<code>'edit'</code>, <code>'launch'</code>, <code>'reload'</code>,
+<code>'assert'</code>, and <code>'assign'</code></p>
+<p>Microtonic also defines these actions for internal use:
+<code>'scriptPopup'</code>, <code>'programPopup'</code>,
+<code>'morphContextMenu'</code>, <code>'toggleAbout'</code>,
+<code>'undo'</code>, <code>'redo'</code>, <code>'register'</code>, and
+<code>'focusToMain'</code>. Avoid using these names.</p>
+</body>
+</html>
