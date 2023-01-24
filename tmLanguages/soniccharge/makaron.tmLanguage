@@ -16,10 +16,6 @@
 	<string>(@begin|@&lt;|@if)</string>
 	<key>foldingStopMarker</key>
 	<string>(@end|@&gt;|@endif)</string>
-    <key>fileTypes</key>
-    <array>
-        <string>makaron</string>
-    </array>
 	<key>patterns</key>
 	<array>
 		<dict>
