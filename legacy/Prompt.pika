@@ -1,0 +1,45 @@
+// TITLE
+// Prompt (script for MicroTonic 3.0)
+//
+// DESCRIPTION
+// Lets the user run PikaScript statements interactively. The initial default text is read from the clipboard
+// (but only used if it represent a single PikaScript statement). The entered statement is copied to the clipboard
+// before executing.
+//
+// print() is overloaded and will accumulate all output (to a limit) and display with display() after execution.
+//
+// AUTHOR
+// Magnus Lidström
+//
+// VERSION
+// 1.0
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+include('stdlib.pika');
+include('help.pika');
+
+function {								// Implemented as an anonymous function to allow local variables.
+	trace();							// Turn off any tracing (debugging etc).
+	s = readClipboard();
+	default = void;
+	try(>if (find(s, "\r\n") >= length(s) && parse(s, false) == length(s)) default = s);
+	for (;true;) {						// Infinite loop is ok since ask() will throw an exception if the user presses cancel.
+		s = ask('Enter PikaScript (e.g. "help()")', default);
+		writeClipboard(s);
+		default = void;
+		originalPrint = ::print;
+		::_output = '';
+		::print = function { ::_output #= $0 # LF };
+		r = void;
+		x = try(>r = evaluate(s, @::));
+		o = ::_output;
+		delete(@::_output);
+		::print = originalPrint;
+		if (x != void || r != void) {
+			if (o !== '') o #= '--------' # LF;
+			if (x != void) o #= 'Error: ' # x
+			else o #= 'Result: ' # r
+		};
+		if (o !== '') display(o{:1000} # (if (length(o) > 1000) ' +++ TRUNCATED LONG STRING +++'));
+	}
+}();

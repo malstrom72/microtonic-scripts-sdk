@@ -8,6 +8,10 @@
 	<string>impd</string>
 	<key>scopeName</key>
 	<string>source.impd</string>
+    <key>fileTypes</key>
+    <array>
+        <string>impd</string>
+    </array>
 	<key>patterns</key>
 	<array>
 		<dict>

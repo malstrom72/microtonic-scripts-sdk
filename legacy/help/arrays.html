@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: arrays</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>arrays</h2>
+			<p><a href="arrays.html#append">append</a>, <a href="arrays.html#compose">compose</a>, <a href="arrays.html#copy">copy</a>, <a href="arrays.html#decompose">decompose</a>, <a href="arrays.html#equal">equal</a>, <a href="arrays.html#fill">fill</a>, <a href="arrays.html#inject">inject</a>, <a href="arrays.html#insert">insert</a>, <a href="arrays.html#iterate">iterate</a>, <a href="arrays.html#qsort">qsort</a>, <a href="arrays.html#remove">remove</a>, <a href="arrays.html#rsort">rsort</a>, <a href="arrays.html#sort">sort</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="append">append</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@array = append(@array, [&lt;elements&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Appends &lt;elements&gt; to @array. If [@array].n does not exist it will be initialized to 0 and this routine will in practice work like compose(). Unlike compose() however, all element argument must be present. The returned value is the input @array reference.</p><p>Notice that calling this function on a "double-ended queue" also works.</p></div>
+	<h4>Examples</h4><pre class="examples">append(@myArray, 5, 6, 7, 8)<br>equal(append(compose(@temp1, 'a', 'b', 'c'), 'd', 'e', 'f'), compose(@temp2, 'a', 'b', 'c', 'd', 'e', 'f')) == true</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#compose">compose</a>, <a href="#insert">insert</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="compose">compose</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@array = compose(@array, [&lt;elements&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Creates an array of indexed elements under @array initialized with the values of the remaining arguments (&lt;element&gt;). The first element will have an index of zero (e.g. "array[0]"). The special element 'n' (e.g. "array.n") will contain the number of indexed elements in the array. If an element argument is omitted the corresponding element will not be initialized, possibly making the array "non-contiguous". The returned value is the input @array reference.</p><p>Notice that this function does not erase any existing elements under @array. You may want to consider calling prune() on @array before composing a new array.</p></div>
+	<h4>Examples</h4><pre class="examples">compose(@myArray, 1, 2, 3, 4)<br>compose(@holy, 'nextIsEmpty', , 'previousWasEmpty')<br>[compose(@temp, 'zero', 'one', 'two', 'three')][2] === 'two'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#append">append</a>, <a href="#decompose">decompose</a>, <a href="containers.html#map">map</a>, <a href="containers.html#prune">prune</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="copy">copy</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@target = copy(@source, +offset, +count, @target, +index)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Copies +count elements from the @source array beginning at +offset into @target at +index, replacing any already existing elements at the target indices. The element count of the @target array (i.e. [@target].n) may be incremented to fit the new elements.</p><p>The @source array must be contiguous. If the output +index is greater than [@target].n (or (+index) + (+count) &lt; 0), the resulting array will become non-contiguous.</p><p>Only direct elements under the arrays will be affected. Any sub-elements that they in turn may have are ignored. @source and @target may reference the same array. The returned value is the input @target reference.</p></div>
+	<h4>Examples</h4><pre class="examples">copy(@myArray, 10, 5, @myArray, 13)<br>equal(copy(compose(@temp1, 'a', 'b', 'c', 'd'), 1, 2, compose(@temp2, 'e', 'f', 'g', 'h'), 3), compose(@temp3, 'e', 'f', 'g', 'b', 'c')) == true</pre>
+	<h4>See Also</h4><p class="seealso"><a href="containers.html#clone">clone</a>, <a href="#inject">inject</a>, <a href="#remove">remove</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="decompose">decompose</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">decompose(@array, [@variables, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Decomposes an array by storing the indexed elements under @array one by one into the given references. If an argument is left empty, the corresponding element index will be skipped.</p></div>
+	<h4>Examples</h4><pre class="examples">decompose(@breakMe, @first, @second, @third, , @noFourthButFifth)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#compose">compose</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="equal">equal</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">?same = equal(@arrayA, @arrayB)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns true if the arrays @arrayA and @arrayB are the same size and all their elements are identical. Both arrays must be contiguous (i.e. all their elements must be defined). Only direct elements under the arrays will be tested. Any sub-elements that they in turn may have are silently ignored.</p></div>
+	<h4>Examples</h4><pre class="examples">equal(@firstArray, @secondArray)<br>equal(compose(@temp1, 1, 10, 100, 'one thousand'), compose(@temp2, 1, 10, 100, 'one thousand')) == true</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="fill">fill</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@array = fill(@array, +offset, +count, &lt;value&gt;)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Fills a range of +count elements in @array with &lt;value&gt; starting at +offset, replacing any existing elements. If the target @array does not exist (i.e. [@array].n is not defined) it is created. The element count (i.e. [@array].n) may be incremented to fit the new elements.</p><p>Only direct elements under the arrays will be affected. The returned value is the input @array reference.</p></div>
+	<h4>Examples</h4><pre class="examples">equal(fill(@a, 0, 5, 'x'), compose(@b, 'x', 'x', 'x', 'x', 'x'))</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#copy">copy</a>, <a href="#inject">inject</a>, <a href="#insert">insert</a>, <a href="#remove">remove</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="inject">inject</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@target = inject(@source, +offset, +count, @target, +index)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Inserts +count elements from the @source array beginning at +offset into @target at +index, relocating any elements at and after +index to make room for the inserted elements. Both arrays must be contiguous and the target +index must be between 0 and [@target].n. Only direct elements under the arrays will be affected. Any sub-elements that they in turn may have are ignored. @source and @target should not reference the same array. The returned value is the input @target reference.</p></div>
+	<h4>Examples</h4><pre class="examples">inject(@myArray, 10, 5, @myArray, 13)<br>equal(inject(compose(@temp1, 'a', 'b', 'c', 'd'), 1, 2, compose(@temp2, 'e', 'f', 'g', 'h'), 3), compose(@temp3, 'e', 'f', 'g', 'b', 'c', 'h')) == true</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#copy">copy</a>, <a href="#fill">fill</a>, <a href="#insert">insert</a>, <a href="#remove">remove</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="insert">insert</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@array = insert(@array, +offset, [&lt;elements&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Inserts one or more elements into @array before the index +offset. The array must be contiguous. Only direct elements under the array will be moved to make room for the new elements. Any sub-elements that they in turn may have remain unaffected. +offset must be between 0 and the element count of @array (or an exception will be thrown). [@array].n must be defined prior to calling this routine. The returned value is the input @array reference.</p></div>
+	<h4>Examples</h4><pre class="examples">insert(@myArray, 10, 'insert', 'three', 'strings')<br>equal(insert(compose(@temp1, 'a', 'b', 'f'), 2, 'c', 'd', 'e'), compose(@temp2, 'a', 'b', 'c', 'd', 'e', 'f')) == true</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#inject">inject</a>, <a href="#remove">remove</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="iterate">iterate</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">iterate(@array, &gt;doThis)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Iterates all elements in @array (as determined by [@array].n) and calls &gt;doThis once for every encountered element in ascending index order. Three arguments will be passed to &gt;doThis:</p><p>$0 will be the full reference to the found element (e.g. "::highscores.3")<br>$1 will be the element index (e.g. 3)<br>$2 will be the value of the element.</p><p>iterate() is the equivalent to foreach() for arrays. Any change to [@array].n while running iterate() will not be accounted for. The array must be contiguous. Only direct elements under the array will be iterated.</p></div>
+	<h4>Examples</h4><pre class="examples">iterate(compose(@a, 0, 'one', 2, true), &gt;print($1 # '=' # $2))</pre>
+	<h4>See Also</h4><p class="seealso"><a href="containers.html#foreach">foreach</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="qsort">qsort</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">qsort(+from, +to, &gt;compare, &gt;swap)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>This is an abstract implementation of the quicksort algorithm. qsort() handles the logic of the sorting algorithm (the bones) while you provide the functions &gt;compare and &gt;swap that carries out the concrete operations on the data being sorted (the meat).</p><p>+from and +to defines the sorting range (+to is non-inclusive).</p><p>&gt;compare is called with two sorting indices and you should return a negative value if the data for the first index ($0) should be placed before the data for the second index ($1). Return a positive non-zero value for the opposite and return zero if the data is identical. (You can use the global ::compare function to easily implement this.)</p><p>&gt;swap is also called with two indices in $0 and $1 ($0 is always less than $1). The function should swap the data for the two indices. (You can use the global ::swap function to easily implement this.)</p><p>The functions sort() and rsort() use this function to implement sorting of entire arrays (ascending and descending respectively).&nbsp;&nbsp;</p></div>
+	<h4>Examples</h4><pre class="examples">qsort(0, myArray.n, &gt;myArray[$0] - myArray[$1], &gt;swap(@myArray[$0], @myArray[$1]))<br>qsort(0, scrambleMe.n, &gt;random(2) - 1, &gt;swap(@scrambleMe[$0], @scrambleMe[$1]))</pre>
+	<h4>See Also</h4><p class="seealso"><a href="utils.html#compare">compare</a>, <a href="#rsort">rsort</a>, <a href="#sort">sort</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="remove">remove</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@array = remove(@array, +offset, [+count = 1])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Removes +count number of elements from @array beginning at +offset, relocating any elements after the removed elements so that the array remains contiguous. (Only direct elements under the array are moved. Any sub-elements under these elements will be left untouched.)</p><p>If +offset and / or +count are negative, this function still yields predictable results (e.g. an +offset of -3 and +count of 6 will remove the three first elements). Likewise, it is allowed to remove elements beyond the end of the array (but naturally it will have no effect). The returned value is the input @array reference.</p></div>
+	<h4>Examples</h4><pre class="examples">remove(@removeNumberThree, 3)<br>remove(@drop1and2, 1, 2)<br>equal(remove(compose(@temp1, 'a', 'b', 'c', 'd', 'e'), 1, 3), compose(@temp2, 'a', 'e')) == true</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#copy">copy</a>, <a href="#fill">fill</a>, <a href="#inject">inject</a>, <a href="#insert">insert</a>, <a href="containers.html#prune">prune</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="rsort">rsort</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@array = rsort(@array)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Sorts the elements of @array in descending order. The returned value is the input @array reference. To sort in ascending order, use sort(). If you need greater control over the sorting (e.g. how elements are compared), use the lower level function qsort() instead.</p></div>
+	<h4>Examples</h4><pre class="examples">rsort(@myArray)<br>equal(rsort(compose(@temp1, 1.1, -5, 1.5, 17, 0x10, 'xyz', 'a', 'def', 'a')), compose(@temp2, 'xyz', 'def', 'a', 'a', 17, 0x10, 1.5, 1.1, -5)) == true</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#qsort">qsort</a>, <a href="#sort">sort</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="sort">sort</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@array = sort(@array)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Sorts the elements of @array in ascending order. The returned value is the input @array reference. To sort in descending order, use rsort(). If you need greater control over the sorting (e.g. how elements are compared), use the lower level function qsort() instead.</p></div>
+	<h4>Examples</h4><pre class="examples">sort(@myArray)<br>equal(sort(compose(@temp1, 1.1, -5, 1.5, 17, 0x10, 'xyz', 'a', 'def', 'a')), compose(@temp2, -5, 1.1, 1.5, 0x10, 17, 'a', 'a', 'def', 'xyz')) == true</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#qsort">qsort</a>, <a href="#rsort">rsort</a></p>
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

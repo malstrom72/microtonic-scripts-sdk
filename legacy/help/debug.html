@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: debug</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>debug</h2>
+			<p><a href="debug.html#assert">assert</a>, <a href="debug.html#trace">trace</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="assert">assert</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">assert(?testResult | &gt;testMe, ['description'])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Asserts are used to check for programming errors in run-time. Until you run "debug.pika", asserts are disabled which means this function will do absolutely nothing (it is defined as an empty function in "stdlib.pika"). Running "debug.pika" will enable asserts by redefining this function. When enabled, it either checks the boolean ?testResult or executes &gt;testMe and checks the result.</p><p>Two things differ depending on the choice of passing a boolean or a function / lambda expression. If you pass a boolean, e.g. assert(myfunc() == 3), and assertions are disabled, the argument will still be evaluated, i.e. myfunc() will still be called. Furthermore, if 'description' is omitted, the exception on an assertion failure will simply contain 'true' or 'false'. </p><p>If you pass a function / lambda expression, e.g. assert(&gt;myfunc() == 3), the argument will only be evaluated if assertions are enabled and the exception will contain the full expression. In most cases you will want to use this variant.</p></div>
+	<h4>Examples</h4><pre class="examples">assert(&gt;(0 &lt;= $0 &lt;= 100))<br>assert(alwaysCallMe(), 'alwaysCallMe() failed miserably')</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="trace">&lt;trace&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">trace([&gt;tracer], [+level = 2])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Sets or resets the tracer function. The tracer function is called at various points in the PikaScript interpreter code. For example, you can use it for tracing caught exceptions, function calls and even implement debuggers and profilers.</p><p>+level ranges from 0 (no tracing) to 21 (maximum tracing) and determines which events that will trigger a callback. The default trace level of 2 calls the trace function on each function entry and exit. Other useful levels are 1 for tracing caught errors and 3 to trace every interpreted statement. (Please see "PikaScriptImpl.h" for a complete listing of all levels.)</p><p>The &gt;tracer function will be called with the following arguments:</p><p>$0 = the source code being executed<br>$1 = the offset into the source code<br>$2 = whether $3 is an lvalue or an rvalue (lvalue = identifier, rvalue = actual value)<br>$3 = the result from the last operation<br>$4 = trace level<br>$5 = false for "entry", true for "exit" (e.g. function call entry / exit).</p><p>Call trace() without arguments to stop all tracing.</p></div>
+	<h4>Examples</h4><pre class="examples">trace()<br>trace(function { print((if ($5) '} ' else '{ ') # if (exists(@^$callee)) ^$callee else '????') })</pre>
+	
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

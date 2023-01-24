@@ -8,6 +8,10 @@
 	<string>ivg</string>
 	<key>scopeName</key>
 	<string>source.ivg</string>
+    <key>fileTypes</key>
+    <array>
+        <string>ivg</string>
+    </array>
 	<key>patterns</key>
 	<array>
 		<dict>

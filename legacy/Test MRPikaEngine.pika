@@ -1,0 +1,362 @@
+// TITLE
+// Test MRPikaEngine (script for Microtonic 3.0)
+//
+// DESCRIPTION
+// Unit tests for the Microtonic PikaScript interface.
+//
+// AUTHOR
+// Magnus Lidström
+//
+// VERSION
+// 1.0
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+run('unittests.pika');
+display('PikaScript unit tests successful');
+run('debug.pika');
+
+// XorshiftPRNG is an implementation of the elegant Xorshift Pseudo Random Number Generator algorithm by
+// George Marsaglia (http://en.wikipedia.org/wiki/Xorshift)
+//
+// It also serves as an example of how to write object-oriented with Pika. XorshiftPRNG can be used like this:
+//
+// construct(@prng, XorshiftPRNG, time(), ~time());		// setup with seed time() and ~time()
+// print(prng.nextInt());
+// print(prng.nextFloat());
+//
+// ... or
+//
+// prng = new(XorshiftPRNG, time(), ~time());			// this time, prng becomes a reference, so that it can be shared etc
+// print([prng].nextInt());
+// print([prng].nextFloat());
+// prng = void;
+// gc();												// garbage collect to kill it
+// 
+XorshiftPRNG.NORM = 1 / ~0;
+XorshiftPRNG = function {
+	vargs(, @seedX, @seedY);
+	defaults(@seedX,123456789 , @seedY,362436069);
+	t = this();
+	[t].x = seedX;
+	[t].y = seedY;
+	[t].nextInt = function {
+		t = this();
+		z = (([t].x ^ ([t].x << 10)) & 0xFFFFFFFF);
+		[t].x = [t].y;
+		[t].y = (([t].y ^ ([t].y >> 13)) ^ (z ^ (z >> 10)) & 0xFFFFFFFF);
+	};
+	[t].nextFloat = function { [this()].nextInt() * XorshiftPRNG.NORM }
+};
+
+predChar = function { char(ordinal($0) - 1) };
+succChar = function { char(ordinal($0) + 1) };
+
+//
+// MAIN FUNCTION
+//
+function {	// Implemented as an anonymous function to allow local variables.
+
+	assert(> try(> assert(> false)) != void);	// Just double-checking that assertion is enabled.
+	
+	compose(@CORRECT_SEQUENCE, 2112846788, 20866602, 3238921223, 965798894, 3232856296, 3130433881, 3217095090, 1609483805, 3823436117, 120426956);
+	construct(@rnd, XorshiftPRNG, 123456789, 362436069);
+
+	// Test that random sequence is correct and deterministic
+	for (i = 0; i < 10; ++i) append(@testSequence, rnd.nextInt());
+	dump(@testSequence);
+	assert(> equal(@testSequence, @CORRECT_SEQUENCE));
+
+	quantize = function { min(floor($0 * $1) / ($1 - 1), 1.0) };
+	randomBool = >((rnd.nextInt() & 1) != 0);
+	randomMidiValue = >(if ((rnd.nextInt() & 1) != 0) (rnd.nextInt() & 127) else void);
+
+	//
+	// Constants tests
+	//
+	
+	assert(> CHANNEL_COUNT == 8);
+	assert(> PATTERN_COUNT == 12);
+	assert(> LAST_PATTERN == 'l');
+	assert(> PROGRAM_COUNT == 16);
+	assert(> PATTERN_STEP_COUNT == 16);
+	assert(> GLOBAL_PARAM_COUNT == 15);
+	assert(> FREQ_VALUE_C4 == 0.4725600599127338);
+	assert(> OCTAVE_STEP == 0.1003433318879937);
+
+	assert(> PARAMS.n == 215);
+	assert(> PARAMS.0 == 'Morph');
+	assert(> PARAMS.1 == 'Pattern');
+	assert(> PARAMS.15 == 'OscWave.1');
+	assert(> PARAMS.20 == 'ModRate.1');
+	assert(> PARAMS.40 == 'OscWave.2');
+	assert(> PARAMS.214 == 'ModVel.8');
+	assert(> DRUM_PATCH_PARAMS.n == 25);
+	assert(> DRUM_PATCH_PARAMS.0 == 'OscWave');
+	assert(> DRUM_PATCH_PARAMS.1 == 'OscFreq');
+	assert(> DRUM_PATCH_PARAMS.5 == 'ModRate');
+	assert(> DRUM_PATCH_PARAMS.24 == 'ModVel');
+	assert(> PARAM_STEPS.OscWave.1 == 3);
+	assert(> DRUM_PATCH_PARAM_STEPS.OscWave == 3);
+
+	display(bake("OS: {PLATFORM.OS}\nCPU: {PLATFORM.CPU}\nTarget: {BUILD.TARGET}\nVersion: {BUILD.VERSION}\nBuild: {BUILD.NUMBER}\nBuild Date: {BUILD.DATE} {BUILD.TIME}\nCompiler: {BUILD.COMPILER}\nLibs: {BUILD.LIBS}"));
+	display(bake("Documentation: {DIRS.DOCUMENTATION}\n\nPresets: {DIRS.PRESETS}\n\nDrum Patches: {DIRS.DRUM_PATCHES}\n\nScripts: {DIRS.SCRIPTS}"));
+
+	//
+	// Input tests
+	//
+	
+	assert(> try(abort) == void);
+	display("Your wrote: " # ask("Write something profound for me please..."));
+
+	//
+	// File and dir tests
+	//
+	
+	assert(> fullPath(void, 'abcd.efg') == DIRS.SCRIPTS # 'abcd.efg');
+	if (PLATFORM.OS == 'windows') {
+		drive = fullPath('/', '');
+		assert(> wildmatch(drive, '{?}:\', @drive));
+		drive = lower(drive);
+		assert(> lower(fullPath('/dir/subdir/file.txt', '../')) == drive # ':\dir\subdir\');
+		assert(> lower(fullPath('/dir/subdir/file.txt', '..\..\')) == drive # ':\dir\');
+		assert(> lower(fullPath('c:\dir\subdir\file.txt', '..\')) == 'c:\dir\subdir\');
+		assert(> lower(fullPath('c:\dir\subdir\file.txt', '..\..\')) == 'c:\dir\');
+	} else if (PLATFORM.OS == 'mac') {
+		assert(> fullPath('/dir/subdir/file.txt', '../') == '/dir/subdir/');
+		assert(> fullPath('/dir/subdir/file.txt', '../../') == '/dir/');
+	} else {
+		assert(false);
+	};
+
+	display("Next up, select any file anywhere, do not press cancel.");
+	display("You selected: " # browse());
+	display("Ok, this time, press cancel.");
+	for (; {
+		s = void;
+		assert(> try(>s = browse()) == void);
+		if (s != void) {
+			display("You did not press cancel. Try again.");
+			true
+		} else
+			false
+	}; );
+	display("Thanks. Next we are going to test saving a text-file somewhere. Please select the file name and location.");
+
+	path = browse('save');
+	save(path, 'One Ring to bring them all and in the darkness bind them');
+	assert(> load(path) == 'One Ring to bring them all and in the darkness bind them');
+	filename = path{rfind(path, '\/') + 1:};
+	found = false;
+	dir(fullPath(path, "../"), >{
+		args(@fn, @attributes, @created, @modified, @filesize, @macFileType);
+		if (fn == filename) {
+			display(bake("Found the file:\n\nFilename: {fn}\nAttributes: {attributes}\nCreated: {created}\nModified: {modified}\nSize: {filesize}\nMac File Type: {macFileType}"));
+			found = true;
+		};
+	});
+	assert(> found);
+	display('File tests done. You may now delete the file.');
+
+	//
+	// Parsing tests
+	//
+	
+	parseArray('{ 1, 2, 3, 4, 5 }', @array);
+	assert(> equal(@array, compose(@temp, 1, 2, 3, 4, 5)));
+	parseArray("{ 1, { 'sub', 'array' }, 2, 3, 4, 5 }", @array);
+	assert(> equal(@array, compose(@temp, 1, "{ 'sub', 'array' }", 2, 3, 4, 5)));
+	parseStruct('{ first=1, second:2, third="three" }', @struct);
+	assert(> struct.first == 1);
+	assert(> struct.second == 2);
+	assert(> struct.third == '"three"');
+	parseStruct("{ first=4, second :  5 /* comment */\nthird /* another comment */ = {\n\t\tsub='yes', dub='no'\n}; fourth=\"4\" }", @struct);
+	assert(> struct.first == 4);
+	assert(> struct.second == 5);
+	assert(> struct.third == "{\n\t\tsub='yes', dub='no'\n}");
+	assert(> struct.fourth == '"4"');
+	parseStruct(struct.third, @subStruct);
+	assert(> subStruct.sub == "'yes'");
+	assert(> subStruct.dub == "'no'");
+	
+	//
+	// Random tests
+	//
+	
+	prune(@gotcha);
+
+	for (count = 0; {
+		i = round(random(100));
+		if (!exists(@gotcha[i])) { gotcha[i] = true; ++count };
+		( count < 101 )
+	};);
+	
+	prune(@gotcha);
+	
+	for (count = 0; {
+		i = randomInt() >> (32 - 7);
+		if (!exists(@gotcha[i])) { gotcha[i] = true; ++count };
+		( count < 128 )
+	};);
+
+	prune(@gotcha);
+	
+	for (count = 0; {
+		i = (randomInt() & 127);
+		if (!exists(@gotcha[i])) { gotcha[i] = true; ++count };
+		( count < 128 )
+	};);
+	
+	//
+	// Clipboard test
+	//
+	
+	writeClipboard('test');
+	assert(> readClipboard() == 'test');
+
+	display('Preset tests will now commence. This may take a little while. Please answer YES to continue on any time-out messages.');
+
+	//
+	// Preset tests
+	//
+	
+	for (programNumber = 1; programNumber <= PROGRAM_COUNT; ++programNumber) {
+		select('program', programNumber);
+		assert(> selected('program') == programNumber);
+
+		createElement('preset', @testPreset);
+
+		testPreset.name = { for (s = ''; length(s) < 100;) s #= char(ordinal('a') + rnd.nextInt() % 26); ( s ) };
+		testPreset.Tempo = rnd.nextFloat() * 999;
+		for (i = 0; i < GLOBAL_PARAM_COUNT; ++i) {
+			param = PARAMS[i];
+			y = rnd.nextFloat();
+			if (exists(@::PARAM_STEPS[param])) y = quantize(y, ::PARAM_STEPS[param]);
+			testPreset[param] = y;
+		};
+		for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+			for (i = 0; i < DRUM_PATCH_PARAMS.n; ++i) {
+				param = DRUM_PATCH_PARAMS[i];
+				y = rnd.nextFloat();
+				if (exists(@::DRUM_PATCH_PARAM_STEPS[param])) y = quantize(y, ::DRUM_PATCH_PARAM_STEPS[param]);
+				testPreset.drumPatches[ch][param] = y;
+			};
+			for (ptn = 'a'; ptn <= LAST_PATTERN; ptn = succChar(ptn)) {
+				testPreset.patterns[ptn].length = 1 + (rnd.nextInt() & 0xF);
+				accents = fills = triggers = '';
+				for (s = 0; s < PATTERN_STEP_COUNT; ++s) {
+					accents #= '-#'{rnd.nextInt() & 1};
+					fills #= '-#'{rnd.nextInt() & 1};
+					triggers #= '-#'{rnd.nextInt() & 1};
+				};
+				testPreset.patterns[ptn][ch].accents = accents;
+				testPreset.patterns[ptn][ch].fills = fills;
+				testPreset.patterns[ptn][ch].triggers = triggers;
+			};
+		};
+	
+		setElement('preset', @testPreset);
+
+		getElement('preset', @p);
+		s = marshal('preset', @p);
+		assert(> isMarshaledFormat('preset', s));
+		unmarshal('preset', s, @p2);
+		foreach(@p, >{ if (classify($2) == 'number') assert(trunc(p2[$1], 4) == trunc($2, 4)) else assert(p2[$1] == $2) });
+	
+		for (i = 0; i < GLOBAL_PARAM_COUNT; ++i) {
+			if (PARAMS[i] != 'Morph') { // Morph is not a preset parameter.
+				trunced = trunc(p[PARAMS[i]], 4);
+				assert(> trunc(testPreset[PARAMS[i]], 4) == trunced);
+				assert(> trunc(getParam(PARAMS[i]), 4) == trunced);
+				assert(> trunc(p2[PARAMS[i]], 4) == trunced);
+			};
+		};
+	
+		for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+			select('channel', ch);
+			assert(> selected('channel') == ch);
+		
+			getElement('drumPatch', @dp);
+			s = marshal('drumPatch', @dp);
+			assert(> isMarshaledFormat('drumPatch', s));
+			unmarshal('drumPatch', s, @dp2);
+
+			for (i = 0; i < DRUM_PATCH_PARAMS.n; ++i) {
+				trunced = trunc(dp[DRUM_PATCH_PARAMS[i]], 4);
+				assert(> trunc(testPreset.drumPatches[ch][DRUM_PATCH_PARAMS[i]], 4) == trunced);
+				assert(> trunc(getParam(DRUM_PATCH_PARAMS[i] # '.' # ch), 4) == trunced);
+				assert(> trunc(dp2[DRUM_PATCH_PARAMS[i]], 4) == trunced);
+			};
+		};
+
+		for (ptn = 'a'; ptn <= LAST_PATTERN; ptn = succChar(ptn)) {
+			select('pattern', ptn);
+			assert(> selected('pattern') == ptn);
+
+			getElement('pattern', @pt);
+			s = marshal('pattern', @pt);
+			assert(> isMarshaledFormat('pattern', s));
+			unmarshal('pattern', s, @pt2);
+
+			assert(> pt.length == pt2.length);
+			assert(> pt.length == testPreset.patterns[ptn].length);
+
+			for (s = 0; s < PATTERN_STEP_COUNT; ++s) {
+				for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+					assert(> pt[ch].accents == pt2[ch].accents);
+					assert(> pt[ch].fills == pt2[ch].fills);
+					assert(> pt[ch].triggers == pt2[ch].triggers);
+					assert(> pt[ch].accents == testPreset.patterns[ptn][ch].accents);
+					assert(> pt[ch].fills == testPreset.patterns[ptn][ch].fills);
+					assert(> pt[ch].triggers == testPreset.patterns[ptn][ch].triggers);
+				};
+			};
+		};
+	};
+
+	//
+	// Midi Config tests
+	//
+
+	compose(@MODE_NAMES, 'SwitchNext', 'SwitchNow', 'Retrigger', 'RetriggerGated');
+
+	for (testCounter = 0; testCounter < 16; ++testCounter) {
+		createElement('midiConfig', @mc);
+		for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+			for (i = 0; i < DRUM_PATCH_PARAMS.n; ++i) {
+				mc.channelCC[ch][DRUM_PATCH_PARAMS[i]] = randomMidiValue();
+				mc.notes.Mute[ch] = randomMidiValue();
+				mc.notes.Trigger[ch] = randomMidiValue();
+			}
+		};
+		mc.improvedCCScaling = randomBool();
+		mc.midiCCAutomates = randomBool();
+		mc.midiCCOnSelectedChannel = randomBool();
+		mc.midiNotesSelectChannel = randomBool();
+		mc.midiReceiveChannel = (if ((rnd.nextInt() & 1) != 0) ((rnd.nextInt() & 15) + 1) else void);
+		mc.midiTransmitChannel = (if ((rnd.nextInt() & 1) != 0) ((rnd.nextInt() & 15) + 1) else void);
+		for (i = 0; i < GLOBAL_PARAM_COUNT; ++i) if (PARAMS[i]{:5} != 'Mute.') mc.globalCC[PARAMS[i]] = randomMidiValue();
+		for (i = 1; i <= PROGRAM_COUNT; ++i) mc.notes.Program[i] = randomMidiValue();
+		mc.notes.Start = randomMidiValue();
+		mc.notes.Stop = randomMidiValue();
+		for (ptn = 'a'; ptn <= LAST_PATTERN; ptn = succChar(ptn)) mc.notes.Pattern[ptn] = randomMidiValue();
+		mc.patternsSendMidi = randomBool();
+		mc.pitchWheelRange = 19;
+		mc.pitchedMode = randomBool();
+		mc.supportMidiNoteOff = randomBool();
+		mc.supportMidiProgramChange = randomBool();
+		mc.patternNoteMode = MODE_NAMES[randomInt() & 3];
+		setElement('midiConfig', @mc);
+		getElement('midiConfig', @mc2);
+		s = marshal('midiConfig', @mc2);
+		assert(> isMarshaledFormat('midiConfig', s));
+		unmarshal('midiConfig', s, @mc3);
+		foreach(@mc, >{
+			elem = $1;
+			assert(> mc[elem] == mc2[elem]);
+			assert(> mc2[elem] == mc3[elem]);
+		});
+	};
+
+	display('All tests successful. Congrats!');
+
+}();

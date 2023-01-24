@@ -1,0 +1,259 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: utilities</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>utilities</h2>
+			<p><a href="utilities.html#args">args</a>, <a href="utilities.html#classify">classify</a>, <a href="utilities.html#coalesce">coalesce</a>, <a href="utilities.html#compare">compare</a>, <a href="utilities.html#default">default</a>, <a href="utilities.html#delete">delete</a>, <a href="utilities.html#evaluate">evaluate</a>, <a href="utilities.html#exists">exists</a>, <a href="utilities.html#input">input</a>, <a href="utilities.html#invoke">invoke</a>, <a href="utilities.html#load">load</a>, <a href="utilities.html#max">max</a>, <a href="utilities.html#min">min</a>, <a href="utilities.html#parse">parse</a>, <a href="utilities.html#print">print</a>, <a href="utilities.html#run">run</a>, <a href="utilities.html#save">save</a>, <a href="utilities.html#swap">swap</a>, <a href="utilities.html#throw">throw</a>, <a href="utilities.html#time">time</a>, <a href="utilities.html#try">try</a>, <a href="utilities.html#vargs">vargs</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="args">args</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">args([@variables, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Assigns arguments to named variables. Pass a reference to a local variable for each argument your function expects. The caller of your function must pass exactly this number of arguments or an exception will be thrown.</p></div>
+	<h4>Examples</h4><pre class="examples">args(@x, @y)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#vargs">vargs</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="classify">&lt;classify&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'class' = classify(&lt;value&gt;)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Examines &lt;value&gt; and tries to determine what "value class" it belongs to:</p><p>- 'void' (empty string)<br>- 'boolean' (true or false)<br>- 'number' (starts with a digit, '-' or 'i' for "infinity", and is convertible to a number)<br>- 'reference' (starting with ':' and containing at least one more ':')<br>- 'function' (enclosed in '{ }' or begins with '&gt;')<br>- 'native' (enclosed in '&lt; &gt;')<br>- 'string' (if no other match)</p></div>
+	<h4>Examples</h4><pre class="examples">classify(void) == 'void'<br>classify('false') == 'boolean'<br>classify(123.456) == 'number'<br>classify(@localvar) == 'reference'<br>classify(function { }) == 'function'<br>classify(&gt;lambda) == 'function'<br>classify('&lt;print&gt;') == 'native'<br>classify('tumbleweed') == 'string'</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="coalesce">coalesce</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;value&gt; = coalesce(&lt;values&gt; | @variables, ...)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the first &lt;value&gt; in the argument list that is non-void, or the contents of the first @variables that exists (whichever comes first).</p></div>
+	<h4>Examples</h4><pre class="examples">coalesce(@mustBeDefined, '')<br>coalesce(cantBeEmpty, perhapsThisAintEmpty, 'nowIAmDefinitelyNotEmpty')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#default">default</a>, <a href="#exists">exists</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="compare">compare</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;diff&gt; = compare(&lt;a&gt;, &lt;b&gt;)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns 0 if &lt;a&gt; equals &lt;b&gt;, -1 if &lt;a&gt; is less than &lt;b&gt; and 1 if &lt;a&gt; is greater than &lt;b&gt;. This function is useful in sorting algorithms.</p></div>
+	<h4>Examples</h4><pre class="examples">compare('abc', 'def') &lt; 0<br>compare('def', 'abc') &gt; 0<br>compare('abc', 'abc') == 0</pre>
+	<h4>See Also</h4><p class="seealso"><a href="containers.html#qsort">qsort</a>, <a href="#swap">swap</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="default">default</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">default(@variable, &lt;value&gt;)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Assigns &lt;value&gt; to @variable if @variable does not exist. If it does already exist, this function does nothing. Use this function for example to initialize optional arguments.</p></div>
+	<h4>Examples</h4><pre class="examples">default(@name, 'Smith')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#coalesce">coalesce</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="delete">&lt;delete&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">delete(@variable)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Deletes the variable referenced to by @variable.</p><p>Notice that this function can only delete a single variable at a time. This means only a single "element" in a "container" as well. Use prune() to delete an entire "plain old data" container and destruct() to delete an object.</p></div>
+	<h4>Examples</h4><pre class="examples">delete(@begone)<br>delete(@hurray[1972])</pre>
+	<h4>See Also</h4><p class="seealso">destruct, <a href="#exists">exists</a>, <a href="containers.html#prune">prune</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="evaluate">&lt;evaluate&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;result&gt; = evaluate('code', [@frame])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Evaluates 'code' and returns the result. You can decide which frame should execute the code by supplying a reference in @frame. Without @frame, code is executed in its own frame just as if you would call a function. Only the "frame identifier" of @frame is used, so you may for example pass a single ^ to evaluate code in the caller's frame.</p></div>
+	<h4>Examples</h4><pre class="examples">evaluate('3 + 3') == 6<br>evaluate('x = random(1)', @x)</pre>
+	<h4>See Also</h4><p class="seealso">expand, <a href="#invoke">invoke</a>, <a href="#parse">parse</a>, <a href="#run">run</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="exists">&lt;exists&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">?found = exists(@variable)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns true if the variable referenced to by @variable is defined.</p></div>
+	<h4>Examples</h4><pre class="examples">exists(@::aglobal)<br>exists(@users['magnus lidstrom'])</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#coalesce">coalesce</a>, <a href="#default">default</a>, <a href="#delete">delete</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="input">&lt;input&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'answer' = input('question')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Prints 'question' and returns a string read from standard input.</p></div>
+	<h4>Examples</h4><pre class="examples">name = input("What's your name? ")</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#print">print</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="invoke">&lt;invoke&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">invoke(['callee'], [&gt;body], @args, [+offset = 0], [+count])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Calls 'callee' (or &gt;body) with the argument list @args. The difference between using 'callee' or &gt;body is that the former should be a string with a function name, while the latter should be an actual function body. If both arguments are present, &gt;body will be executed, but the called function's $callee variable will be set to 'callee'.</p><p>+offset can be used to adjust the element index for the first argument. +count is the number of arguments. If it is omitted, [@args].n is used to determine the count.</p></div>
+	<h4>Examples</h4><pre class="examples">invoke('max', , @values)<br>invoke('(callback)', $0, @$, 1, 4)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#evaluate">evaluate</a>, <a href="#run">run</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="load">&lt;load&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'contents' = load('filePath')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Loads a file from disk and returns it as a string. The standard implementation uses the file I/O of the standard C++ library, which takes care of line ending conversion etc. It can normally only handle ASCII text files.</p></div>
+	<h4>Examples</h4><pre class="examples">data = load('myfolder/myfile.txt')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#save">save</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="max">max</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;m&gt; = max(&lt;x&gt;, &lt;y&gt;, [&lt;z&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the largest value of all the arguments.</p></div>
+	<h4>Examples</h4><pre class="examples">max(5, 3, 7, 1, 4) == 7<br>max('Sleepy', 'Grumpy', 'Happy', 'Bashful', 'Dopey', 'Sneezy', 'Doc') == 'Sneezy'<br>max('Zero', '10', '5') == 'Zero'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#min">min</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="min">min</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;m&gt; = min(&lt;x&gt;, &lt;y&gt;, [&lt;z&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the smallest value of all the arguments.</p></div>
+	<h4>Examples</h4><pre class="examples">min(5, 3, 7, 1, 4) == 1<br>min('Sleepy', 'Grumpy', 'Happy', 'Bashful', 'Dopey', 'Sneezy', 'Doc') == 'Bashful'<br>min('Zero', '10', '5') == '5'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#max">max</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="parse">&lt;parse&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = parse('code')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Parses 'code' (without executing it) and returns the number of characters that was successfully parsed. 'code' is expected to begin with a single PikaScript expression. The parsing ends when a semicolon or any unknown or unexpected character is encountered (including unbalanced parentheses etc). The resulting expression needs to be syntactically correct or an exception will be thrown.</p><p>You can use this function to extract PikaScript code inlined in other text.</p></div>
+	<h4>Examples</h4><pre class="examples">parse('3+3') == 3<br>parse('1 + 2 * 3 ; stop at semicolon') == 10<br>parse(' /* leading comment */ code_here /* skip */ /* trailing */ /* comments */ but stop here') == 74<br>parse('stop after space after stop') == 5<br>parse('x + x * 3 ) * 7 /* stop at unbalanced ) */') == 10</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#evaluate">evaluate</a>, <a href="#run">run</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="print">&lt;print&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">print('textLine')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Prints 'textLine' to the standard output, appending a newline character. (Sorry, but standard PikaScript provides no means for outputting text without the newline.)</p></div>
+	<h4>Examples</h4><pre class="examples">print('Hello world!')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#input">input</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="run">run</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">run('filePath')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Loads and executes a PikaScript source file. The code is executed in its own frame, just as if you were calling a function.</p></div>
+	<h4>Examples</h4><pre class="examples">run('src/chess.pika')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#evaluate">evaluate</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="save">&lt;save&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">save('filePath', 'contents')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Saves 'contents' to a file (replacing any existing file). The standard implementation uses the file I/O of the standard C++ library, which takes care of line ending conversion etc. It can normally only handle ASCII text files.</p></div>
+	<h4>Examples</h4><pre class="examples">save('myfolder/myfile.txt', 'No, sir, away! A papaya war is on!')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#load">load</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="swap">swap</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">swap(@a, @b)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Swaps the contents of the variables referenced to by @a and @b. This function is useful in sorting algorithms.</p></div>
+	<h4>Examples</h4><pre class="examples">swap(@master, @slave)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#compare">compare</a>, <a href="containers.html#qsort">qsort</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="throw">&lt;throw&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">throw('error')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Throws an exception. 'error' should describe the error in human readable form. Use try() to catch errors. (PikaScript exceptions are standard C++ exceptions. How uncaught exceptions are handled is up to the host application.)</p></div>
+	<h4>Examples</h4><pre class="examples">throw('Does not compute')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#try">try</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="time">&lt;time&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+secs = time()</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the system clock as the number of seconds passed since January 1 1970 (or at least, if that is how the C time() function works on your platform).</p></div>
+	<h4>Examples</h4><pre class="examples">elapsed = time() - lastcheck</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="try">&lt;try&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;result&gt; = try(&gt;doThis)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Executes &gt;doThis, catching any thrown exceptions and returning the error string of the exception. If no exception was caught, void is returned. The returned value of &gt;doThis is discarded. (PikaScript exceptions are standard C++ exceptions. You may catch other exceptions than PikaScript errors with this function.)</p></div>
+	<h4>Examples</h4><pre class="examples">success = try(&gt;data = load(file))<br>try(&gt;1+1) == void<br>try(&gt;1+'a') == "Invalid number: 'a'"<br>try(&gt;throw('catchme')) == 'catchme'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#throw">throw</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="vargs">vargs</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">vargs([@arguments, ...], , [@optionals, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>As args() but you may define arguments that are optional. The caller of your function must pass all required arguments or an exception will be thrown. An exception will also be thrown if the caller passes more optional arguments than present in vargs(). An easy way to assign default values for optional arguments is with the default() function. Alternatively you may want to use coalesce().</p></div>
+	<h4>Examples</h4><pre class="examples">vargs(@required1, @required2, , @optional1, @optional2)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#args">args</a>, <a href="#coalesce">coalesce</a>, <a href="#default">default</a></p>
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

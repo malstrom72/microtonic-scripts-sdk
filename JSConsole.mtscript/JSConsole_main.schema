@@ -1,0 +1,16 @@
+include: ../../Resources/microtonic.schema
+resources: ../
+resources: ../../Resources
+
+<actions> = <microtonicAction>
+        | { action: "jsConsole.startup" }
+        | { action: "jsConsole.updateConfig", params: <string> }
+        | { action: "jsConsole.fpsTick" }
+        | { action: "jsConsole.shutdown" }
+        | { action: "jsConsole.paste" }
+        | { action: "jsConsole.hitEnter" }
+        | { action: "jsConsole.minimize" }
+        | { action: "jsConsole.checkLitter" }
+        | { action: "jsConsole.close" }
+
+<view> = <microtonicView>

@@ -1,0 +1,194 @@
+@define shadowBlur=8
+@define shadowX=4
+@define shadowY=2
+@define shadowIntensity=0.33
+@define titleBarHeight=24
+
+@define columns=80
+@define rows=25
+@define backgroundColor=#F0F0F0
+@define frameColor=#6090C0
+
+// 8x18 font
+@define width=(@columns * 8)
+@define height=(@titleBarHeight + @rows*18)
+@define tabSize=4
+
+bounds: { (w - @width) / 2 - @shadowX, (h - @height) / 2 - @shadowY, @width + @shadowBlur, @height + @shadowBlur }
+
+transitions: {
+	open: {
+		time: 0.1
+		scale: 50
+		opacity: 0
+	}
+	close: {
+		time: 0.1
+		scale: 50
+		opacity: 0
+	}
+}
+
+autoexecs: {
+	{ action: "set", params: { jsConsole.windowZOrder, 0 }, onReload: false	}
+	{ action: "jsConsole.startup", onReload: false }
+	{ action: "jsConsole.updateConfig", params: "@columns,@rows,@tabSize" }
+	{ action: "jsConsole.fpsTick", repeat: 0.001 }
+	{ action: "jsConsole.shutdown", onClose: true, onReload: false }
+	{ action: "jsConsole.checkLitter", repeat: 0.25 }
+}
+
+translations: {
+	"minOrMax:false": "Minimize",
+	"minOrMax:true": "Maximize"
+}
+
+views: {
+	// dragArea can't be in a group, or we'll just drag within that group.
+	{
+		type: "dragArea"
+		bounds: { @shadowX, @shadowY, w-@shadowBlur, @titleBarHeight }
+		hint: "Drag window"
+		bringToFront: "auto"
+		positionVariable: jsConsole.windowPosition
+		zOrderVariable: jsConsole.windowZOrder
+		cursor: "arrow"
+	}
+	{
+		type: "paged",
+		index: "jsConsole.minimized",
+		pages: {			// Notice that all pages are created on init, then shown / hidden as requested
+			"true": {
+				// Drop shadow (using masks to multiply four gradient fades in each direction)
+				{
+					type: "vector"
+					bounds: { 0, 0, w, @titleBarHeight+@shadowBlur }
+					code: "g=call [ mask [ wipe gradient:[linear $0 from:0.0 to:1.0] ] ]; $g 0,0,@shadowBlur,0; $g 0,0,0,@shadowBlur; $g {@width+@shadowBlur},0,{@width},0; $g 0,{@titleBarHeight+@shadowBlur},0,{@titleBarHeight}; wipe rgb(0,0,0,@shadowIntensity)"
+				}
+			},
+			"false": {
+				{
+					type: "paged",
+					index: "jsConsole.opacity",
+					pages: {			// Notice that all pages are created on init, then shown / hidden as requested
+						"100": {
+							// Drop shadow (using masks to multiply four gradient fades in each direction)
+							{
+								type: "vector"
+								code: "g=call [ mask [ wipe gradient:[linear $0 from:0.0 to:1.0] ] ]; $g 0,0,@shadowBlur,0; $g 0,0,0,@shadowBlur; $g {@width+@shadowBlur},0,{@width},0; $g 0,{@height+@shadowBlur},0,{@height}; wipe rgb(0,0,0,@shadowIntensity)"
+							}
+						}
+					}
+				}
+				{
+					type: "click"
+					bounds: { @shadowX, @shadowY+@titleBarHeight, w-@shadowBlur, h-@titleBarHeight-@shadowBlur }
+					actions: {
+						{ "click", "nop" },
+						{ "context", "jsConsole.paste" }
+					},
+					hint: "" // empty hint removes hints by underlying views from popuping up
+					cursor: "arrow"
+				},
+
+				{
+					type: "transformed",
+					opacity: jsConsole.opacity
+					views: {
+						{
+							bounds: { @shadowX, @shadowY+@titleBarHeight, w-@shadowBlur, h-@titleBarHeight-@shadowBlur }
+							dimensions: { @columns, @rows }
+							type: "console"
+							background: "@backgroundColor"
+							font: { ivgfont: "monospace", size: 14, color: "black", unknown: '?' },
+							tabSize: @tabSize
+							promptVariable: jsConsole.prompt
+							outputVariable: jsConsole.output
+							inputVariable: jsConsole.input
+							inputAction: "jsConsole.hitEnter"
+							margins: { 5, 5 }
+							historyVariable: jsConsole.history
+						}
+					}
+				},
+
+				{
+					type: "rectangle"
+					bounds: { @shadowX, @shadowY, w-@shadowBlur, h-@shadowBlur }
+					frame: { color: "@frameColor", stroke: 2, joints: "miter" }
+				}
+			}
+		}
+	}
+
+	{
+		type: "hover",
+		enterAction: "set"
+		enterParams: { jsConsole.opacity, 100 }
+		leaveAction: "set"
+		leaveParams: { jsConsole.opacity, 90 }
+	}
+
+	// Window title and frame
+	{
+		type: "group"
+		bounds: { @shadowX, @shadowY, w-@shadowBlur, @titleBarHeight }
+		views: {
+			{
+				type: "rectangle"
+				fill: "@frameColor"
+			}
+
+			{
+				type: "caption"
+				font: { ivgfont: "sans-serif", size: 16, color: "white" }
+				text: "JSConsole"
+				align: "middle center"
+			}
+
+			{
+				type: "caption",
+				bounds: { r - 110, t + 4, 40, 16 },
+				align: "middle right",
+				font: { ivgfont: "sans-serif", size: 12, color: "white" }
+				text: "[var]jsConsole.fps[/var] fps"
+			}
+			
+			{
+				@define reloadPath=M8,6.01h-6.58l1.94-6.01,1.72,2.22c1.96-1.39,4.35-2.21,6.93-2.21,6.62,0,12,5.38,12,12s-5.38,12-12,12-12-5.36-12-12c0-1.04.13-2.04.38-3h2.08c-.3.95-.46,1.96-.46,3,0,5.52,4.48,10,10,10,5.52,0,10-4.48,10-10,0-5.52-4.48-10-10-10-2.12,0-4.08.67-5.7,1.8l1.7,2.2zm4,1.99c2.21,0,4,1.79,4,4s-1.79,4-4,4-4-1.79-4-4,1.79-4,4-4z
+				bounds: { r - 60, t + 4, 16, 16 },
+				type: "button",
+				actions: {
+					{ "click", "reload" }
+					{ "click+shift", "reload", "reset" }
+				},
+				standard: { image: { ivgCode: "bounds 0,0,16,16; scale 0.6 anchor:8,8; offset -4,-4; fill white; path svg:@reloadPath" } }
+				down: { image: { ivgCode: "bounds 0,0,16,16; scale 0.5 anchor:8,8; offset -4,-4; fill white; path svg:@reloadPath" } }
+				hint: "Reload all UI components"
+				cursor: "arrow"
+			},
+
+			{
+				bounds: { r - 40, t + 4, 16, 16 },
+				type: "button",
+				action: "jsConsole.minimize",
+				standard: { image: { ivgCode: "bounds 0,0,16,16; fill white; star 8,9,3,6" } }
+				down: { image: { ivgCode: "bounds 0,0,16,16; fill white; star 8,9,3,5" } }
+				checked: { image: { ivgCode: "bounds 0,0,16,16; fill white; star 8,7,3,6 rotation:180" } }
+				checkedDown: { image: { ivgCode: "bounds 0,0,16,16; fill white; star 8,7,3,5 rotation:180" } }
+				hint: "[xlate]minOrMax:[var]jsConsole.minimized[/var][/xlate] window"
+				cursor: "arrow"
+			},
+
+			{
+				bounds: { r - 20, t + 4, 16, 16 }
+				type: "button"
+				action: "jsConsole.close"
+				standard: { image: { ivgCode: "bounds 0,0,16,16; pen white; path svg:M3,3L13,13M13,3L3,13" } }
+				down: { image: { ivgCode: "bounds 0,0,16,16; pen white; path svg:M4,4L12,12M12,4L4,12" } }
+				hint: "Close window"
+				cursor: "arrow"
+			}
+		}
+	}
+}

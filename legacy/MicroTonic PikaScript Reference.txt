@@ -1,0 +1,766 @@
+Microtonic PikaScript API Reference v1.01
+#########################################
+
+  Notice that help for the functions in the PikaScript standard library is available through the `help()` function, but
+the Microtonic API is only documented here for now.
+
+
+Table of Contents
+=================
+
+ - Globals
+   
+   - Build Constants
+   - Directory Constants
+   - Execution Constants
+   - Microtonic Constants
+   - Parameter Constants
+   
+ - Functions
+   
+   - abort()
+   - ask()
+   - browse()
+   - createElement()
+   - dir()
+   - display()
+   - fullPath()
+   - getElement()
+   - getParam()
+   - isMarshaledFormat()
+   - load()
+   - marshal()
+   - paramText()
+   - paramValue()
+   - parseArray()
+   - parseStruct()
+   - print()
+   - random()
+   - randomInt()
+   - readClipboard()
+   - save()
+   - select()
+   - selected()
+   - setElement()
+   - setParam()
+   - unmarshal()
+   - writeClipboard()
+   
+ - Structures
+   
+   - drumPatch Structure
+   - midiConfig Structure
+   - pattern Structure
+   - preset Structure
+   
+ - Built-in PikaScript Files
+
+
+Globals
+=======
+
+========================================================================================================================
+
+Build Constants
+---------------
+
+    PLATFORM.OS    = 'windows'|'mac'
+    PLATFORM.CPU   = 'x86'|'ppc'
+    BUILD.TARGET   = 'debug' | 'beta' | 'release'
+    BUILD.VERSION  = string (e.g. '3.0.1')
+    BUILD.NUMBER   = number (e.g. 34)
+    BUILD.DATE     = string (e.g. 'Feb 2 2011')
+    BULLD.TIME     = string (e.g. '12:15:16')
+    BUILD.COMPILER = string (e.g. 'GCC 4.0.1 (Apple Inc. build 5494)')
+    BUILD.LIBS     = string (e.g. 'OSXSDK 1040')
+
+========================================================================================================================
+
+Directory Constants
+-------------------
+
+    DIRS.DOCUMENTATION  
+    DIRS.PRESETS  
+    DIRS.DRUM_PATCHES
+    DIRS.SCRIPTS
+
+  Paths to various installation directories. These are always full absolute paths ending with a directory slash ('/' or
+'\'). `DIRS.SCRIPTS` is the default directory used when loading and saving files without specifying an absolute path.
+
+========================================================================================================================
+
+Execution Constants
+-------------------
+
+    ::isRepeating = true | false
+
+  If `::isRepeating` is true the user is running the script by shift-clicking the script menu button. Usually this means
+you should rerun the algorithms using the same parameters as last time without interrupting to ask the user for input.
+
+========================================================================================================================
+
+Microtonic Constants
+--------------------
+
+ By using these constants (instead of literal numbers) you can achieve future compatibility in case some configuration
+in Microtonic is changed in a future version.
+
+========================================================================================================================
+
+    CHANNEL_COUNT = 8
+
+  Drum channel count. Drum channels are indexed from 1 to 8.
+
+========================================================================================================================
+
+    PATTERN_COUNT = 12
+
+  Pattern count. Patterns are indexed from 'a' to 'l'.
+
+========================================================================================================================
+
+    LAST_PATTERN = 'l'
+
+  Last pattern index. To iterate all patterns you could write:
+
+    for (ptn = 'a'; ptn <= LAST_PATTERN; ptn = char(ordinal($0) + 1)) /* do something */
+
+  or
+
+    for (i = 0; i < PATTERN_COUNT; ++i) { ptn = char(ordinal('a') + i); /* do something */ }
+
+========================================================================================================================
+
+    PROGRAM_COUNT = 16
+
+  Number of programs. Programs are indexed from 1, e.g. to iterate all programs you could write:
+
+    for (pgm = 1; pgm <= PROGRAM_COUNT; ++pgm) /* do something */
+
+========================================================================================================================
+
+    PATTERN_STEP_COUNT = 16
+
+  Number of steps in a pattern. Pattern data is represented by strings containing '-' and '#'. The step count is the
+length of these strings.
+
+========================================================================================================================
+
+    GLOBAL_PARAM_COUNT = 15
+
+  Number of global parameters.
+
+========================================================================================================================
+
+    FREQ_VALUE_C4 = 0.4725600599127338
+
+  The frequency value for middle C (523.25 Hz) on "OscFreq", "NFilFrq" and "EQFreq".
+
+========================================================================================================================
+
+    OCTAVE_STEP = 0.1003433318879937
+
+  The parameter value step for a full octave.
+
+========================================================================================================================
+
+Parameter Constants
+-------------------
+
+========================================================================================================================
+
+    PARAMS.n   = 215
+    PARAMS.0   = 'Morph'
+    PARAMS.1   = 'Pattern'
+        .
+        .
+    PARAMS.15  = 'OscWave.1'
+        .
+        .
+    PARAMS.20  = 'ModRate.1'
+        .
+        .
+    PARAMS.40  = 'OscWave.2'
+        .
+        .
+    PARAMS.214 = 'ModVel.8'
+
+
+    DRUM_PATCH_PARAMS.n  = 25
+    DRUM_PATCH_PARAMS.0  = 'OscWave'
+    DRUM_PATCH_PARAMS.1  = 'OscFreq'
+        .
+        .
+    DRUM_PATCH_PARAMS.5  = 'ModRate'
+        .
+        .
+    DRUM_PATCH_PARAMS.24 = 'ModVel'
+
+  Drum patch and global parameters are usually accessed via their symbolic names (although some functions also take an
+index). The `PARAMS` and `DRUM_PATCH_PARAMS` arrays can be used to look up symbolic names for specific parameters
+indexes. Notice that the `PARAMS` array contains parameters for all eight drum patches as well as global parameters.
+
+========================================================================================================================
+
+    PARAM_STEPS.OscWave.1 = 3
+        etc
+
+    DRUM_PATCH_PARAM_STEPS.OscWave = 3
+        etc
+
+The `PARAM_STEPS` and `DRUM_PATCH_PARAM_STEPS` arrays will give you the number of discrete steps for discrete parameters
+("undefined" for continuous parameters, so you can check which parameters are discrete by using exists() ). 
+
+========================================================================================================================
+
+
+Functions
+=========
+
+========================================================================================================================
+
+abort()
+-------
+
+    abort()
+
+  Terminates the script by throwing an "exception" that will not display any error message. (You can catch this
+exception with `try()`. The exception string will be empty.)
+
+  See also: throw(), try()
+
+========================================================================================================================
+
+ask()
+-----
+
+    +string = ask('question', ['defaultAnswer'])
+
+  Lets the user respond with a string to `'question'` through a simple text edit dialog. If the user clicks the cancel
+button, the script will be aborted with an "exception". (You can catch this exception with `try()`. The exception string
+will be empty.)
+
+  See also: display(), try()
+
+========================================================================================================================
+
+browse()
+--------
+
+    'fullpath' = browse(['type'])
+
+  Opens a file browser window and returns the path browsed to. `'type'` can be `'open'` (default) or `'save'` (opens a
+"save as" file dialog). If the user presses cancel, the script will be aborted with an "exception". (You can catch this
+exception with `try()`. The exception string will be empty.)
+
+  See also: dir(), fullPath(), load(), save(), try()
+
+========================================================================================================================
+
+createElement()
+---------------
+
+    @target = createElement('type', @target)
+
+  Creates a new initialized preset, drum-patch, pattern or midi-config structure (`'type'` should be `'preset'`,
+`'drumPatch'`, `'pattern'` or `'midiConfig'`). Returns the input `@target`. See Structures for more info on the various
+element data.
+
+  See also: getElement(), setElement()
+
+========================================================================================================================
+
+dir()
+-----
+
+    dir('path', >callback)
+
+  List files in `'path'` and calls `>callback` for every file. Forward slash ('/') in paths work on both Windows and
+OS X, backward slash ('\') only works on Windows. `'path'` is expected to be an UTF-8 encoded path. If the path is not
+an "absolute full path" it is considered relative to the script directory. `>callback` will receive the following
+arguments:
+
+  - $0 = filename (incl. extension, but no path)
+  - $1 = attributes (3 chars, 'DRH' for directory, read-only and hidden, '-' = not)
+  - $2 = created (secs since 1970 as in C)
+  - $3 = modified (secs again)
+  - $4 = filesize (bytes)
+  - $5 = mac file type (4 chars)
+  
+  Suggestion: use the standard library `wildmatch()` to match filenames with "wildcard patterns".
+
+  See also: browse(), fullPath(), load(), save(), wildmatch()
+
+========================================================================================================================
+
+display()
+---------
+
+    'button' = display('message', ['type' = 'plain'], ['buttons' = 'ok'], ['defaultButton' = 'ok'])
+
+  Displays a message box (a so called "alert") and returns the name of the button pressed. `'type'` can be any of
+`'plain'`, `'question'`, `'warning'`, `'info'` and `'error'`. `'buttons'` can be `'ok'`, `'ok cancel'`,
+`'retry cancel'`, `'yes no'`, `'yes no cancel'` or `'abort retry ignore'`. Naturally, `'defaultButton'` can be any of
+the buttons just listed.
+
+  See also: ask(), print()
+
+========================================================================================================================
+
+fullPath()
+----------
+
+    'fullpath' = fullPath('base', 'path')
+
+  Canonicalizes the relative `'path'` against the `'base'` path (i.e. returns a distinct full path specification). E.g.,
+`fullPath("./", 'file')` returns the absolute path to `'file'` in the current working dir. `fullPath('file', "../")`
+returns the absolute path to the parent directory for `'file'`. Pass `void` for `'base'` to make a path relative to the
+script folder.
+
+  See also: browse(), dir(), load(), save()
+
+========================================================================================================================
+
+getElement()
+------------
+
+    @target = getElement('type', @target)
+
+  Gets current preset, drum-patch (of current channel), pattern (currently selected) or midi-config into `@target`
+(`'type'` should be `'preset'`, `'drumPatch'`, `'pattern'` or `'midiConfig'`). Returns the input `@target`. See
+Structures for more info on the various element data.
+
+  See also: createElement(), setElement()
+
+========================================================================================================================
+
+getParam()
+----------
+
+    +float = getParam('param'|+index)
+
+  Retrieves the current setting of a single parameter. `'param'` is a string or number (e.g. `'ModRate.1'` and 20 is
+equivalent). The returned value is a floating point number between 0 and 1.
+
+  See also: getElement(), paramText(), setParam()
+
+========================================================================================================================
+
+isMarshaledFormat()
+-------------------
+
+    ?bool = isMarshaledFormat('type', 'string')
+
+  Returns true if `'string'` is valid Microtonic file / clipboard format (`'type'` should be `'preset'`, `'drumPatch'`,
+`'pattern'` or `'midiConfig'`).
+
+  See also: marshal(), unmarshal()
+
+========================================================================================================================
+
+load()
+------
+
+    'string' = load('path')
+
+  Loads a file. `'path'` is expected to be an UTF-8 encoded path. If the path is not an "absolute full path" it is
+considered relative to the script directory. Alternatively, if the file does not exist and a built-in resource exists
+with the name, the resource is loaded instead (e.g. `'debug.pika'`). Forward slash ('/') in paths work on both Windows
+and OS X, backward slash ('\') only works on Windows.
+
+  See also: browse(), dir(), fullPath(), save()
+
+========================================================================================================================
+
+marshal()
+---------
+
+    'string' = marshal('type', @source)
+
+  Converts a structure (in `@source`) to Microtonic file / clipboard format (`'type'` should be `'preset'`,
+`'drumPatch'`, `'pattern'` or `'midiConfig'`). See Structures for more info on the various element data.
+
+  See also: createElement(), getElement(), isMarshaledFormat(), unmarshal()
+
+========================================================================================================================
+
+paramText()
+-----------
+
+    'text' = paramText('param'|+index, +value, [?highPrecision = false], [@context])
+
+  Converts a parameter value to a human readable string. `+value` must be a floating point number between 0 and 1. If
+`?highPrecision` is true, the returned text will have enough precision to preserve all the bits of the original
+floating-point value. `@context` is optional and if present should reference a "drumPatch" structure. Some parameter's
+textual representation depend on other parameter settings (such as "ModRate" depending on "ModMode"), and `@context` can
+be used to declare these settings. If `@context` is omitted, the currently active drum patch is used.
+
+  See also: getParam(), paramValue()
+
+========================================================================================================================
+
+paramValue()
+------------
+
+    +value = paramValue('param'|+index, 'text', [@context])
+
+  Converts a human readable string to a parameter value. `paramValue()` will return a default standard value (for the
+parameter) if it is not convertable. `@context` is optional and if present should reference a "drumPatch" structure.
+Some parameter's textual representation depend on other parameter settings (such as "ModRate" depending on "ModMode"),
+and `@context` can be used to declare these settings. If `@context` is omitted, the currently active drum patch is used.
+
+  See also: paramText(), setParam()
+
+========================================================================================================================
+
+parseArray()
+------------
+
+    parseArray('string', @array)
+
+  Parses `'string'` that represents an array in "NumbStruck" format (the encoding scheme used for all file formats in
+Sonic Charge products). The result will be stored under `@array`. Notice that "NumbStruck" parsing is very forgiving.
+Any string is considered valid "NumbStruck" format, although only correctly formatted strings will actually generate any
+data.
+
+  See also: parseStruct()
+
+========================================================================================================================
+
+parseStruct()
+-------------
+
+    parseStruct('string', @struct)
+
+  Parses `'string'` that represents a struct / associative array in "NumbStruck" format (the encoding scheme used for
+all file formats in Sonic Charge products). The result will be stored under `@struct`. Notice that "NumbStruck" parsing
+is very forgiving. Any string is considered valid "NumbStruck" format, although only correctly formatted strings will
+actually generate any data.
+
+  See also: parseArray()
+
+========================================================================================================================
+
+print()
+-------
+
+    print('string')
+
+  Traces (use "DebugView" to view on Windows and "Console" on Mac). (Replacing the standard PikaScript `print()`
+function.)
+
+  See also: display()
+
+========================================================================================================================
+
+random()
+--------
+
+    +float = random(+max)
+
+  Returns a pseudo-random number between 0 and `+max`. (Replacing the standard PikaScript `random()` function with a
+better implementation.)
+
+  See also: randomInt()
+
+========================================================================================================================
+
+randomInt()
+-----------
+
+    +integer = randomInt()
+
+  Returns a random 32-bit value ("unsigned").
+
+  See also: random
+
+========================================================================================================================
+
+readClipboard()
+---------------
+
+    'string' = readClipboard()
+
+  Reads a string from the clipboard. On Windows, CR LF ("\r\n") are automatically translated to LF ("\n").
+
+  See also: writeClipboard()
+
+========================================================================================================================
+
+save()
+------
+
+    save('path', 'contents')
+
+  Saves a file. `'path'` is expected to be an UTF-8 encoded path. If the path is not an "absolute full path" it is
+considered relative to the script directory. Forward slash ('/') in paths work on both Windows and OS X, backward slash
+('\') only works on Windows.
+
+  See also: browse(), dir(), fullPath(), load()
+
+========================================================================================================================
+
+select()
+--------
+
+    select('type', +index|'pattern')
+
+  Selects the current program, drum channel or pattern (`'type'` should be `'program'`, `'channel'` or `'pattern'`). The
+range for programs are 1 to 16 (defined by `PROGRAM_COUNT`). The range for channels are 1 to 8 (defined by
+`CHANNEL_COUNT`). The range for patterns are 'a' to 'l' (defined by `LAST_PATTERN`).
+
+  See also: selected()
+
+========================================================================================================================
+
+selected()
+----------
+
+    +index|'pattern' = selected('type')
+
+  Returns the currently selected program, drum channel or pattern (`'type'` should be `'program'`, `'channel'` or
+`'pattern'`). The range for programs are 1 to 16 (defined by `PROGRAM_COUNT`). The range for channels are 1 to 8
+(defined by `CHANNEL_COUNT`). The range for patterns are 'a' to 'l' (defined by `LAST_PATTERN`).
+
+  See also: select()
+
+========================================================================================================================
+
+setElement()
+------------
+
+    @source = setElement('type', @source)
+
+  Updates current preset, drum-patch (for current channel), pattern (currently selected) or midi-config from source
+(`'type'` should be `'preset'`, `'drumPatch'`, `'pattern'` or `'midiConfig'`). Returns the input `@source`.
+
+  See also: createElement(), getElement()
+
+========================================================================================================================
+
+setParam()
+----------
+
+    setParam('param'|+index, +value)
+
+  Updates a single parameter immediately. `'param'` is a string or number (e.g. 'ModRate.1' and 20 is equivalent).
+`+value` must be a floating point number between 0 and 1.
+
+  See also: setElement(), getParam(), paramValue()
+
+========================================================================================================================
+
+unmarshal()
+-----------
+
+    @target = unmarshal('type', 'string', @target)
+
+  Converts Microtonic file / clipboard format to a structure in `@target` (`'type'` should be `'preset'`, `'drumPatch'`,
+`'pattern'` or `'midiConfig'`). Returns the input `@target`.
+
+  See also: isMarshaledFormat(), marshal(), setElement()
+
+========================================================================================================================
+
+writeClipboard()
+----------------
+
+    writeClipboard('string')
+
+  Puts a string to the clipboard. On Windows, LF ("\n") are automatically translated to CR LF ("\r\n").
+
+  See also: readClipboard()
+
+========================================================================================================================
+
+
+Structures
+==========
+
+  createElement(), getElement(), setElement(), marshal() and unmarshal() work on entire presets, drum patches, patterns
+and midi configurations. In PikaScript these are represented by "monolithic" PikaScript structures.
+
+========================================================================================================================
+
+drumPatch Structure
+-------------------
+
+    .Choke            = 0 | 1
+    .DistAmt          = 0 .. 1
+    .EQFreq           = 0 .. 1
+    .EQGain           = 0 .. 1
+    .Level            = 0 .. 1
+    .Mix              = 0 .. 1
+    .ModAmt           = 0 .. 1
+    .ModMode          = 0 (decay) | 0.5 (sine) | 1 (noise)
+    .ModRate          = 0 .. 1
+    .ModVel           = 0 .. 1
+    .NEnvAtk          = 0 .. 1
+    .NEnvDcy          = 0 .. 1
+    .NEnvMod          = 0 (exponential) | 0.5 (linear) | 1 (modulated)
+    .NFilFrq          = 0 .. 1
+    .NFilMod          = 0 (lp) | 0.5 (bp) | 1 (hp)
+    .NFilQ            = 0 .. 1
+    .NStereo          = 0 | 1
+    .NVel             = 0 .. 1
+    .OscAtk           = 0 .. 1
+    .OscDcy           = 0 .. 1
+    .OscFreq          = 0 .. 1
+    .OscVel           = 0 .. 1
+    .OscWave          = 0 (sine) | 0.5 (triangle) | 1 (sawtooth)
+    .Output           = 0 | 1
+    .Pan              = 0 .. 1
+    .modified         = false | true
+    .name             = string
+    .path             = string | void
+
+  Parameter names are capitalized and their values are normalized from 0 to 1 (inclusively). You can use paramText() and
+paramValue() to convert values to and from their natural human readable units.
+
+========================================================================================================================
+
+midiConfig Structure
+--------------------
+
+    .channelCC.1.Choke        = void | 0 .. 127
+    .channelCC.1.DistAmt      = void | 0 .. 127
+    .channelCC.1.EQFreq       = void | 0 .. 127
+        .
+        .
+    .channelCC.8.Pan          = void | 0 .. 127
+    
+    .globalCC.FillRate        = void | 0 .. 127
+    .globalCC.MastVol         = void | 0 .. 127
+    .globalCC.Morph           = void | 0 .. 127
+    .globalCC.Pattern         = void | 0 .. 127
+    .globalCC.PlayStop        = void | 0 .. 127
+    .globalCC.StepRate        = void | 0 .. 127
+    .globalCC.Swing           = void | 0 .. 127
+    .globalCC.Mute.1          = void | 0 .. 127
+    .globalCC.Mute.2          = void | 0 .. 127
+        .
+        .
+    .globalCC.Mute.8          = void | 0 .. 127
+    
+    .improvedCCScaling        = false | true
+    .midiCCAutomates          = false | true
+    .midiCCOnSelectedChannel  = false | true
+    .midiNotesSelectChannel   = false | true
+    .sendMidiCC               = false | true
+    .midiReceiveChannel       = void | 1 .. 16
+    .midiTransmitChannel      = void | 1 .. 16
+    
+    .notes.Mute.1             = void | 0 .. 127
+    .notes.Mute.2             = void | 0 .. 127
+        .
+        .
+    .notes.Mute.8             = void | 0 .. 127
+    
+    .notes.Pattern.a          = void | 0 .. 127
+    .notes.Pattern.b          = void | 0 .. 127
+        .
+        .
+    .notes.Pattern.l          = void | 0 .. 127
+    
+    .notes.Program.1          = void | 0 .. 127
+    .notes.Program.2          = void | 0 .. 127
+        .
+        .
+    .notes.Program.16         = void | 0 .. 127
+    
+    .notes.Start              = void | 0 .. 127
+    .notes.Stop               = void | 0 .. 127
+    
+    .notes.Trigger.1          = void | 0 .. 127
+    .notes.Trigger.2          = void | 0 .. 127
+        .
+        .
+    .notes.Trigger.8          = void | 0 .. 127
+    
+    .patternCC.1.Triggers	  = void | 0 .. 127
+    .patternCC.1.Accents	  = void | 0 .. 127
+    .patternCC.1.Repeats	  = void | 0 .. 127
+        .
+        .
+    .patternCC.8.Repeats	  = void | 0 .. 127
+
+    .patternNoteMode          = 'SwitchNext' | 'SwitchNow' | 'Retrigger' | 'RetriggerGated'
+    .patternsSendMidi         = false | true
+    .pitchWheelRange          = 1 | 2 | 3 | 4 | 7 | 12 | 19 | 24
+    .pitchedMode              = false | true
+    .supportMidiNoteOff       = false | true
+    .supportMidiProgramChange = false | true
+
+========================================================================================================================
+
+pattern Structure
+-----------------
+
+    .1.accents        = string (e.g. '----####----####')
+    .1.fills          = - " -
+    .1.triggers       = - " -
+    .2.accents
+    .2.fills
+    .2.triggers
+        .
+        .
+    .8.accents
+    .8.fills
+    .8.triggers
+    .length           = 1 .. 16
+
+  `accents`, `fills` and `triggers` are arrays of 16 on / off switches in the form of strings where '-' equals off
+and '#' equals on.
+
+========================================================================================================================
+
+preset Structure
+----------------
+
+    .FillRate              = 0 .. 1
+    .MastVol               = 0 .. 1
+    
+    .Mute.1                = 0 | 1
+    .Mute.2                = 0 | 1
+        .
+        .
+    .Mute.8
+    
+    .Pattern               = 0 .. 1 (in 1 / 12 steps)
+    .PlayStop              = 0 (forced stop) | 0.33333 (stop) | 0.66666 (play) | 1 (forced play)
+    .StepRate              = 0 (1/8) | 0.25 (1/8T) | 0.5 (1/16) | 0.75 (1/16T) | 1 (1/32)
+    .Swing                 = 0 .. 1
+    
+    .drumPatches.1.Choke   = see drumPatch Structure
+    .drumPatches.1.DistAmt
+    .drumPatches.1.EQFreq
+        .
+        .
+    .drumPatches.8.path
+    
+    .modified              = false | true
+    .name                  = string
+    .path                  = string | void
+    
+    .patterns.a.1.accents  = see pattern Structure
+    .patterns.a.1.fills
+    .patterns.a.1.triggers
+    .patterns.a.chained    = false | true
+        .
+        .
+    .patterns.l.length     = 1 .. 16
+    
+    .tempo                 = number | '' (unspecified tempo)
+
+========================================================================================================================
+
+
+Built-in PikaScript Files
+=========================
+
+  The following files are compiled into the binary. You can run or load them using their filenames only:
+
+  - debug.pika
+  - help.pika
+  - stdlib.pika
+  - unittests.pika

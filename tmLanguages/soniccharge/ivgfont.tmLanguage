@@ -8,6 +8,10 @@
 	<string>ivgfont</string>
 	<key>scopeName</key>
 	<string>source.ivgfont</string>
+    <key>fileTypes</key>
+    <array>
+        <string>ivgfont</string>
+    </array>
 	<key>patterns</key>
 	<array>
 		<dict>

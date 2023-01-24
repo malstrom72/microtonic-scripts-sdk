@@ -1,0 +1,336 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: math</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>math</h2>
+			<p><a href="math.html#abs">abs</a>, <a href="math.html#acos">acos</a>, <a href="math.html#asin">asin</a>, <a href="math.html#atan">atan</a>, <a href="math.html#atan2">atan2</a>, <a href="math.html#cbrt">cbrt</a>, <a href="math.html#ceil">ceil</a>, <a href="math.html#cos">cos</a>, <a href="math.html#cosh">cosh</a>, <a href="math.html#cube">cube</a>, <a href="math.html#exp">exp</a>, <a href="math.html#factorial">factorial</a>, <a href="math.html#floor">floor</a>, <a href="math.html#log">log</a>, <a href="math.html#log10">log10</a>, <a href="math.html#log2">log2</a>, <a href="math.html#logb">logb</a>, <a href="math.html#nroot">nroot</a>, <a href="math.html#pow">pow</a>, <a href="math.html#random">random</a>, <a href="math.html#round">round</a>, <a href="math.html#sign">sign</a>, <a href="math.html#sin">sin</a>, <a href="math.html#sinh">sinh</a>, <a href="math.html#sqr">sqr</a>, <a href="math.html#sqrt">sqrt</a>, <a href="math.html#tan">tan</a>, <a href="math.html#tanh">tanh</a>, <a href="math.html#trunc">trunc</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="abs">&lt;abs&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = abs(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the absolute value of +x.</p></div>
+	<h4>Examples</h4><pre class="examples">abs(3.7) == 3.7<br>abs(-3.7) == 3.7<br>abs(-infinity) == +infinity</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#sign">sign</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="acos">&lt;acos&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = acos(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the arccosine of +x (which should be in the range -1 to 1 or the result will be undefined). The returned value is in the range 0 to PI.</p><p>Inverse: cos().</p></div>
+	<h4>Examples</h4><pre class="examples">acos(0.0) == PI / 2<br>acos(0.73168886887382) == 0.75<br>acos(cos(0.5)) == 0.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#asin">asin</a>, <a href="#atan">atan</a>, <a href="#cos">cos</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="asin">&lt;asin&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = asin(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the arcsine of +x (which should be in the range -1 to 1 or the result will be undefined). The returned value is in the range -PI / 2 to PI / 2.</p><p>Inverse: sin().</p></div>
+	<h4>Examples</h4><pre class="examples">asin(0.0) == 0.0<br>asin(0.68163876002334) == 0.75<br>asin(sin(0.5)) == 0.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#acos">acos</a>, <a href="#atan">atan</a>, <a href="#sin">sin</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="atan">&lt;atan&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = atan(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the arctangent of +x. The returned value is in the range -PI / 2 to PI / 2.</p><p>Inverse: tan().</p></div>
+	<h4>Examples</h4><pre class="examples">atan(0.0) == 0.0<br>atan(0.93159645994407) == 0.75<br>atan(tan(0.5)) == 0.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#acos">acos</a>, <a href="#asin">asin</a>, <a href="#atan2">atan2</a>, <a href="#tan">tan</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="atan2">&lt;atan2&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+z = atan2(+y, +x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the arctangent of +y/+x with proper handling of quadrants. The returned value is in the range -PI to PI.</p></div>
+	<h4>Examples</h4><pre class="examples">atan2(0.0, 1.0) == 0.0<br>atan2(1.0, 0.0) == PI / 2<br>atan2(sin(0.5), cos(0.5)) == 0.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#atan">atan</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="cbrt">cbrt</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = cbrt(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the cube root of +x.</p><p>Inverse: cube(+y).</p></div>
+	<h4>Examples</h4><pre class="examples">cbrt(0.0) == 0.0<br>cbrt(0.421875) == 0.75<br>cbrt(cube(-0.7)) == -0.7</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#sqr">sqr</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="ceil">&lt;ceil&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = ceil(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the ceiling of value +x. Ceil() rounds both positive and negative values upwards.</p></div>
+	<h4>Examples</h4><pre class="examples">ceil(0.0) == 0.0<br>ceil(-0.99999) == 0.0<br>ceil(1000.00001) == 1001.0</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#floor">floor</a>, <a href="#round">round</a>, <a href="#trunc">trunc</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="cos">&lt;cos&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = cos(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the cosine of +x. The returned value is in the range -1 to 1.</p><p>Inverse: acos().</p></div>
+	<h4>Examples</h4><pre class="examples">cos(0.0) == 1.0<br>cos(0.72273424781342) == 0.75<br>cos(acos(0.5)) == 0.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#acos">acos</a>, <a href="#sin">sin</a>, <a href="#tan">tan</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="cosh">&lt;cosh&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = cosh(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the hyperbolic cosine of +x.</p></div>
+	<h4>Examples</h4><pre class="examples">cosh(0.0) == 1.0<br>cosh(0.9624236501192069) == 1.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#sinh">sinh</a>, <a href="#tanh">tanh</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="cube">cube</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = cube(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the cube of +x.</p><p>Inverse: cbrt(+y).</p></div>
+	<h4>Examples</h4><pre class="examples">cube(0.0) == 0.0<br>cube(0.90856029641607) == 0.75<br>cube(cbrt(-0.7)) == -0.7</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#cbrt">cbrt</a>, <a href="#sqr">sqr</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="exp">&lt;exp&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = exp(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the exponential of +x. I.e, the result is e to the power +x.</p><p>Inverse: log().</p></div>
+	<h4>Examples</h4><pre class="examples">exp(0.0) == 1.0<br>exp(1.0) == 2.718281828459<br>exp(-0.28768207245178) == 0.75<br>exp(log(0.6)) == 0.6</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#log">log</a>, <a href="#log2">log2</a>, <a href="#log10">log10</a>, <a href="#pow">pow</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="factorial">factorial</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = factorial(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the factorial of value +x. +x should be an integer in the range of 1 to 170.</p></div>
+	<h4>Examples</h4><pre class="examples">factorial(10) == 3628800</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="floor">&lt;floor&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = floor(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the floor of value +x. Floor() rounds both positive and negative values downwards.</p></div>
+	<h4>Examples</h4><pre class="examples">floor(0.0) == 0.0<br>floor(-0.99999) == -1.0<br>floor(1000.00001) == 1000.0</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#ceil">ceil</a>, <a href="#round">round</a>, <a href="#trunc">trunc</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="log">&lt;log&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = log(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the natural logarithm of +x (i.e. the logarithm with base e). +x should be positive or the result will be undefined.</p><p>Inverse: exp().</p></div>
+	<h4>Examples</h4><pre class="examples">log(0.0) == -infinity<br>log(1.0) == 0.0<br>log(2.7182818284593) == 1.0<br>log(exp(0.6)) == 0.6</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#exp">exp</a>, <a href="#log2">log2</a>, <a href="#log10">log10</a>, <a href="#logb">logb</a>, <a href="#nroot">nroot</a>, <a href="#pow">pow</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="log10">&lt;log10&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = log10(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the base-10 logarithm of +x. +x should be positive or the result will be undefined.</p><p>Inverse: pow(10, +y).</p></div>
+	<h4>Examples</h4><pre class="examples">log10(0.0) == -infinity<br>log10(1.0) == 0.0<br>log10(10000.0) == 4.0<br>log10(pow(10, 0.6)) == 0.6</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#exp">exp</a>, <a href="#log">log</a>, <a href="#log2">log2</a>, <a href="#logb">logb</a>, <a href="#nroot">nroot</a>, <a href="#pow">pow</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="log2">log2</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = log2(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the base-2 logarithm of +x. +x should be positive or the result will be undefined.</p><p>Inverse: pow(2, +y).</p></div>
+	<h4>Examples</h4><pre class="examples">log2(0.0) == -infinity<br>log2(1.0) == 0.0<br>log2(65536.0) == 16.0<br>log2(pow(2, 1.2)) == 1.2</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#exp">exp</a>, <a href="#log">log</a>, <a href="#log10">log10</a>, <a href="#logb">logb</a>, <a href="#nroot">nroot</a>, <a href="#pow">pow</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="logb">logb</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = logb(+b, +x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the logarithm of +x with base +b. +x should be positive or the result will be undefined. Equivalent to log(+x) / log(+b).</p><p>Inverses: +x = pow(+b, +y), +b = nroot(+y, +x).</p></div>
+	<h4>Examples</h4><pre class="examples">logb(20, 1.0) == 0.0<br>logb(20, 8000) == 3</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#exp">exp</a>, <a href="#log">log</a>, <a href="#log2">log2</a>, <a href="#log10">log10</a>, <a href="#nroot">nroot</a>, <a href="#pow">pow</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="nroot">nroot</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+x = nroot(+y, +z)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the nth (+y) root of +z.</p><p>Inverse: +z = pow(+x, +y).</p></div>
+	<h4>Examples</h4><pre class="examples">nroot(11, pow(17, 11)) == 17</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#exp">exp</a>, <a href="#log">log</a>, <a href="#log2">log2</a>, <a href="#logb">logb</a>, <a href="#log10">log10</a>, <a href="#pow">pow</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="pow">&lt;pow&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+z = pow(+x, +y)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns +x raised to the power of +y.</p><p>Inverses: +y = log(+z) / log(+x) or logb(+x, +z), +x = pow(+z, 1.0 / +y) or nroot(+y, +z).</p></div>
+	<h4>Examples</h4><pre class="examples">pow(0.0, 0.0) == 1.0<br>pow(10.0, 4.0) == 10000.0<br>pow(10.0, log10(0.7)) == 0.7<br>pow(pow(2.7, 9.6), 1.0 / 9.6) == 2.7</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#exp">exp</a>, <a href="#log">log</a>, <a href="#log2">log2</a>, <a href="#logb">logb</a>, <a href="#log10">log10</a>, <a href="#nroot">nroot</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="random">&lt;random&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = random(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns a pseudo-random number between 0 and +x.</p></div>
+	<h4>Examples</h4><pre class="examples">random(100.0)</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="round">round</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = round(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Rounds the value of +x to the nearest integer. If the decimal part of +x is exactly 0.5, the rounding will be upwards (e.g. -3.5 rounds to 3.0).</p></div>
+	<h4>Examples</h4><pre class="examples">round(1.23456) == 1<br>round(-1.6789) == -2<br>round(3.5) == 4.0<br>round(-3.5) == -3.0<br>round(1000.499999) == 1000.0</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#ceil">ceil</a>, <a href="#floor">floor</a>, <a href="#trunc">trunc</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="sign">sign</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = sign(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns -1 if +x is negative, +1 if +x is positive or 0 if +x is zero.</p></div>
+	<h4>Examples</h4><pre class="examples">sign(0.0) == 0.0<br>sign(12.34) == 1<br>sign(-infinity) == -1</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#abs">abs</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="sin">&lt;sin&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = sin(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the sine of +x. The returned value is in the range -1 to 1.</p><p>Inverse: asin().</p></div>
+	<h4>Examples</h4><pre class="examples">sin(0.0) == 0.0<br>sin(0.84806207898148) == 0.75<br>sin(asin(0.5)) == 0.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#asin">asin</a>, <a href="#cos">cos</a>, <a href="#tan">tan</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="sinh">&lt;sinh&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = sinh(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the hyperbolic sine of +x.</p></div>
+	<h4>Examples</h4><pre class="examples">sinh(0.0) == 0.0<br>sinh(0.6931471805599453) == 0.75</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#cosh">cosh</a>, <a href="#tanh">tanh</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="sqr">sqr</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = sqr(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the square of +x.</p><p>Inverse: sqrt(+y).</p></div>
+	<h4>Examples</h4><pre class="examples">sqr(0.0) == 0.0<br>sqr(0.86602540378444) == 0.75<br>sqr(sqrt(0.7)) == 0.7</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#cube">cube</a>, <a href="#sqrt">sqrt</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="sqrt">&lt;sqrt&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = sqrt(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the square root of +x. +x should be positive or the result will be undefined.</p><p>Inverse: sqr(+y).</p></div>
+	<h4>Examples</h4><pre class="examples">sqrt(0.0) == 0.0<br>sqrt(0.5625) == 0.75<br>sqrt(sqr(0.7)) == 0.7</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#sqr">sqr</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="tan">&lt;tan&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = tan(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the tangent of +x.</p><p>Inverse: atan(+y).</p></div>
+	<h4>Examples</h4><pre class="examples">tan(0.0) == 0.0<br>tan(0.64350110879329) == 0.75<br>tan(atan(0.3)) == 0.3</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#atan">atan</a>, <a href="#cos">cos</a>, <a href="#sin">sin</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="tanh">&lt;tanh&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = tanh(+x)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the hyperbolic tangent of +x.</p></div>
+	<h4>Examples</h4><pre class="examples">tanh(0.0) == 0.0<br>tanh(0.9729550745276566) == 0.75</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#cosh">cosh</a>, <a href="#sinh">sinh</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="trunc">trunc</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+y = trunc(+x, [+n = 0])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Truncates the value of +x leaving up to +n decimal places intact. If +n is omitted, all decimals are truncated. Truncation rounds positive values downwards and negative values upwards.</p></div>
+	<h4>Examples</h4><pre class="examples">trunc(1.23456) == 1<br>trunc(-1.23456) == -1<br>trunc(1.23456, 2) == 1.23<br>trunc(1.5, 10) == 1.5</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#ceil">ceil</a>, <a href="#floor">floor</a>, <a href="strings.html#precision">precision</a>, <a href="#round">round</a></p>
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

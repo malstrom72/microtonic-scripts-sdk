@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: help</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>help</h2>
+			<p><a href="help.html#describe">describe</a>, <a href="help.html#help">help</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="describe">describe</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">describe('category', 'page', 'syntax', ['description'], ['examples'], ['seealso'])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Adds a help page to the database.</p></div>
+	<h4>Examples</h4><pre class="examples">describe('#mine', 'countIf', '+count = countIf(@array, &lt;value&gt;)', 'Counts the number of items in @array that is equal to &lt;value&gt;.', "n = countIf(@fruits, 'apple')")</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="help">help</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">help('page' | '/search')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Prints a help page or searches the help database for text. Function syntax is documented with the following conventions:</p><p>- Arguments in [ ] brackets are optional and default values may be documented like this: [arg = value]<br>- Vertical bar | is used to separate alternatives<br>- ... means repeat 0 or more times<br>- "Type classes" can be identified as follows: ?boolean, +number, 'string', &gt;function, @reference, &lt;arbitrary&gt;</p><p>Type help('#categories') for a list of valid categories. help('#pages') lists all available help pages. You can also search the entire help database for a string with help('/search')</p></div>
+	<h4>Examples</h4><pre class="examples">help('#categories')<br>help('#pages')<br>help('#utils')<br>help('args')<br>help('/delete')</pre>
+	
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

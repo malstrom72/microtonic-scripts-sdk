@@ -1,0 +1,303 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: strings</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>strings</h2>
+			<p><a href="strings.html#bake">bake</a>, <a href="strings.html#char">char</a>, <a href="strings.html#chop">chop</a>, <a href="strings.html#escape">escape</a>, <a href="strings.html#find">find</a>, <a href="strings.html#length">length</a>, <a href="strings.html#lower">lower</a>, <a href="strings.html#mismatch">mismatch</a>, <a href="strings.html#ordinal">ordinal</a>, <a href="strings.html#precision">precision</a>, <a href="strings.html#radix">radix</a>, <a href="strings.html#repeat">repeat</a>, <a href="strings.html#replace">replace</a>, <a href="strings.html#reverse">reverse</a>, <a href="strings.html#rfind">rfind</a>, <a href="strings.html#right">right</a>, <a href="strings.html#rsearch">rsearch</a>, <a href="strings.html#rspan">rspan</a>, <a href="strings.html#search">search</a>, <a href="strings.html#span">span</a>, <a href="strings.html#tokenize">tokenize</a>, <a href="strings.html#trim">trim</a>, <a href="strings.html#unescape">unescape</a>, <a href="strings.html#upper">upper</a>, <a href="strings.html#wildfind">wildfind</a>, <a href="strings.html#wildmatch">wildmatch</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="bake">bake</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'concrete' = bake('abstract', ['escape' = "{"], ['return' = "}"])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Processes the 'abstract' string by interpreting any text bracketed by 'escape' and 'return' as PikaScript expressions and injecting the results from evaluating those expressions. The default brackets are '{' and '}'. The code is evaluated in the caller's frame. Thus you can inject local variables like this: '{myvar}'.</p></div>
+	<h4>Examples</h4><pre class="examples">bake('The result of 3+7 is {3+7}') === 'The result of 3+7 is 10'<br>bake('Welcome back {username}. It has been {days} days since your last visit.')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="utils.html#evaluate">evaluate</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="char">&lt;char&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'character' = char(+code)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the character represented by +code as a string. +code is either an ASCII or Unicode value (depending on how PikaScript is configured). If +code is not a valid character code the exception 'Illegal character code: {code}' will be thrown.</p><p>Inverse: ordinal('character').</p></div>
+	<h4>Examples</h4><pre class="examples">char(65) === 'A'<br>char(ordinal('å')) === 'å'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#ordinal">ordinal</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="chop">chop</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'chopped' = chop('string', +count)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Removes the last +count number of characters from 'string'. This function is equivalent to 'string'{:length('string') - +count}. If +count is zero or negative, the entire 'string' is returned. If +count is greater than the length of 'string', the empty string is returned. (There is no function for removing characters from the beginning of the string because you can easily use 'string'{+count:}.)</p></div>
+	<h4>Examples</h4><pre class="examples">chop('abcdefgh', 3) === 'abcde'<br>chop('abcdefgh', 42) === ''</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#length">length</a>, <a href="#right">right</a>, <a href="#trim">trim</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="escape">&lt;escape&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'escaped' = escape('raw')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Depending on the contents of the source string 'raw' it is encoded either in single (') or double (") quotes. If the string contains only printable ASCII chars (ASCII values between 32 and 126 inclusively) and no apostrophes ('), it is enclosed in single quotes with no further processing. Otherwise it is enclosed in double quotes (") and any unprintable ASCII character, backslash (\) or quotation mark (") is encoded using C-style escape sequences (e.g. "line1\nline2").</p><p>You can use unescape() to decode an escaped string.</p></div>
+	<h4>Examples</h4><pre class="examples">escape("trivial") === "'trivial'"<br>escape("it's got an apostrophe") === '"it''s got an apostrophe"'<br>escape(unescape('"first line\n\xe2\x00tail"')) === '"first line\n\xe2\x00tail"'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#unescape">unescape</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="find">&lt;find&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = find('string', 'chars')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Finds the first occurrence of any character of 'chars' in 'string' and returns the zero-based offset (i.e. 0 = first character). The search is case-sensitive. If no characters in 'chars' exist in 'string', the length of 'string' is returned. Use rfind() to find the last occurrence instead of the first. Use span() to find the first occurrence of any character not present in 'chars'. Use search() to find sub-strings instead of single characters.</p></div>
+	<h4>Examples</h4><pre class="examples">find('abcd', 'd') == 3<br>find('abcdcba', 'dc') == 2<br>find('nomatch', 'x') == 7</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#mismatch">mismatch</a>, <a href="#rfind">rfind</a>, <a href="#search">search</a>, <a href="#span">span</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="length">&lt;length&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+count = length('string')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the character count of 'string'.</p></div>
+	<h4>Examples</h4><pre class="examples">length('abcd') == 4</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="lower">&lt;lower&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'lowercase' = lower('string')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Translates 'string' character by character to lower case. Notice that the standard implementation only works with characters having ASCII values between 32 and 126 inclusively.</p></div>
+	<h4>Examples</h4><pre class="examples">lower('aBcD') === 'abcd'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#upper">upper</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="mismatch">&lt;mismatch&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = mismatch('first', 'second')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Compares the 'first' and 'second' strings character by character and returns the zero-based offset of the first mismatch (e.g. 0 = first character). If the strings are identical in contents, the returned value is the length of the shortest string. As usual, the comparison is case sensitive.</p></div>
+	<h4>Examples</h4><pre class="examples">mismatch('abcd', 'abcd') == 4<br>mismatch('abc', 'abcd') == 3<br>mismatch('abCd', 'abcd') == 2</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#find">find</a>, <a href="#search">search</a>, <a href="#span">span</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="ordinal">&lt;ordinal&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+code = ordinal('character')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the ordinal (i.e. the character code) of the single character string 'character'. Depending on how PikaScript is configured, the character code is an ASCII or Unicode value. If 'character' cannot be converted to a character code the exception 'Value is not single character: {character}' will be thrown.</p><p>Inverse: char(+code).</p></div>
+	<h4>Examples</h4><pre class="examples">ordinal('A') == 65<br>ordinal(char(211)) == 211</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#char">char</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="precision">&lt;precision&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'string' = precision(+value, +precision)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Converts +value to a decimal number string (in scientific E notation if required). +precision is the maximum number of digits to include in the output. Scientific E notation (e.g. 1.3e+3) will be used if +precision is smaller than the number of digits required to express +value in decimal notation. The maximum number of characters returned is (+precision) plus 7 (for possible minus sign, decimal point and exponent).</p></div>
+	<h4>Examples</h4><pre class="examples">precision(12345, 3) === '1.23e+4'<br>precision(9876, 8) === '9876'<br>precision(9876.54321, 8) === '9876.5432'<br>precision(-0.000000123456, 5) === '-1.2346e-7'<br>precision(+infinity, 1) === '+infinity'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#radix">radix</a>, <a href="math.html#trunc">trunc</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="radix">&lt;radix&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'string' = radix(+value, +radix, [+minLength])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Converts the integer +value to a string using a selectable radix between 2 (binary) and 16 (hexadecimal). If +minLength is specified and the string becomes shorter than this, it will be padded with leading zeroes. May throw 'Radix out of range: {radix}' or 'Minimum length out of range: {minLength}'.</p></div>
+	<h4>Examples</h4><pre class="examples">radix(0xaa, 2, 12) === '000010101010'<br>radix(3735928559, 16) === 'deadbeef'<br>radix(0x2710, 10) === 10000</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#precision">precision</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="repeat">repeat</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'repeated' = repeat('repeatme', +count)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Concatenates 'repeatme' +count number of times.</p></div>
+	<h4>Examples</h4><pre class="examples">repeat(' ', 5) === '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<br>repeat('-#-', 10) === '-#--#--#--#--#--#--#--#--#--#-'</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="replace">replace</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'processed' = replace('source', 'what', 'with', [&gt;findFunction = search], [+dropCount = length(what)], [&gt;replaceFunction = &gt;$1])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Replaces all occurrences of 'what' with 'with' in the 'source' string.</p><p>The optional &gt;findFunction allows you to modify how the function finds occurrences of 'what' and +dropCount determines how many characters are replaced on each occurrence. The default &gt;findFunction is ::search (and +dropCount is the number of characters in 'what'), which means that 'what' represents a substring to substitute. If you want this function to substitute any occurrence of any character in 'what', you can let &gt;findFunction be ::find and +dropCount be 1. Similarly, you may use ::span to substitute occurrences of all characters not present in 'what'.</p><p>Finally, &gt;replaceFunction lets you customize how substrings should be replaced. It will be called with two arguments, the source substring in $0 and 'with' in $1, and it is expected to return the replacement substring.</p></div>
+	<h4>Examples</h4><pre class="examples">replace('Barbazoo', 'zoo', 'bright') === 'Barbabright'<br>replace('Barbalama', 'lm', 'p', find, 1) === 'Barbapapa'<br>replace('Bqaxrbzzabypeillme', 'Bbarel', '', span, 1) === 'Barbabelle'<br>replace('B03102020', '0123', 'abmr', find, 1, &gt;$1{$0}) === 'Barbamama'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#bake">bake</a>, <a href="#find">find</a>, <a href="#search">search</a>, <a href="#span">span</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="reverse">&lt;reverse&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'backwards' = reverse('string')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns 'string' reversed.</p></div>
+	<h4>Examples</h4><pre class="examples">reverse('stressed') === 'desserts'</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="rfind">rfind</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = rfind('string', 'chars')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>As find(), but finds the last occurrence of any character of 'chars' instead of the first. -1 is returned if no character was found (unlike find() which returns the length of 'string').</p></div>
+	<h4>Examples</h4><pre class="examples">rfind('abcd', 'd') == 3<br>rfind('abcdcba', 'dc') == 4<br>rfind('nomatch', 'xyz') == -1</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#find">find</a>, <a href="#rsearch">rsearch</a>, <a href="#rspan">rspan</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="right">right</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'ending' = right('string', +count)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the last +count number of characters from 'string'. This function is equivalent to 'string'{length('string') - +count:}. If +count is greater than the length of 'string', the entire 'string' is returned. If +count is zero or negative, the empty string is returned. (There is no "left" function because you can easily use 'string'{:+count}.)</p></div>
+	<h4>Examples</h4><pre class="examples">right('abcdefgh', 3) === 'fgh'<br>right('abcdefgh', 42) === 'abcdefgh'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#chop">chop</a>, <a href="#length">length</a>, <a href="#trim">trim</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="rsearch">rsearch</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = rsearch('string', 'substring')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>As search(), but finds the last occurrence of 'substring' in 'string' instead of the first. A negative value is returned if 'substring' was not found (unlike search() which returns the length of 'string').</p></div>
+	<h4>Examples</h4><pre class="examples">rsearch('abcdabcd', 'cd') == 6<br>rsearch('nomatch', 'xyz') == -3</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#rfind">rfind</a>, <a href="#rspan">rspan</a>, <a href="#search">search</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="rspan">rspan</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = rspan('string', 'chars')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>As span(), but finds the last occurrence of a character not present in 'chars' instead of the first. -1 is returned if the entire 'string' consists of characters in 'chars (unlike span() which returns the length of 'string').</p></div>
+	<h4>Examples</h4><pre class="examples">rspan('abcd', 'abc') == 3<br>rspan('abcdcba', 'ab') == 4<br>rspan('george bush', 'he bugs gore') == -1</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#rfind">rfind</a>, <a href="#rsearch">rsearch</a>, <a href="#span">span</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="search">&lt;search&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = search('string', 'substring')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Finds the first occurrence of 'substring' in 'string' and returns the zero-based offset (e.g. 0 = first character). The search is case-sensitive. If 'substring' does not exist in 'string', the length of 'string' is returned. Use rsearch() to find the last occurrence instead of the first. Use find() to find the first occurrence of any character in a set of characters instead of a sub-string.</p></div>
+	<h4>Examples</h4><pre class="examples">search('abcdabcd', 'cd') == 2<br>search('nomatch', 'x') == 7</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#find">find</a>, <a href="#mismatch">mismatch</a>, <a href="#rsearch">rsearch</a>, <a href="#span">span</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="span">&lt;span&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset = span('string', 'chars')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Finds the first occurrence of a character in 'string' that is not present in 'chars' and returns the zero-based offset (i.e. 0 = first character). The search is case-sensitive. If the entire 'string' consists of characters in 'chars', the length of 'string' is returned. Use rspan() to find the last occurrence instead of the first. Use find() to find the first occurrence of any character in 'chars'.</p></div>
+	<h4>Examples</h4><pre class="examples">span('abcd', 'abc') == 3<br>span('abcdcba', 'ab') == 2<br>span('george bush', 'he bugs gore') == 11</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#find">find</a>, <a href="#mismatch">mismatch</a>, <a href="#rspan">rspan</a>, <a href="#search">search</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="tokenize">tokenize</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">tokenize('source', &gt;process, ['delimiters' = "\n"])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Divides the 'source' string into tokens separated by any character in 'delimiters' (linefeed by default). For every extracted token, &gt;process is called, passing the token as the single argument $0 (not including the delimiter). The final delimiter at the end of the string is optional. For example, tokenize() can be useful for reading individual lines from a text file, parsing tab or comma-separated data and splitting sentences into separate words.</p></div>
+	<h4>Examples</h4><pre class="examples">tokenize("First line\nSecond line\nLast line\n", &gt;append(@lines, $0))<br>tokenize('Eeny, meeny, miny, moe', &gt;print(trim($0)), ',')<br>tokenize('Data is not information, information is not knowledge, knowledge is not understanding, understanding is not!wisdom.', &gt;if ($0 !== '') append(@words, $0), " \t\r\n,.!?&amp;\"/;:=-()[]{}")</pre>
+	<h4>See Also</h4><p class="seealso"><a href="utils.html#parse">parse</a>, <a href="#trim">trim</a>, <a href="#wildmatch">wildmatch</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="trim">trim</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'trimmed' = trim('string', ['leading' = " \t\r\n"], ['trailing' = " \t\r\n"])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Trims the source 'string' from leading and / or trailing characters of choice. The default characters are any white space character. If you pass void to 'leading' or 'trailing' you can prevent the routine from trimming leading respectively trailing characters.</p></div>
+	<h4>Examples</h4><pre class="examples">trim("&nbsp;&nbsp;extractme\t") === 'extractme'<br>trim("\n&nbsp;&nbsp;&nbsp;&nbsp;keep trailing spaces&nbsp;&nbsp;\n", , void) === "keep trailing spaces&nbsp;&nbsp;\n"<br>trim("--- keep me ---", '-', '-') === ' keep me '</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#replace">replace</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="unescape">unescape</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'raw' = unescape('escaped')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Converts a string that is either enclosed in single (') or double (") quotes. If the single (') quote is used, the string between the quotes is simply extracted "as is" with the exception of pairs of apostrophes ('') that are used to represent single apostrophes. If the string is enclosed in double quotes (") it can use a subset of the C-style escape sequences. The supported sequences are: \\ \" \' \a \b \f \n \r \t \v \xHH \uHHHH \&lt;decimal&gt;. If the string cannot be successfully converted an exception will be thrown.</p><p>Inverse: escape('raw').</p></div>
+	<h4>Examples</h4><pre class="examples">unescape("'trivial'") == 'trivial'<br>unescape('"it''s got an apostrophe"') == "it's got an apostrophe"<br>unescape(escape("first line\n\xe2\x00tail")) == "first line\n\xe2\x00tail"</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#escape">escape</a>, <a href="utils.html#evaluate">evaluate</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="upper">&lt;upper&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'uppercase' = upper('string')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Translates 'string' character by character to upper case. Notice that the standard implementation only works with characters having ASCII values between 32 and 126 inclusively.</p></div>
+	<h4>Examples</h4><pre class="examples">upper('aBcD') === 'ABCD'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#lower">lower</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="wildfind">wildfind</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+offset|void = wildfind('source', 'pattern', +from, +to, @captureQueue)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>This is a low-level subroutine used by wildmatch() to match the full or partial 'pattern' in 'source' between the offsets +from and +to (inclusively). The returned value is either the offset where the first match was found or void if no match was found. @captureQueue should be initialized with resetQueue() prior to calling this routine. "Captured ranges" will be pushed to this "queue" as pairs of offsets and lengths. Pop these with popFront().</p><p>See the documentation for wildmatch() for a description of the pattern syntax and more.</p></div>
+	<h4>Examples</h4><pre class="examples">wildfind('abcdef', 'def', 0, 6, @c) == 3<br>wildfind('abcdef', '[def]', 0, 6, @c) == 5<br>wildfind('abcdef', '[def]*', 0, 6, @c) == 3<br>wildfind('abcdef', '[^def]', 4, 6, @c) == void</pre>
+	<h4>See Also</h4><p class="seealso"><a href="queues.html#popFront">popFront</a>, <a href="queues.html#resetQueue">resetQueue</a>, <a href="#wildmatch">wildmatch</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="wildmatch">wildmatch</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">?matched = wildmatch('source', 'pattern', [@captures, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Tries to match the 'source' string with 'pattern' (which may contain "wild card" patterns). true is returned if there is a match. You may also capture substrings from 'source' into the @captures variables. The pattern syntax is inspired by the "glob" standard (i.e. the syntax used for matching file names in most operating systems). However, a lot of additional features have been added, making the complexity of the syntax somewhere between glob and "regular expressions". It is easiest to describe with some examples:</p><p>*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;any string (including the empty string)<br>?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a single arbitrary character<br>~&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;an optional arbitrary character<br>smurf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the string 'smurf' exactly (comparison is always case sensitive)<br>*smurf*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'smurf' anywhere in the source<br>????~~~~&nbsp;&nbsp;&nbsp;&nbsp;between four and eight arbitrary characters<br>[a-zA-Z]&nbsp;&nbsp;&nbsp;&nbsp;any single lower or upper case letter between 'a' and 'z'<br>[^a-zA-Z]&nbsp;&nbsp;&nbsp;any single character that is not between 'a' and 'z' (case insensitive)<br>[*]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;matches a single asterisk<br>[^]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a single ^ character only<br>[[]]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ or ]<br>[]^]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] or ^<br>[x-]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x or -<br>[0-9]*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a string consisting of zero or more digits<br>[0-9]????&nbsp;&nbsp;&nbsp;exactly four digits<br>[0-9]?*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a string consisting of one or more digits<br>[0-9]??~~&nbsp;&nbsp;&nbsp;between two and four digits<br>[0-9]?[]*&nbsp;&nbsp;&nbsp;a single digit and then an arbitrary string<br>{*}smurf&nbsp;&nbsp;&nbsp;&nbsp;captures everything before 'smurf' into the next @captures variable</p><p>Notice that the * and ~ quantifiers are always non-greedy (i.e. they match as little as they possibly can). (This is a limitation of the current implementation, there are plans to let double ** mark a greedy match instead.) If you want to perform case insensitive matching for the entire pattern, use lower() or upper() on the source string. There is also a low-level routine called wildfind() if you need greater control over the matching.</p></div>
+	<h4>Examples</h4><pre class="examples">wildmatch('readme.txt', '*.txt')<br>wildmatch('myfile.with.extension', '{[^&lt;&gt;:"/\|?*]*}.{[^&lt;&gt;:"/\|?*.]*}', @filename, @extension) &amp;&amp; filename === 'myfile.with' &amp;&amp; extension === 'extension'<br>wildmatch(LF # "skip line\n\n\tmatch : me \nthis:is the rest" # LF, "*\n[ \t]*{[^ \t]?*}[ \t]*:*{[^ \t]?[]*}[ \t]*\n{*}", @key, @value, @theRest) &amp;&amp; key === 'match' &amp;&amp; value === 'me'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#lower">lower</a>, <a href="#tokenize">tokenize</a>, <a href="#upper">upper</a>, <a href="#wildfind">wildfind</a></p>
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

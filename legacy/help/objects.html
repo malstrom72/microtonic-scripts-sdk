@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: objects</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>objects</h2>
+			<p><a href="objects.html#construct">construct</a>, <a href="objects.html#destruct">destruct</a>, <a href="objects.html#gc">gc</a>, <a href="objects.html#invokeMethod">invokeMethod</a>, <a href="objects.html#method">method</a>, <a href="objects.html#new">new</a>, <a href="objects.html#newLocal">newLocal</a>, <a href="objects.html#this">this</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="construct">construct</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@object = construct(@object, &gt;constructor, [&lt;arguments&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Constructs</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="#destruct">destruct</a>, <a href="#new">new</a>, <a href="#newLocal">newLocal</a>, <a href="#this">this</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="destruct">destruct</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+count = destruct(@object)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Destructs</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="#construct">construct</a>, <a href="utils.html#delete">delete</a>, <a href="containers.html#prune">prune</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="gc">gc</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+count = gc()</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Garbage collect.</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="#new">new</a>, <a href="#newLocal">newLocal</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="invokeMethod">invokeMethod</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;result&gt; = invokeMethod(@object, 'method', @args, [+offset = 0], [+count])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Like invoke() but for methods.</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="utils.html#invoke">invoke</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="method">method</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'method' = method()</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Method called.</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="#this">this</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="new">new</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@object = new(&gt;constructor, [&lt;arguments&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Allocates and constructs.</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="#construct">construct</a>, <a href="#gc">gc</a>, <a href="#newLocal">newLocal</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="newLocal">newLocal</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@object = newLocal(&gt;constructor, [&lt;arguments&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Allocates and constructs on local heap.</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="#construct">construct</a>, <a href="#gc">gc</a>, <a href="#new">new</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="this">this</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@object = this()</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Object called.</p></div>
+	
+	<h4>See Also</h4><p class="seealso"><a href="#method">method</a></p>
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: queues</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>queues</h2>
+			<p><a href="queues.html#popBack">popBack</a>, <a href="queues.html#popFront">popFront</a>, <a href="queues.html#pushBack">pushBack</a>, <a href="queues.html#pushFront">pushFront</a>, <a href="queues.html#queueSize">queueSize</a>, <a href="queues.html#resetQueue">resetQueue</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="popBack">popBack</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;value&gt; = popBack(@queue)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Pops &lt;value&gt; from the back of the double-ended queue @queue. If @queue is empty an exception will be thrown. (@queue must have been initialized with resetQueue() prior to calling this routine.)</p></div>
+	<h4>Examples</h4><pre class="examples">lastIn = popBack(@dq)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#popFront">popFront</a>, <a href="#pushBack">pushBack</a>, <a href="#pushFront">pushFront</a>, <a href="#queueSize">queueSize</a>, <a href="#resetQueue">resetQueue</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="popFront">popFront</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">&lt;value&gt; = popFront(@queue)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Pops &lt;value&gt; from the front of the double-ended queue @queue. If @queue is empty an exception will be thrown. (@queue must have been initialized with resetQueue() prior to calling this routine.)</p></div>
+	<h4>Examples</h4><pre class="examples">firstOut = popFront(@dq)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#popBack">popBack</a>, <a href="#pushBack">pushBack</a>, <a href="#pushFront">pushFront</a>, <a href="#queueSize">queueSize</a>, <a href="#resetQueue">resetQueue</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="pushBack">pushBack</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@queue = pushBack(@queue, &lt;value&gt;)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Pushes &lt;value&gt; to the back of the double-ended queue @queue. The returned value is the input @queue reference. (@queue must have been initialized with resetQueue() prior to calling this routine.)</p><p>It is also legal to call append() to push several elements at once to a queue.</p></div>
+	<h4>Examples</h4><pre class="examples">pushBack(@dq, 'lastIn')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="arrays.html#append">append</a>, <a href="#popBack">popBack</a>, <a href="#popFront">popFront</a>, <a href="#pushFront">pushFront</a>, <a href="#queueSize">queueSize</a>, <a href="#resetQueue">resetQueue</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="pushFront">pushFront</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@queue = pushFront(@queue, &lt;value&gt;)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Pushes &lt;value&gt; to the front of the double-ended queue @queue. The returned value is the input @queue reference. (@queue must have been initialized with resetQueue() prior to calling this routine.)</p></div>
+	<h4>Examples</h4><pre class="examples">pushFront(@dq, 'firstOut')</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#popBack">popBack</a>, <a href="#popFront">popFront</a>, <a href="#pushBack">pushBack</a>, <a href="#queueSize">queueSize</a>, <a href="#resetQueue">resetQueue</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="queueSize">queueSize</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+count = queueSize(@queue)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns the count of elements in the double-ended queue @queue. The count is defined by [@queue].n - [@queue].m (see resetQueue() for an explanation). (@queue must have been initialized with resetQueue() prior to calling this routine.)</p></div>
+	<h4>Examples</h4><pre class="examples">count = queueSize(@dq)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#popBack">popBack</a>, <a href="#popFront">popFront</a>, <a href="#pushBack">pushBack</a>, <a href="#pushFront">pushFront</a>, <a href="#resetQueue">resetQueue</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="resetQueue">resetQueue</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">resetQueue(@queue)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Initializes the "double-ended queue" referenced to by @queue for use with pushBack(), popFront() etc by setting the sub-elements [@queue].m and [@queue].n to 0.</p><p>[@queue].m is the index of the first element on the queue and it is decremented on pushFront() and incremented on popFront(). [@queue].n is one greater than the index of the last element on the queue and it is incremented on pushBack() and decremented on popBack(). (The 'm' and 'n' identifiers were chosen to make queue() compatible with some of the array functions such as append().)</p></div>
+	<h4>Examples</h4><pre class="examples">resetQueue(@dq)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#popBack">popBack</a>, <a href="#popFront">popFront</a>, <a href="#pushBack">pushBack</a>, <a href="#pushFront">pushFront</a>, <a href="#queueSize">queueSize</a></p>
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

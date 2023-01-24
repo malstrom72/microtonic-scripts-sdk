@@ -8,6 +8,10 @@
 	<string>makaron</string>
 	<key>scopeName</key>
 	<string>source.makaron</string>
+    <key>fileTypes</key>
+    <array>
+        <string>makaron</string>
+    </array>
 	<key>foldingStartMarker</key>
 	<string>(@begin|@&lt;|@if)</string>
 	<key>foldingStopMarker</key>

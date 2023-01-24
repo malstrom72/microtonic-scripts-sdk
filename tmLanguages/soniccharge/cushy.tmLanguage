@@ -8,6 +8,10 @@
 	<string>cushy</string>
 	<key>scopeName</key>
 	<string>source.cushy</string>
+    <key>fileTypes</key>
+    <array>
+        <string>cushy</string>
+    </array>
 	<key>foldingStartMarker</key>
 	<string>(@begin|@&lt;|@if)</string>
 	<key>foldingStopMarker</key>
@@ -926,9 +930,17 @@
 				</dict>
 				<dict>
 					<key>name</key>
-					<string>entity.name.macro.makaron</string>
+					<string>meta.macro.invoke.makaron</string>
 					<key>match</key>
 					<string>@[a-zA-Z$_][a-zA-Z0-9$_]*\b</string>
+					<key>captures</key>
+					<dict>
+						<key>0</key>
+						<dict>
+							<key>name</key>
+							<string>entity.name.function.makaron</string>
+						</dict>
+					</dict>
 				</dict>
 				<dict>
 					<key>name</key>

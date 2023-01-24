@@ -1,0 +1,405 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+      <meta http-equiv="Content-Style-Type" content="text/css">
+        <title>PikaScript</title>
+        <style type="text/css">
+          table, th, td { border: 1px solid black; padding: 5px; border-collapse:collapse; }
+          th { text-align: left }
+          img { border: 0 none }
+		html {background:#faf8f3;}body {min-width:650px;max-width:960px;_width:650px;color:#000;margin:0;font-family:'Cambria',Georgia,'Times New Roman',Times,serif;height:100%;overflow:visible;padding:36px;}table {line-height:18px;margin-bottom:17px;border:1px solid #ccc;border-collapse:collapse;border-bottom-color:#aaa;border-radius:2px;box-shadow:0px 1px 0 #ddd;-moz-border-radius:2px;-moz-box-shadow:0px 1px 0 #ddd;-webkit-box-shadow:0px 1px 0 #ddd;}tr { background:#fff;vertical-align:top;}th,tr:nth-child(even) { background:#eee;}td {border:1px dotted #ccc;padding:2px 18px 4px 9px;font-size:0.9em;}th {background:#ddd;border:1px solid #bbb;color:#000;font-weight:normal;padding:4px 18px 4px 9px;text-align:left;font-size:0.85em;}tr:nth-child(1) th {background:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#ccc), to(#bbb));background:-moz-linear-gradient(top, #ccc, #bbb);border:1px solid #aaa;border-bottom-color:#999;border-top-color:#bbb;box-shadow:0px 1px 1px #ccc;-moz-box-shadow:0px 1px 1px #ccc;-webkit-box-shadow:0px 1px 1px #ccc;color:#333;padding:8px 18px 8px 9px;text-shadow:0 1px #ddd;}tt {color:#5d5d5d;padding-right:4px;padding-left:4px;}pre {border:1px solid #d0d0d0;overflow:auto;color:#5f5f5f;padding:0.4em;}ul {list-style-type:disc;padding-left:14px;list-style-position:inside;}h1,h2,h3,h4,h5,h6 {font-weight:bold;margin-bottom:18px;}h1,h2 { line-height:36px; }h3,h4 { line-height:18px; }h1 { font-size:2.0em; }h2 { font-size:1.5em; }h3 { font-size:1.3em; }h4 { font-size:1.2em; }h5 { font-size:1.1em; }h6 { font-size:1.0em; }a { text-decoration:none; }a[href]:hover { text-decoration:underline; }a sup{ font-size:0.7em; }	
+        </style>
+      </head>
+	  <body>
+<h1><a name="PikaScript">PikaScript</a></h1>
+<h2><a name="What_is_PikaScript?">What is PikaScript?</a></h2>
+<p>PikaScript is a small interpreting C-style scripting language implemented with modern C++ programming techniques. The source code for PikaScript is amazingly compact. It's core is around 1000 lines of C++ plus an additional header file of 500 lines including doxygen comments. The optional standard library (written in PikaScript), providing utilities for strings, math, algorithms and objects (including a mark and swipe garbage collector) is less than 300 lines of source code. Despite it's small size the language is powerful enough to support sophisticated concepts such as higher order functions and closures.</p>
+<h3><a name="Goals_of_PikaScript">Goals of PikaScript</a></h3>
+
+<ul>
+<li>Compact bug-free implementation in modern C++.</li>
+</ul>
+
+<ul>
+<li>Easy to interface with host code. <i>E.g., all variables are represented by C++ strings.</i></li>
+</ul>
+
+<ul>
+<li>100% interpreted. <i>No compilation pass required, just load a string and run.</i></li>
+</ul>
+
+<ul>
+<li>Minimalistic language syntax. <i>E.g., all statements counts as expressions and return values, eliminating redundant</i> <i>operators such as</i> <tt>? :</tt> <i>(instead</i> <tt>if</tt> <i>may be used inside expressions).</i>
+</li>
+</ul>
+
+<ul>
+<li>Extremely dynamic with full run-time reflection of variables, code and even stack. <i>(Making it possible to actually</i> <i>write debuggers in PikaScript.)</i>
+</li>
+</ul>
+
+<ul>
+<li>No heap and no need for memory management (explicit or implicit). <i>The only dynamically allocated entity in</i> <i>PikaScript is the variable. E.g., a vector is a number of variables linked by name only.</i>
+</li>
+</ul>
+<h3><a name="Non-goals_of_PikaScript">Non-goals of PikaScript</a></h3>
+
+<ul>
+<li>Speed. <i>PikaScript is</i> <b>slow</b>, <i>no doubt about that. Even with the optional quicker string class it will</i> <b>never</b> <i>be able to compete with compiled languages.</i>
+<br><br></li>
+<li>Small memory footprint. <i>PikaScript can eat memory like a horse, especially if you use standard STL maps and</i> <i>strings for variable storage (which is the default configuration).</i>
+</li>
+</ul>
+
+<ul>
+<li>Object-orientation. <i>You can create and use objects in PikaScript, but it is a secondary language contruct created</i> <i>without explicit support from the language syntax.</i>
+</li>
+</ul>
+<h2><a name="Syntax">Syntax</a></h2>
+<p>PikaScript syntax borrows heavily from C. This documentation assumes that the reader has at least a basic understanding of the C language (or of any of the languages it has influenced such as C++, C#, Java, Javascript, Perl, PHP etc etc).</p>
+<h2><a name="Variables">Variables</a></h2>
+<p>In order to minimize code complexity and make the interface to PikaScript minimal and easy, all Pika variables are represented internally by strings. Unlike many dynamically typed languages, there is no distinct variable type coupled with the values. Instead, the interpretation of a value (and its type) is determined by the context in which it is used. For example, there is no distinction between <tt>10 / 2</tt> and <tt>"10" / "2"</tt>. Both result in the value <tt>"5"</tt>. Similiarly, <tt>10 + 2</tt> and <tt>'10' + '2'</tt> are equivalent and the result is <tt>"12"</tt>. (If you want to perform string concatention you use the special <tt>#</tt> operator instead.) This approach is usually referred to as <i>weak typing</i>.</p>
+<p>Despite the lack of strong types in PikaScript, you can distinguish seven different <i>value classes</i> by how they are handled by the various expressions, operators and library functions:</p>
+<table>
+<tr>
+<th>Class</th><th>Source example</th><th>Internal representation</th><th colspan=2>Comments</th>
+</tr>
+<tr>
+<td>void</td><td><tt>void</tt></td><td>&nbsp;</td><td colspan=2>The "no value" value, always represented internally by an empty string.</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td></td>
+</tr>
+<tr>
+<td>boolean</td><td><tt>false</tt></td><td><tt>false</tt></td><td colspan=2>The input and output of logical expressions (such as <tt>&amp;&amp;</tt> and <tt>||</tt>).</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>true</tt></td><td><tt>true</tt></td><td colspan=2>Always represented by a lowercase <tt>false</tt> or <tt>true</tt>.</td>
+</tr>
+<tr>
+<td></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>number</td><td><tt>23</tt></td><td><tt>23</tt></td><td colspan=2>Numerical value. Numbers must begin with a digit (or <tt>+</tt> or <tt>-</tt>) and end with a digit. (Except for <tt>infinity</tt> of course.)</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>-0x94</tt></td><td><tt>-148</tt></td><td colspan=2>E.g, ".3" and "3." are not considered valid numbers. </td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>0.00000003</tt></td><td><tt>3e-8</tt></td><td colspan=2>They may contain an exponential prefixed with <tt>e</tt>.</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>5.930e-77</tt></td><td><tt>5.93e-77</tt></td><td colspan=2>Numerical literals are "normalized" so that identical numbers are also identical strings</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>infinity</tt></td><td><tt>infinity</tt></td><td colspan=2>(e.g. 1.00, 1e0, 0x01 and 1 are all normalized to <tt>1</tt>).</td>
+</tr>
+<tr>
+<td></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>string</td><td><tt>'orange'</tt></td><td><tt>orange</tt></td><td colspan=2>As said, all values are stored internally in string format, so in practice all values are valid strings.</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>'I "love" Pika'</tt></td><td><tt>I "love" Pika</tt></td><td colspan=2>String literals are enclosed in either single quote (') or double quote (").</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>"line1\nline2"</tt></td><td><tt>line1&lt;lf&gt;line2</tt></td><td colspan=2>Strings within double quotes may use the standard C escape codes (e.g. "\n", "\x10").</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td colspan=2>Strings within single quotes are interpreted literally character by character (sometimes called raw strings).</td>
+</tr>
+<tr>
+<td></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>reference</td><td><tt>@myvar</tt></td><td><tt>:&lt;frame&gt;:myvar</tt></td><td colspan=2>Variable / element references.</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>@myelem[i]</tt></td><td><tt>:&lt;frame&gt;:myelem.&lt;i&gt;</tt></td><td colspan=2>Internal representation starts with the frame label (see motivation in <a href="#References">References</a>).</td>
+</tr>
+<tr>
+<td></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>function</td><td><tt>function { /* code */ }</tt></td><td><tt>{ /* code */ }</tt></td><td colspan=2><a href="#Functions">Functions</a> (and <i>lambda expressions</i>).</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><tt>&gt;($0 + $1)</tt></td><td><tt>&gt;($0 + $1)</tt></td><td colspan=2>Internal representation begins with a leading <tt>{</tt> or <tt>&gt;</tt>.</td>
+</tr>
+<tr>
+<td></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>native</td><td><tt>&lt;print&gt;</tt></td><td><tt>&lt;print&gt;</tt></td><td colspan=2>Native C / C++ function (or object).</td>
+</tr>
+<tr>
+<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td colspan=2>Always starts with <tt>&lt;</tt> and ends with <tt>&gt;</tt>.</td>
+</tr>
+</table>
+<p>PikaScript is pretty strict with the kind of values it allows for many operations. For example, <tt>true</tt> and <tt>false</tt> are the only legal values for logical expressions (such as <tt>if</tt> and <tt>for</tt>). <a href="#Functions">Functions</a> and <i>lambda expressions</i> are the only legal targets for function calls and numbers are the only acceptable values for arithmetic operations.</p>
+<p>In PikaScript you simply declare variables by assigning them values (in fact, this is the only way to create new variables). Unless a variable is global (prefixed with <tt>::</tt>), it will be destroyed when the function wherein it is declared returns. Read more about variable scopes under <a href="#Functions">Functions</a>.</p>
+<h2><a name="Operators">Operators</a></h2>
+<p>Since everything counts as expressions in PikaScript, you will find that quite a few of the standard C / C++ statements (such as <tt>if</tt> and <tt>for</tt>) are actually operators rather than statements. See <a href="#Expressions">Expressions</a> for more on this.</p>
+<p><font color="red">?? TODO : document system with "artificial" precedence levels for "ticks" ??</font></p>
+<table>
+<tr>
+<th>Operator</th><th>Prec.</th><th>Comment</th>
+</tr>
+<tr>
+<td>function { x }</td><td>21</td><td>Function with body <tt>x</tt>. See <a href="#Functions">Functions</a> for more info.</td>
+</tr>
+<tr>
+<td>x([a][,b][,c]...)</td><td>20</td><td>Function call. (All arguments are optional and will be void if omitted.)</td>
+</tr>
+<tr>
+<td>x.y</td><td>20</td><td>Element operator (<tt>y</tt> must be a valid symbol literal).</td>
+</tr>
+<tr>
+<td>x[y]</td><td>20</td><td>Subscript operator.</td>
+</tr>
+<tr>
+<td>x{[o]:[l]}</td><td>20</td><td>Substring operator. Returns a sub-string of <tt>l</tt> characters from <tt>x</tt> starting at offset <tt>o</tt> .<a href="#fn0001"><sup>*</sup></a></td>
+</tr>
+<tr>
+<td>x++</td><td>20</td><td>Postfix increment. Value is that of <tt>x</tt> before the increment. <tt>x</tt> must be an integer <i>lvalue</i> .<a href="#fn0002"><sup>**</sup></a></td>
+</tr>
+<tr>
+<td>x--</td><td>20</td><td>Postfix decrement. Value is that of <tt>x</tt> before the decrement. <tt>x</tt> must be an integer <i>lvalue</i> .<a href="#fn0002"><sup>**</sup></a></td>
+</tr>
+<tr>
+<td>@x</td><td>19</td><td>Reference operator. See <a href="#References">References</a> for more info.</td>
+</tr>
+<tr>
+<td>!x</td><td>19</td><td>Logical not (<tt>false</tt> -&gt; <tt>true</tt> and vice versa). (<tt>!!x</tt> can be used to assert that <tt>x</tt> is a boolean.)</td>
+</tr>
+<tr>
+<td>~x</td><td>19</td><td>Bitwise not (only works on integers) (<tt>~~x</tt> can be used to assert that <tt>x</tt> is an integer value.)</td>
+</tr>
+<tr>
+<td>+x</td><td>19</td><td>Prefix plus, verifies that <tt>x</tt> is a number and "normalizes" it. (<tt>+x</tt> can be used to assert that <tt>x</tt> is a number.)</td>
+</tr>
+<tr>
+<td>-x</td><td>19</td><td>Negate, only works on numbers.</td>
+</tr>
+<tr>
+<td>++x</td><td>19</td><td>Prefix increment, <tt>x</tt> must be an integer <i>lvalue</i> .<a href="#fn0002"><sup>**</sup></a> (Use += for floating point numbers.)</td>
+</tr>
+<tr>
+<td>--x</td><td>19</td><td>Prefix decrement, <tt>x</tt> must be an integer <i>lvalue</i> .<a href="#fn0002"><sup>**</sup></a> (Use -= for floating point numbers.)</td>
+</tr>
+<tr>
+<td>x * y</td><td>18</td><td>Multiplication (only works on numbers).</td>
+</tr>
+<tr>
+<td>x / y</td><td>18</td><td>Division (only works on numbers).</td>
+</tr>
+<tr>
+<td>x % y</td><td>18</td><td>Modulo (only works on numbers). (Result is platform dependent if <tt>x</tt> is negative.)</td>
+</tr>
+<tr>
+<td>x + y</td><td>17</td><td>Addition (only works on numbers).</td>
+</tr>
+<tr>
+<td>x - y</td><td>17</td><td>Subtraction (only works on numbers).</td>
+</tr>
+<tr>
+<td>x &lt;&lt; y</td><td>16</td><td>Bit-shift left (only works on positive integers).</td>
+</tr>
+<tr>
+<td>x &gt;&gt; y</td><td>16</td><td>Bit-shift right (only works on positive integers).</td>
+</tr>
+<tr>
+<td>x # y</td><td>15</td><td>String concatenation.</td>
+</tr>
+<tr>
+<td>x &lt; y</td><td>14</td><td><tt>true</tt> if <tt>x</tt> is less than <tt>y</tt>. Numbers are considered lesser than all non-numerical strings (incl <tt>''</tt> / <tt>void</tt>).</td>
+</tr>
+<tr>
+<td>x &lt;= y</td><td>14</td><td><tt>true</tt> if <tt>x</tt> is less or equal to <tt>y</tt>. Numbers are considered lesser than all non-numerical strings (incl <tt>''</tt> / <tt>void</tt>).</td>
+</tr>
+<tr>
+<td>x &gt;= y</td><td>14</td><td><tt>true</tt> if <tt>x</tt> is greater or equal to <tt>y</tt>. Numbers are considered lesser than all non-numerical strings (incl <tt>''</tt> / <tt>void</tt>).</td>
+</tr>
+<tr>
+<td>x &gt; y</td><td>14</td><td><tt>true</tt> if <tt>x</tt> is greater than <tt>y</tt>. Numbers are considered lesser than all non-numerical strings (incl <tt>''</tt> / <tt>void</tt>).</td>
+</tr>
+<tr>
+<td>x === y</td><td>13</td><td><tt>true</tt> if <tt>x</tt> is literally equal to <tt>y</tt> (character by character).</td>
+</tr>
+<tr>
+<td>x == y</td><td>13</td><td><tt>true</tt> if <tt>x</tt> is equal to <tt>y</tt>, numerically (if both <tt>x</tt> and <tt>y</tt> are valid numbers) or literally.</td>
+</tr>
+<tr>
+<td>x !== y</td><td>13</td><td><tt>true</tt> if <tt>x</tt> is not literally equal to <tt>y</tt> (character by character).</td>
+</tr>
+<tr>
+<td>x != y</td><td>13</td><td><tt>true</tt> if <tt>x</tt> is not equal to <tt>y</tt>, numerically (if both <tt>x</tt> and <tt>y</tt> are valid numbers) or literally.</td>
+</tr>
+<tr>
+<td>x &amp; y</td><td>12</td><td>Bitwise and (only works on positive integers).</td>
+</tr>
+<tr>
+<td>x ^ y</td><td>11</td><td>Bitwise xor (only works on positive integers).</td>
+</tr>
+<tr>
+<td>x | y</td><td>10</td><td>Bitwise or (only works on positive integers).</td>
+</tr>
+<tr>
+<td>x &amp;&amp; y</td><td>9</td><td>Logical and. <tt>y</tt> is only evaluated if <tt>x</tt> is <tt>true</tt>.</td>
+</tr>
+<tr>
+<td>x || y</td><td>8</td><td>Logical or. <tt>y</tt> is only evaluated if <tt>x</tt> is <tt>false</tt>.</td>
+</tr>
+<tr>
+<td>x = y</td><td>7</td><td>Assignment (right to left associative, e.g. <tt>a = b = 3</tt> is ok.)</td>
+</tr>
+<tr>
+<td>*= /= %=</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>+= -=</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>&lt;&lt;= &gt;&gt;= #=</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+<td>&amp;= ^= |=</td><td>7</td><td>Assignment by operation, e.g. <tt>a += 3</tt> adds 3 to <tt>a</tt>.</td>
+</tr>
+<tr>
+<td>(x)</td><td>6</td><td>Parenthesis, groups sub-expressions.</td>
+</tr>
+<tr>
+<td>[x]</td><td>6</td><td>Dereferences <tt>x</tt>. E.g. <tt>[@x]</tt> is the same as <tt>x</tt>. See <a href="#References">References</a> for more info.</td>
+</tr>
+<tr>
+<td>{[a[;b][;c]...]}</td><td>3</td><td>Compound expression. Evaluates sub-expressions sequentially. Final result is that of last sub-expression.</td>
+</tr>
+<tr>
+<td>&gt;x</td><td>3</td><td>Lambda expression of <tt>x</tt>. E.g. <tt>(&gt;x)()</tt> is the same as <tt>x</tt>. See <a href="#Functions">Functions</a> for more info.</td>
+</tr>
+<tr>
+<td>for ([a];b;[c]) [x]</td><td>3</td><td>First evaluates <tt>a</tt>, then if <tt>b</tt> is <tt>true</tt>, <tt>x</tt> and <tt>c</tt> are repeated until <tt>b</tt> is <tt>false</tt>. Final result is that of <tt>x</tt> (or unchanged if first <tt>b</tt> is <tt>false</tt> or <tt>x</tt> is omitted).</td>
+</tr>
+<tr>
+<td>if (x) a [else b]</td><td>3</td><td>Evaluates <tt>a</tt> if <tt>x</tt> is <tt>true</tt> (or optionally evaluates <tt>b</tt> if <tt>x</tt> is <tt>false</tt>). Final result is that of <tt>a</tt>, <tt>b</tt> or unchanged. (Can be <i>lvalue</i> or <i>rvalue</i>.)</td>
+</tr>
+</table>
+<p><small><a name="fn0001"><sup>*</sup> You must specify either <tt>o</tt>, <tt>l</tt> or both. If <tt>o</tt> is omitted, the first <tt>l</tt> characters of the source string <tt>x</tt> are returned. If <tt>l</tt> is omitted, the sub-string from offset <tt>o</tt> to the end of the source string is returned. Negative values and values greater than the length of <tt>x</tt> are valid for both <tt>o</tt> and <tt>l</tt>. For example, <tt>'hello'{-2:6}</tt> returns <tt>'hell'</tt> (the first two negative character positions are considered empty for this purpose).</a></small></p>
+<p><small><a name="fn0002"><sup>**</sup> An <i>lvalue</i> is an addressed value, such as a variable or element in an array (as opposed to a literal number, string etc). An <i>rvalue</i> is the opposite: an actual value. <i>rvalues</i> can be assigned to <i>lvalues</i>, but not the other way around.</a></small></p>
+<h2><a name="Expressions">Expressions</a></h2>
+<p>As said, PikaScript borrows it's syntax from C, although in Pika, there is no distinction between statements and expressions. Every piece of code results in a value, so everything counts as an expression. For example, <tt>if</tt> can be written and used (almost) like you would in C, but you can also use it to generate a conditional value. The following is valid Pika code:</p>
+<pre>x = if (y &lt; 0) -1 else 1;<br></pre>
+<p>For this reason, the decision was taken not to support the ternary <tt>? :</tt> conditional operator. Even the "for loop" can be used as an expression. The resulting value is that of the last "increment" operation. Thus, the following is valid code for finding a value in an array:</p>
+<pre>index = for (i = 0; i &lt; n &amp;&amp; a[i] != x; ++i);<br></pre>
+<p>As if that wasn't odd enough, code enclosed within <tt>{</tt> and <tt>}</tt> can also be used as expressions (so called <i>compound expressions</i>). The result is that of the last expression evaluated within the compound. For example, this is perfectly valid syntax:</p>
+<pre>print( if (y &lt; 10) { ++y; 'incremented' } else 'not incremented' );<br></pre>
+<p>In consequence, there is no return statement in PikaScript. Instead, the return value of a function is that of the last expression evaluated. If you do not wish for a function to return a value, simply put void as the last expression in the function.</p>
+<p>Within compounds, you are required to separate all expressions with semicolons (the last semicolon before the terminating <tt>}</tt> is optional). This use of semicolon is similar, but still different to C / C++ which uses semicolons for terminating statements. The implication is that semicolons are often required also after <tt>}</tt> in PikaScript, as illustrated in this example:</p>
+<pre>{<br>    welcome = function {<br>        print("Hello!");<br>    };                                      // Semicolon required here!<br>    if (true) {<br>        welcome();<br>    };                                      // And here!<br>    print("Goodbye")                        // But not required here.<br>}<br></pre>
+<p>At other times, the semicolon is <b>not</b> allowed, such as before <tt>else</tt> in a conditional expression. For example:</p>
+<pre>{<br>    if (test()) print('Test succeeded!')    // "else" belongs to the "if" expression, therefore no semicolon.<br>    else print('Test failed!');<br>}<br></pre>
+<h2><a name="Arrays">Arrays</a></h2>
+<p>You may have noticed that there were no array or object class in the class table earlier, but don't despair, there is support for associative arrays in PikaScript, it is just that they are not what you normally call <i>first class objects</i>. That is, they are not stored in variables in a self-contained manner. Instead, each individual array element is an individual variable with a distinct naming convention where periods delimit its element keys. E.g. <tt>myArray[5]</tt> actually resolves to <tt>myArray.5</tt>. Likewise, <tt>phoneNumber["John"]["Doe"]</tt> will resolve to <tt>phoneNumber.John.Doe</tt>.</p>
+<p>There are no restrictions on what strings you can use for element names, but in case the string is not a valid symbol name (for example if it contains spaces, starts with a leading digit etc) you must use the subscript operator <tt>[]</tt>. E.g. <tt>x = myArray.5</tt> and <tt>x = myArray.two words</tt> are not valid expression syntaxes but <tt>myArray[5]</tt> and <tt>myArray["two words"]</tt> are. Also <tt>.</tt> is actually an operator, so surrounding spaces will not matter. <tt>myArray . myKey</tt> is the same as <tt>myArray.myKey</tt>.</p>
+<p>While this approach might seem a bit strange and limiting at first, it simplifies the language a lot. It is actually quite similiar to how array handling in C works. PikaScript supports creating references to individual array elements as well as to entire arrays and also allows the subscript / element operators to work on dereferenced array references. Read more about this in the <a href="#References">References</a> section.</p>
+<p>For arrays with numerical indices there is a convention in PikaScript to include a member <tt>n</tt> that simply contains the number of elements for the array. E.g. to construct a three element array and then loop through the elements one could write:</p>
+<pre>{<br>    myArray[0] = 'first';<br>    myArray[1] = 'second';<br>    myArray[2] = 'last'; <br>    myArray.n = 3;<br>    for (i = 0; i &lt; myArray.n; ++i) print(myArray[i]);<br>}<br></pre>
+<p>There are some utility functions in the standard library that help you work easier with arrays. For example, <tt>compose</tt> lets you create an array from an argument list. The following example shows a few of these utilities.</p>
+<pre>include('stdlib.pika');                         // include() loads and executes a script file, but only if it has<br>                                                // not been included before.<br><br>compose(@myArray, 'first', 'second', 'last');   // This is equivalent to the example above.<br>remove(@myArray, 2);<br>append(@myArray, 'new last');<br>print(myArray[2]);                              // Prints 'new last'.<br><br>map(@crew['Spock']                              // map() creates associative arrays<br>        , 'Species', 'Half-Vulcan'<br>        , 'Birth Planet', 'Vulcan'<br>        , 'Rank', 'Lieutenant commander');<br>print(crew['Spock'].Species);                   // Prints 'Half-Vulcan'.<br><br>set(@validColors, 'yellow');                    // set() creates an associative array with elements set to true<br>prune(@validColors);                            // No, we change our minds, remove all sub-elements.<br>set(@validColors, 'red', 'green', 'blue');      // New colors.<br>print(exists(@validColors, 'yellow'));          // Prints 'false'.<br></pre>
+<p>See the Standard Library Reference (<a href="help/index.html">help/index</a>) for full descriptions of all utility functions.</p>
+<h2><a name="Functions">Functions</a></h2>
+<p>Functions are <i>first class objects</i>, meaning that you can create them in run-time, assign them to variables (local or global) and pass them as arguments. In fact, just like any other data type, functions are just strings (containing the function body in clear text format). There are two types of functions which differ in how access to local variables is resolved<a href="#fn0003"><sup>*</sup></a>:</p>
+
+<ul>
+<li>The <i>ordinary function</i> which creates a new local variable scope on each call. E.g. <tt>function { /* code */ }</tt><br></li>
+<li>The <i>lambda expression</i> is a function that shares the variable scope with the function that created it. E.g. <tt>&gt;(a+b)</tt></li>
+</ul>
+<p>The following example illustrates the difference between these two variants:</p>
+<pre>f = function {<br>    localVariable = 'abcd';         // localVariable is created in the local variable scope of this function,<br>                                    // it will be destroyed on function exit.<br><br>    print(exists(@outerVariable));  // Will print false, because outerVariable is not reachable from here.<br>};<br><br>l =&gt; {                              // Notice that l =&gt; { is interpreted as l = &gt;{, but it looks neater in this form.<br><br>    newVariable = outerVariable;    // outerVariable is accessible here.<br>};<br><br>outerVariable = 'reach me';<br>f();<br>l();<br>print(newVariable);                 // Will print 'reach me'.<br>print(exists(@localVariable));      // Will print false, because localVariable from f does not exist in this scope.<br></pre>
+<p>Lambda expressions are very powerful, allowing practical use of so called higher-order functions, i.e. functions that take other functions as arguments (or returns new functions). For example, the <tt>foreach</tt> function (part of the standard library) takes an array as first argument and a function / lambda expression as second argument which is then applied to each element found in the array. Like this:</p>
+<pre>a[0] = 'q';<br>a[1] = 'w';<br>a[2] = 'e';<br>count = 0;<br>foreach(@a, &gt;++count);              // Count will now be 3.<br></pre>
+<p>Function arguments are not accessed by name in PikaScript, but by index. The first argument is number 0 and is accessed with <tt>$0</tt>. <tt>$n</tt> is a special variable containing the number of arguments passed to the function. Notice that you can modify the contents of the arguments in the function, but it will not affect any source variables passed to the function since arguments are passed by value. If you want to modify variable content in the caller's variable scope you should explicitly pass a reference to this variable from the caller to the function, e.g. a swap function could be implemented like this:</p>
+<pre>swap = function { temp = [$0]; [$0] = [$1]; [$1] = temp; }<br><br>left = 'stuff';<br>right = 'cool';<br>swap(@left, @right);                // Left is now 'cool' and right is 'stuff'.<br></pre>
+<p>(See <a href="#References">References</a> section for more information on references.)</p>
+<p>Arguments are available for lambda expressions just as for ordinary functions. Furthermore, you may create arbitrary new variables prefixed with the dollar sign to create a temporary variable that is only visible to the current function / lambda. (Thus, $ variables in lambda expressions are similiar to non-$ variables in ordinary functions.)</p>
+<p>The subscript operator <tt>[]</tt> can be appended to a single <tt>$</tt> to access arguments by index. For example, the following code iterates through each function argument and prints it:</p>
+<pre>printAll = function {<br>    for (i = 0; i &lt; $n; ++i) {<br>        print($[i]);<br>    };<br>};<br><br>printAll(1, 2, 3, 4); // Will print 1, 2, 3 and 4.<br></pre>
+<p>There is a global variable scope that is accessible from everywhere. Global variables are not destroyed until the entire language context is destroyed by the host. Prefix the symbol with the <tt>::</tt> operator to access this scope. E.g., <tt>::myGlobal = 'hello world'</tt> will create a global <tt>myGlobal</tt> that can be accessed from any function. It is quite common to declare functions in the global scope, e.g <tt>::newCoolFunction = function { /* do something nice */ }</tt>.</p>
+<p>Finally, the special variable prefix <tt>^</tt> allows you to "sneak" into a function caller's frame and access variables there. You rarely need to use this operator, but there are some special circumstances where it is useful. E.g. <tt>^$0</tt> is the first argument of the caller (as opposed to the first argument of this function), <tt>^^$0</tt> is the first argument of the caller's caller and so on. An example of how this feature can come in handy is the <tt>args</tt> function (from the standard library) which assigns arguments to named variables. Here is an illustration of how it was implemented and how you might use it:</p>
+<pre>// Definition of ::args from the standard libary.<br><br>args = function {<br>    if (^$n != $n) throw(if (^$n &gt; $n) "Too many arguments" else "Too few arguments");<br>    for (i = 0; i &lt; $n; ++i) [$[i]] = ^$[i];<br>};<br><br>// Never mind if that was complicated. It is easy to use:<br><br>repeat = function {<br>    args(@string, @count);<br>    for (i = 0; i &lt; count; ++i) output #= string;<br>    output;<br>};<br><br>print(repeat('All work and no play makes Jack a dull boy. ', 1000));<br></pre>
+<p><small><a name="fn0003"><sup>*</sup> There is actually a third type of function as well, which is the native function. It is described in the <a href="#C++_Interface">C++ Interface</a> section below.</a></small></p>
+<h2><a name="References">References</a></h2>
+<p>You can create references to variables, individual array elements and entire arrays in PikaScript using the reference operator <tt>@</tt> .<a href="#fn0004"><sup>*</sup></a> References may be stored in variables or passed as arguments in function calls. As mentioned earlier, references are very important in PikaScript because of how arrays are implemented. Since arrays cannot be stored directly in variables you cannot simply pass them as arguments either. Instead you need to pass references to arrays. E.g., this is <b>not</b> valid code:</p>
+<pre>a[0] = 'q';<br>a[1] = 'w';<br>a[2] = 'e';<br>sumArray(3, a);<br></pre>
+<p>This will just result in a missing variable error because <tt>a</tt> isn't actually declared (but <tt>a.0</tt>, <tt>a.1</tt> and <tt>a.2</tt> are). Instead the last line needs to look like this:</p>
+<pre>sumArray(3, @a);<br></pre>
+<p>The difference here being that we pass a reference to <tt>a</tt> instead of trying to pass its value. We may then use this <br>
+reference inside of the <tt>sumArray</tt> function together with the element operator <tt>[]</tt> to access the individual elements <br>
+under <tt>a</tt>.</p>
+<p>Dereferencing is done with the dereferencing operator which also happens to be <tt>[]</tt> .<a href="#fn0004"><sup>*</sup></a> For example, the <tt>sumArray</tt> function from the previous example may be implemented as follows:</p>
+<pre>sumArray = function {             // This is how you declare a function in PikaScript.<br>    count = $0;                   // $0 is the first argument.<br>    array = $1;<br>    <br>    sum = 0;<br>    for (i = 0; i &lt; count; ++i) {<br>        sum += [array][i];        // Dereferencing [array] and addressing its element [i].<br>    };<br>    <br>    sum;                          // The result of the last expression is returned, in this case 'sum'.<br>}<br></pre>
+<p>The internal representation of a reference starts with a <i>frame identifier</i> (enclosed in colons) followed by the variable name. For example, printing the reference <tt>@xwing</tt> may display something like: <tt>:a93:xwing</tt>, where <tt>:a93:</tt> would be the unique identifier for the frame where the variable was declared. The global frame identifier is always <tt>::</tt>.</p>
+<p>Notice that although you are allowed to return a reference to a local variable from a function, it will be useless to the caller since the frame is destroyed when the function returns (unless the function is a <i>lambda expression</i> that shares the same variable scope as the caller of course). Here is an illustrative example:</p>
+<pre>myFunction = function { @myLocal };    // Returning reference to myLocal.<br>myReference = myFunction();            // This is ok, but myReference will be pretty useless.<br>[myReference] = 'not ok';              // Here you will get a "frame does not exist" error.<br><br>myLambda =&gt; { @myLocal };              // This is different, myLocal is located in the same frame as myLambda.<br>[myLambda()] = 'ok';                   // This is ok, myLocal will now exist in the current scope.<br></pre>
+<p><small><a name="fn0004"><sup>*</sup> The primary reason why <tt>@</tt> and <tt>[]</tt> were chosen as reference and dereference operators and not <tt>&amp;</tt> and <tt>*</tt> (which would be more consistent with C / C++) is that PikaScript references are radically different to C / C++ pointers. For example, you are allowed to create references to variables that do not even exist. More importantly, unlike C / C++ pointers, references to arrays need to be dereferenced in order to access their elements, and the <tt>[]</tt> syntax was found more elegant for this purpose compared to using a prefix <tt>*</tt> operator like in C. For example, dereferencing an element in an array referenced by <tt>array_ref</tt> looks like this: <tt>[[array_ref][index]]</tt>. The intention of this expression is clearer than <tt>*(*array_ref[index])</tt> and more compact than <tt>*((*array_ref)[index])</tt>.</a></small></p>
+<h2><a name="Objects">Objects</a></h2>
+<p>Although PikaScript was not designed primarily for object orientated programming there are reflection features in the language that makes it possible to support at least rudementary OO-styled programming. The specific language feature that enables this is the special variable named <tt>$callee</tt>. <tt>$callee</tt> will contain the full name of the function currently being executed (that is, the name that the caller invoked the function through). The follow example gives you a hint of how this can be used to create methods for objects:</p>
+<pre>myFunction = function { print($callee) };<br>myFunction();                                 // Will print "myFunction".<br>myObject.myMethod = myFunction;               // This just assigns "myFunction" to variable name "myObject.myMethod".<br>myObject.myMethod();                          // Will print "myObject.myMethod".<br>ref = @myObject;<br>[ref].myMethod();                             // Will print "::myObject.myMethod".<br></pre>
+<p>The only thing that remains to get started with object orientation is a way to separate the object and method name and naturally the standard library provides functions to do this. The functions are called <tt>this()</tt> and <tt>method()</tt>. Finally, we need conventions and functions for object allocation, construction and destruction. A constructor is simply a function that sets up the object under <tt>this()</tt>. Here is an example:</p>
+<pre>Point = function {<br>    args(@x, @y);<br>    map(this()<br>        , 'x', x<br>        , 'y', y<br>        , 'add', function { t = this(); [t].x += [$0].x; [t].y += [$0].y; t }<br>        , 'subtract', function { t = this(); [t].x -= [$0].x; [t].y -= [$0].y; t }<br>        , 'print', function { t = this(); print([t].x # ',' # [t].y); t }<br>        );<br>};<br></pre>
+<p>You use the standard library function <tt>construct</tt> or <tt>new</tt> to construct objects either on a designated target address or "allocated" on the "heap".</p>
+<pre>construct(@a, Point, 3, 5);<br>construct(@b, Point, 7, 6);<br>b.subtract(@a);                // Remember we must pass references to objects and arrays.<br>b.print();<br></pre>
+<p>The "heap" is also something of a pseudo-construction in PikaScript (that is, it doesn't exist as a concept in the run-time engine, but as a construction by the standard library). Every time you call <tt>new</tt> to construct an object, a global counter is incremented, this counter is used to name the object, the object is constructed under this name and a reference to it is returned. For example:</p>
+<pre>a = new(Point, 3, 5);<br>b = new(Point, 7, 6);          // Now, 'a' and 'b' are probably ::0 and ::1.<br>[b].subtract(a);               // This time around 'a' is already a reference, so no need for '@'.<br>[b].print();<br></pre>
+<p>... or just for fun, everything in one line (this is possible cause <tt>subtract()</tt> returns a reference to <tt>this()</tt>):</p>
+<pre>[[new(Point, 7, 6)].subtract(new(Point, 3, 5))].print();<br></pre>
+<p>Finally, the standard library function gc() iterates all variables "on the heap" (that is variables with numerical names) and deletes any object that is "unreachable" through other references. It deletes the object by calling 'destruct' which first invokes any 'destruct' member of the object and then "prunes" it.</p>
+<h2><a name="C++_Interface">C++ Interface</a></h2>
+<p><font color="red">?? To be written. Include info on custom string class etc, qstrings, quickvars, how to sandbox, object interfacing ??</font></p>
+<h2><a name="Standard_Native_Functions">Standard Native Functions</a></h2>
+<p>Here is a list of standard library functions that have native implementations. These are declared by the <tt>addStandardNatives</tt> C++ functions which means they are available without having to run / include <tt>stdlib.pika</tt>. Naturally they also execute much much faster than functions written in PikaScript. Please see the PikaScript Standard Library Reference (<a href="help/index.html">help/index</a>) for full documentation on all standard library functions.</p>
+<p><tt>abs</tt>, <tt>acos</tt>, <tt>asin</tt>, <tt>atan</tt>, <tt>atan2</tt>, <tt>ceil</tt>, <tt>char</tt>, <tt>cos</tt>, <tt>cosh</tt>, <tt>delete</tt>, <tt>escape</tt>, <tt>exists</tt>, <tt>elevate</tt>, <tt>evaluate</tt>, <tt>exp</tt>, <tt>find</tt>, <tt>floor</tt>, <tt>foreach</tt>, <tt>input</tt>*, <tt>invoke</tt>, <tt>length</tt>, <tt>log</tt>, <tt>log10</tt>, <tt>load</tt>*, <tt>lower</tt>, <tt>mismatch</tt>, <tt>ordinal</tt>, <tt>pow</tt>, <tt>parse</tt>, <tt>precision</tt>, <tt>print</tt>*, <tt>radix</tt>, <tt>random</tt>, <tt>reverse</tt>, <tt>sin</tt>, <tt>sinh</tt>, <tt>save</tt>*, <tt>search</tt>, <tt>span</tt>, <tt>sqrt</tt>, <tt>system</tt>*, <tt>tan</tt>, <tt>tanh</tt>, <tt>time</tt>, <tt>throw</tt>, <tt>trace</tt>, <tt>try</tt>, <tt>upper</tt></p>
+<p>There are two functions written in PikaScript that are also declared by <tt>addStandardNatives</tt>: <tt>run</tt> and <tt>include</tt></p>
+<p>Finally the global constant <tt>VERSION</tt> will contain the current PikaScript engine version.</p>
+<p><small><sup>*</sup> <tt>input</tt>, <tt>load</tt>, <tt>print</tt>, <tt>save</tt> and <tt>system</tt> can be excluded by calling <tt>addStandardNatives</tt> with a false <tt>includeIO</tt> argument.</small></p>
+<h2><a name="Further_Reading">Further Reading</a></h2>
+
+<ul>
+<li>PikaScript Standard Library Reference : <a href="help/index.html">help/index</a></li>
+</ul>
+
+<ul>
+<li>PikaScript C++ API Reference (Doxygen) : <a href="html/index.html">html/index</a></li>
+</ul>
+<h2><a name="Copyrights_and_Trademarks">Copyrights and Trademarks</a></h2>
+<p>PikaScript is released under the "New Simplified BSD License". <br>
+<a href="http://www.opensource.org/licenses/bsd-license.php">http://www.opensource.org/licenses/bsd-license.php</a></p>
+<p>Copyright (c) 2011, NuEdge Development / Magnus Lidstr&ouml;m <br>
+All rights reserved.</p>
+
+<ul>
+<li>Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+</li>
+</ul>
+
+<ul>
+<li>Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+</li>
+</ul>
+
+<ul>
+<li>Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+</li>
+</ul>
+
+<ul>
+<li>Neither the name of the NuEdge Development nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+</li>
+</ul>
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+<p>The HTML version of this document was created with PikaScript.</p>
+
+	</body>
+</html>

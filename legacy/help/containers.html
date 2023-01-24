@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+		<meta http-equiv="Content-Style-Type" content="text/css">
+		<title>PikaScript Library Reference: containers</title>
+	</head>
+	<body>
+		<div class="navigation"><a href="index.html">toc</a></div>
+		<hr>
+		<h2>containers</h2>
+			<p><a href="containers.html#ascend">ascend</a>, <a href="containers.html#clone">clone</a>, <a href="containers.html#foreach">foreach</a>, <a href="containers.html#map">map</a>, <a href="containers.html#prune">prune</a>, <a href="containers.html#redotify">redotify</a>, <a href="containers.html#set">set</a>, <a href="containers.html#undotify">undotify</a></p>
+		<hr>
+			
+<div>
+	<h3><a name="ascend">ascend</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@parent = ascend(@child)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Returns a reference to the "parent container" of @child (i.e. the variable or element that contains the sub-element referred to by @child). If @child is a top-level variable, void is returned.</p></div>
+	<h4>Examples</h4><pre class="examples">ascend(@x['3']) === @x<br>ascend(@x.y.z) === @x.y<br>ascend(@x) === void</pre>
+	
+</div>
+<hr>
+
+<div>
+	<h3><a name="clone">clone</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@target = clone(@source, @target)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Makes a "deep copy" of the container @source to @target, meaning that all elements under the source and any sub-elements that they may have (and so on) will be copied to the target. If there is a variable directly at @source it will also be copied to @target. The returned value is the input @target reference.</p><p>Notice that this function does not erase any existing elements under @target. You may want to consider calling prune() on @target first.</p></div>
+	<h4>Examples</h4><pre class="examples">clone(@myCarbonCopy, @originalData)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="arrays.html#copy">copy</a>, <a href="#prune">prune</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="foreach">&lt;foreach&gt;</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">foreach(@map, &gt;doThis)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Traverses all elements under @map (and any sub-elements that they may have and so on) and calls &gt;doThis once for every encountered element. (An alternative description of foreach() is that it calls &gt;doThis for every found variable that begins with the value of @map # '.') Three arguments will be passed to &gt;doThis:</p><p>$0 will be the full reference to the found element (e.g. "::zoo.elephant")<br>$1 will be the name of the element (e.g. "elephant")<br>$2 will be the value of the element.</p><p>The order with which elements are processed is undefined and depends on the implementation of PikaScript. Any modifications to @map while running foreach() will not be reflected in the calls to &gt;doThis. Notice that you normally would not use foreach() on arrays since it would also include the 'n' element (the element count). Use iterate() or a simple for-loop instead.</p></div>
+	<h4>Examples</h4><pre class="examples">foreach(map(@a, 'Asia', 4157, 'Africa', 1030, 'Americas', 929, 'Europe', 739, 'Oceania', 35), &gt;print($1 # '=' # $2))</pre>
+	<h4>See Also</h4><p class="seealso"><a href="arrays.html#iterate">iterate</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="map">map</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@map = map(@map, ['keys', &lt;values&gt;, ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Creates a "map" under @map by assigning sub-elements to @map for each key / value pair passed to the function. The returned value is the input @map reference.</p><p>Notice that this function does not erase any existing elements under @map so you may call this function repeatedly to incrementally build a map. Use prune on @map to delete it.</p><p>A creative use of this function is to create efficient "switch statements" something that is otherwise missing in PikaScript by mapping keys to functions / lambda expressions. You could then execute the switch like this: mySwitch[theKey].</p></div>
+	<h4>Examples</h4><pre class="examples">map(@userInfo['magnus'], 'fullName','Magnus Lidstroem' , 'birthDate','31 march 1972' , 'favoriteColor','#3333FF')<br>map(@actions, 'hi',&gt;print('Good day sir!') , 'spin',&gt;{ for (i = 0; i &lt; 360; ++i) print('Spun ' # i # ' degrees') } , 'quit',&gt;doQuit = true)<br>[map(@temp, 'zero',0 , 'one',1 , 'two',2 , 'three',3)]['two'] == 2</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#foreach">foreach</a>, <a href="#prune">prune</a>, <a href="#set">set</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="prune">prune</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">+count = prune(@reference)</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Deletes the variable referenced to by @reference as well as all its sub-elements. Use prune() to delete an entire "plain old data" container (e.g. an "array" or "map"). Use destruct() instead for deleting an "object" to have its destructor called before it is deleted. prune() returns the number of variables that were deleted.</p></div>
+	<h4>Examples</h4><pre class="examples">prune(@myArray)</pre>
+	<h4>See Also</h4><p class="seealso"><a href="utils.html#delete">delete</a>, <a href="objects.html#destruct">destruct</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="redotify">redotify</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'yesdots' = redotify('nodots')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Decodes an "undotified" string as returned from undotify(). See help for "undotify" for further explanation and examples.</p></div>
+	<h4>Examples</h4><pre class="examples">redotify('nearly 50%25 use google%2ecom daily') === 'nearly 50% use google.com daily'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#undotify">undotify</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="set">set</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">@set = set(@set, ['keys', ...])</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Creates a "set" under @set by assigning sub-elements with the value true for each key. The returned value is the input @set reference.</p><p>Notice that this function does not erase any existing elements under @set so you may call this function repeatedly to incrementally build a set. Use prune() on @set to delete it.</p><p>One practical use for sets is to efficiently check if a value belongs to a group of values. Initially you create the group of values with this function and later you can call exists(@set[key]).</p></div>
+	<h4>Examples</h4><pre class="examples">set(@validColors, 'red', 'green', 'blue', 'yellow')<br>exists(@[set(@smallPrimes, 2, 3, 5, 7, 11, 13, 17, 19)][13])</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#foreach">foreach</a>, <a href="#map">map</a>, <a href="#prune">prune</a></p>
+</div>
+<hr>
+
+<div>
+	<h3><a name="undotify">undotify</a></h3>
+	<h4>Syntax</h4>
+	<pre class="syntax">'nodots' = undotify('yesdots')</pre>
+	<h4>Description</h4>
+	<div class="description"><p>Simply returns a copy of 'source' where all '.' have been replaced with '%2e' and all '%' have been replaced with '%25'. The purpose of this function is to allow arbitrary strings to work as keys in multi-dimensional arrays / deep containers. Without "undotifying" keys, any '.' in the keys would be interpreted as separators. E.g. "files['name.ext'].size" is the same as "files.name.ext.size", which is probably not what you want. Instead use "files[undotify('name.ext')].size". To return the original key from an "undotified" key, use redotify().</p></div>
+	<h4>Examples</h4><pre class="examples">undotify('nearly 50% use google.com daily') === 'nearly 50%25 use google%2ecom daily'<br>redotify(undotify('a.b.c%d.e.f')) === 'a.b.c%d.e.f'</pre>
+	<h4>See Also</h4><p class="seealso"><a href="#redotify">redotify</a></p>
+</div>
+<hr>
+
+		<div class="navigation"><a href="index.html">toc</a></div>
+	</body>
+</html>

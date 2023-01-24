@@ -1,0 +1,554 @@
+PikaScript
+##########
+
+What is PikaScript?
+===================
+
+ PikaScript is a small interpreting C-style scripting language implemented with modern C++ programming techniques. The
+source code for PikaScript is amazingly compact. It's core is around 1000 lines of C++ plus an additional header file of
+500 lines including doxygen comments. The optional standard library (written in PikaScript), providing utilities for
+strings, math, algorithms and objects (including a mark and swipe garbage collector) is less than 300 lines of source
+code. Despite it's small size the language is powerful enough to support sophisticated concepts such as higher order
+functions and closures.
+
+Goals of PikaScript
+-------------------
+
+ -  Compact bug-free implementation in modern C++.
+
+ -  Easy to interface with host code. /E.g., all variables are represented by C++ strings./
+
+ -  100% interpreted. /No compilation pass required, just load a string and run./
+
+ -  Minimalistic language syntax. /E.g., all statements counts as expressions and return values, eliminating redundant/
+   /operators such as/ `? :` /(instead/ `if` /may be used inside expressions)./
+
+ -  Extremely dynamic with full run-time reflection of variables, code and even stack. /(Making it possible to actually/
+   /write debuggers in PikaScript.)/
+
+ -  No heap and no need for memory management (explicit or implicit). /The only dynamically allocated entity in/
+   /PikaScript is the variable. E.g., a vector is a number of variables linked by name only./
+
+Non-goals of PikaScript
+-----------------------
+
+ -  Speed. /PikaScript is/ *slow*, /no doubt about that. Even with the optional quicker string class it will/
+   *never* /be able to compete with compiled languages./
+   
+ -  Small memory footprint. /PikaScript can eat memory like a horse, especially if you use standard STL maps and/
+   /strings for variable storage (which is the default configuration)./
+
+ -  Object-orientation. /You can create and use objects in PikaScript, but it is a secondary language contruct created/
+   /without explicit support from the language syntax./
+
+Syntax
+======
+
+ PikaScript syntax borrows heavily from C. This documentation assumes that the reader has at least a basic understanding
+of the C language (or of any of the languages it has influenced such as C++, C#, Java, Javascript, Perl, PHP etc etc).
+
+Variables
+=========
+
+ In order to minimize code complexity and make the interface to PikaScript minimal and easy, all Pika variables are
+represented internally by strings. Unlike many dynamically typed languages, there is no distinct variable type coupled
+with the values. Instead, the interpretation of a value (and its type) is determined by the context in which it is used.
+For example, there is no distinction between `10 / 2` and `"10" / "2"`. Both result in the value `"5"`. Similiarly,
+`10 + 2` and `'10' + '2'` are equivalent and the result is `"12"`. (If you want to perform string concatention you use
+the special `#` operator instead.) This approach is usually referred to as /weak typing/.
+
+ Despite the lack of strong types in PikaScript, you can distinguish seven different /value classes/ by how they are
+handled by the various expressions, operators and library functions:
+
+ Class      Source example              Internal representation     Comments
+ -----      --------------              -----------------------     --------
+ void       `void`                                                  The "no value" value, always represented internally by an empty string.
+                                                                        
+ boolean    `false`                     `false`                     The input and output of logical expressions (such as `&&` and `||`).
+            `true`                      `true`                      Always represented by a lowercase `false` or `true`.
+ 
+ number     `23`                        `23`                        Numerical value. Numbers must begin with a digit (or `+` or `-`) and end with a digit. (Except for `infinity` of course.)
+            `-0x94`                     `-148`                      E.g, ".3" and "3." are not considered valid numbers. 
+            `0.00000003`                `3e-8`                      They may contain an exponential prefixed with `e`.
+            `5.930e-77`                 `5.93e-77`                  Numerical literals are "normalized" so that identical numbers are also identical strings
+            `infinity`                  `infinity`                  (e.g. 1.00, 1e0, 0x01 and 1 are all normalized to `1`).
+ 
+ string     `'orange'`                  `orange`                    As said, all values are stored internally in string format, so in practice all values are valid strings.
+            `'I "love" Pika'`           `I "love" Pika`             String literals are enclosed in either single quote (') or double quote (").
+            `"line1\nline2"`            `line1<lf>line2`            Strings within double quotes may use the standard C escape codes (e.g. "\n", "\x10").
+                                                                    Strings within single quotes are interpreted literally character by character (sometimes called raw strings).
+ 
+ reference  `@myvar`                    `:<frame>:myvar`            Variable / element references.
+            `@myelem[i]`                `:<frame>:myelem.<i>`       Internal representation starts with the frame label (see motivation in References).
+ 
+ function   `function { /* code */ }`   `{ /* code */ }`            Functions (and /lambda expressions/).
+            `>($0 + $1)`                `>($0 + $1)`                Internal representation begins with a leading `{` or `>`.
+ 
+ native     `<print>`                   `<print>`                   Native C / C++ function (or object).
+                                                                    Always starts with `<` and ends with `>`.
+
+ PikaScript is pretty strict with the kind of values it allows for many operations. For example, `true` and `false` are
+the only legal values for logical expressions (such as `if` and `for`). Functions and /lambda expressions/ are the only
+legal targets for function calls and numbers are the only acceptable values for arithmetic operations.
+
+ In PikaScript you simply declare variables by assigning them values (in fact, this is the only way to create new
+variables). Unless a variable is global (prefixed with `::`), it will be destroyed when the function wherein it is
+declared returns. Read more about variable scopes under Functions.
+
+Operators
+=========
+
+ Since everything counts as expressions in PikaScript, you will find that quite a few of the standard C / C++ statements
+(such as `if` and `for`) are actually operators rather than statements. See Expressions for more on this.
+
+?? TODO : document system with "artificial" precedence levels for "ticks" ??
+
+Operator                    Prec.   Comment
+--------                    -----   -------
+function { x }              21      Function with body `x`. See Functions for more info.
+x([a][,b][,c]...)           20      Function call. (All arguments are optional and will be void if omitted.)
+x.y                         20      Element operator (`y` must be a valid symbol literal).
+x[y]                        20      Subscript operator.
+x{[o]:[l]}                  20      Substring operator. Returns a sub-string of `l` characters from `x` starting at offset `o` .*
+x++                         20      Postfix increment. Value is that of `x` before the increment. `x` must be an integer /lvalue/ .**
+x--                         20      Postfix decrement. Value is that of `x` before the decrement. `x` must be an integer /lvalue/ .**
+@x                          19      Reference operator. See References for more info.
+!x                          19      Logical not (`false` -> `true` and vice versa). (`!!x` can be used to assert that `x` is a boolean.)
+~x                          19      Bitwise not (only works on integers) (`~~x` can be used to assert that `x` is an integer value.)
++x                          19      Prefix plus, verifies that `x` is a number and "normalizes" it. (`+x` can be used to assert that `x` is a number.)
+-x                          19      Negate, only works on numbers.
+++x                         19      Prefix increment, `x` must be an integer /lvalue/ .** (Use += for floating point numbers.)
+--x                         19      Prefix decrement, `x` must be an integer /lvalue/ .** (Use -= for floating point numbers.)
+x * y                       18      Multiplication (only works on numbers).
+x / y                       18      Division (only works on numbers).
+x \ y                       18      Integer division (only works on integers).
+x % y                       18      Modulo (only works on numbers). (Result is platform dependent if `x` is negative.)
+x + y                       17      Addition (only works on numbers).
+x - y                       17      Subtraction (only works on numbers).
+x << y                      16      Bit-shift left (only works on positive integers).
+x >> y                      16      Bit-shift right (only works on positive integers).
+x # y                       15      String concatenation.
+x < y                       14      `true` if `x` is less than `y`. Numbers are considered lesser than all non-numerical strings (incl `''` / `void`).
+x <= y                      14      `true` if `x` is less or equal to `y`. Numbers are considered lesser than all non-numerical strings (incl `''` / `void`).
+x >= y                      14      `true` if `x` is greater or equal to `y`. Numbers are considered lesser than all non-numerical strings (incl `''` / `void`).
+x > y                       14      `true` if `x` is greater than `y`. Numbers are considered lesser than all non-numerical strings (incl `''` / `void`).
+x === y                     13      `true` if `x` is literally equal to `y` (character by character).
+x == y                      13      `true` if `x` is equal to `y`, numerically (if both `x` and `y` are valid numbers) or literally.
+x !== y                     13      `true` if `x` is not literally equal to `y` (character by character).
+x != y                      13      `true` if `x` is not equal to `y`, numerically (if both `x` and `y` are valid numbers) or literally.
+x & y                       12      Bitwise and (only works on positive integers).
+x ^ y                       11      Bitwise xor (only works on positive integers).
+x | y                       10      Bitwise or (only works on positive integers).
+x && y                      9       Logical and. `y` is only evaluated if `x` is `true`.
+x || y                      8       Logical or. `y` is only evaluated if `x` is `false`.
+x = y                       7       Assignment (right to left associative, e.g. `a = b = 3` is ok.)
+*= /= \= %=
++= -=
+<<= >>= #=
+&= ^= |=                    7       Assignment by operation, e.g. `a += 3` adds 3 to `a`.
+(x)                         6       Parenthesis, groups sub-expressions.
+[x]                         6       Dereferences `x`. E.g. `[@x]` is the same as `x`. See References for more info.
+{[a[;b][;c]...]}            3       Compound expression. Evaluates sub-expressions sequentially. Final result is that of last sub-expression.
+>x                          3       Lambda expression of `x`. E.g. `(>x)()` is the same as `x`. See Functions for more info.
+for ([a];b;[c]) [x]         3       First evaluates `a`, then if `b` is `true`, `x` and `c` are repeated until `b` is `false`. Final result is that of `x` (or unchanged if first `b` is `false` or `x` is omitted).
+if (x) a [else b]           3       Evaluates `a` if `x` is `true` (or optionally evaluates `b` if `x` is `false`). Final result is that of `a`, `b` or unchanged. (Can be /lvalue/ or /rvalue/.)
+
+ * You must specify either `o`, `l` or both. If `o` is omitted, the first `l` characters of the source string `x` are
+returned. If `l` is omitted, the sub-string from offset `o` to the end of the source string is returned. Negative values
+and values greater than the length of `x` are valid for both `o` and `l`. For example, `'hello'{-2:6}` returns `'hell'`
+(the first two negative character positions are considered empty for this purpose).
+
+ ** An /lvalue/ is an addressed value, such as a variable or element in an array (as opposed to a literal number,
+string etc). An /rvalue/ is the opposite: an actual value. /rvalues/ can be assigned to /lvalues/, but not the other
+way around.
+
+Expressions
+===========
+
+ As said, PikaScript borrows it's syntax from C, although in Pika, there is no distinction between statements and
+expressions. Every piece of code results in a value, so everything counts as an expression. For example, `if` can be
+written and used (almost) like you would in C, but you can also use it to generate a conditional value. The following
+is valid Pika code:
+
+    x = if (y < 0) -1 else 1;
+
+ For this reason, the decision was taken not to support the ternary `? :` conditional operator. Even the "for loop" can
+be used as an expression. The resulting value is that of the last "increment" operation. Thus, the following is valid
+code for finding a value in an array:
+
+    index = for (i = 0; i < n && a[i] != x; ++i);
+
+ As if that wasn't odd enough, code enclosed within `{` and `}` can also be used as expressions (so called /compound
+expressions/). The result is that of the last expression evaluated within the compound. For example, this is perfectly
+valid syntax:
+
+    print( if (y < 10) { ++y; 'incremented' } else 'not incremented' );
+
+ In consequence, there is no return statement in PikaScript. Instead, the return value of a function is that of the last
+expression evaluated. If you do not wish for a function to return a value, simply put void as the last expression in the
+function.
+
+ Within compounds, you are required to separate all expressions with semicolons (the last semicolon before the
+terminating `}` is optional). This use of semicolon is similar, but still different to C / C++ which uses semicolons for
+terminating statements. The implication is that semicolons are often required also after `}` in PikaScript, as
+illustrated in this example:
+
+    {
+        welcome = function {
+            print("Hello!");
+        };                                      // Semicolon required here!
+        if (true) {
+            welcome();
+        };                                      // And here!
+        print("Goodbye")                        // But not required here.
+    }
+
+ At other times, the semicolon is *not* allowed, such as before `else` in a conditional expression. For example:
+
+    {
+        if (test()) print('Test succeeded!')    // "else" belongs to the "if" expression, therefore no semicolon.
+        else print('Test failed!');
+    }
+
+Arrays
+======
+
+ You may have noticed that there were no array or object class in the class table earlier, but don't despair, there is
+support for associative arrays in PikaScript, it is just that they are not what you normally call /first class objects/.
+That is, they are not stored in variables in a self-contained manner. Instead, each individual array element is an
+individual variable with a distinct naming convention where periods delimit its element keys. E.g. `myArray[5]` actually
+resolves to `myArray.5`. Likewise, `phoneNumber["John"]["Doe"]` will resolve to `phoneNumber.John.Doe`.
+
+ There are no restrictions on what strings you can use for element names, but in case the string is not a valid symbol
+name (for example if it contains spaces, starts with a leading digit etc) you must use the subscript operator `[]`.
+E.g. `x = myArray.5` and `x = myArray.two words` are not valid expression syntaxes but `myArray[5]` and
+`myArray["two words"]` are. Also `.` is actually an operator, so surrounding spaces will not matter. `myArray . myKey`
+is the same as `myArray.myKey`.
+
+ While this approach might seem a bit strange and limiting at first, it simplifies the language a lot. It is actually
+quite similiar to how array handling in C works. PikaScript supports creating references to individual array elements
+as well as to entire arrays and also allows the subscript / element operators to work on dereferenced array references.
+Read more about this in the References section.
+
+ For arrays with numerical indices there is a convention in PikaScript to include a member `n` that simply contains the
+number of elements for the array. E.g. to construct a three element array and then loop through the elements one could
+write:
+
+    {
+        myArray[0] = 'first';
+        myArray[1] = 'second';
+        myArray[2] = 'last'; 
+        myArray.n = 3;
+        for (i = 0; i < myArray.n; ++i) print(myArray[i]);
+    }
+
+ There are some utility functions in the standard library that help you work easier with arrays. For example, `compose`
+lets you create an array from an argument list. The following example shows a few of these utilities.
+
+    include('stdlib.pika');                         // include() loads and executes a script file, but only if it has
+                                                    // not been included before.
+    
+    compose(@myArray, 'first', 'second', 'last');   // This is equivalent to the example above.
+    remove(@myArray, 2);
+    append(@myArray, 'new last');
+    print(myArray[2]);								// Prints 'new last'.
+    
+    map(@crew['Spock']								// map() creates associative arrays
+            , 'Species', 'Half-Vulcan'
+            , 'Birth Planet', 'Vulcan'
+            , 'Rank', 'Lieutenant commander');
+    print(crew['Spock'].Species);					// Prints 'Half-Vulcan'.
+    
+    set(@validColors, 'yellow');					// set() creates an associative array with elements set to true
+    prune(@validColors);							// No, we change our minds, remove all sub-elements.
+    set(@validColors, 'red', 'green', 'blue');		// New colors.
+    print(exists(@validColors, 'yellow'));			// Prints 'false'.
+
+See the Standard Library Reference (help/index.html) for full descriptions of all utility functions.
+
+Functions
+=========
+
+ Functions are /first class objects/, meaning that you can create them in run-time, assign them to variables (local or
+global) and pass them as arguments. In fact, just like any other data type, functions are just strings (containing the
+function body in clear text format). There are two types of functions which differ in how access to local variables is
+resolved*:
+
+ *) The /ordinary function/ which creates a new local variable scope on each call. E.g. `function { /* code */ }`
+ *) The /lambda expression/ is a function that shares the variable scope with the function that created it. E.g. `>(a+b)`
+
+ The following example illustrates the difference between these two variants:
+
+    f = function {
+        localVariable = 'abcd';			// localVariable is created in the local variable scope of this function,
+                                        // it will be destroyed on function exit.
+    
+        print(exists(@outerVariable));	// Will print false, because outerVariable is not reachable from here.
+    };
+    
+    l => {								// Notice that l => { is interpreted as l = >{, but it looks neater in this form.
+    
+        newVariable = outerVariable;	// outerVariable is accessible here.
+    };
+    
+    outerVariable = 'reach me';
+    f();
+    l();
+    print(newVariable);					// Will print 'reach me'.
+    print(exists(@localVariable));		// Will print false, because localVariable from f does not exist in this scope.
+
+ Lambda expressions are very powerful, allowing practical use of so called higher-order functions, i.e. functions that
+take other functions as arguments (or returns new functions). For example, the `foreach` function (part of the standard
+library) takes an array as first argument and a function / lambda expression as second argument which is then applied to
+each element found in the array. Like this:
+
+    a[0] = 'q';
+    a[1] = 'w';
+    a[2] = 'e';
+    count = 0;
+    foreach(@a, >++count);				// Count will now be 3.
+
+ Function arguments are not accessed by name in PikaScript, but by index. The first argument is number 0 and is accessed
+with `$0`. `$n` is a special variable containing the number of arguments passed to the function. Notice that you can
+modify the contents of the arguments in the function, but it will not affect any source variables passed to the function
+since arguments are passed by value. If you want to modify variable content in the caller's variable scope you should
+explicitly pass a reference to this variable from the caller to the function, e.g. a swap function could be implemented
+like this:
+
+    swap = function { temp = [$0]; [$0] = [$1]; [$1] = temp; }
+    
+    left = 'stuff';
+    right = 'cool';
+    swap(@left, @right);			    // Left is now 'cool' and right is 'stuff'.
+
+(See References section for more information on references.)
+
+ Arguments are available for lambda expressions just as for ordinary functions. Furthermore, you may create arbitrary
+new variables prefixed with the dollar sign to create a temporary variable that is only visible to the current
+function / lambda. (Thus, $ variables in lambda expressions are similiar to non-$ variables in ordinary functions.)
+
+ The subscript operator `[]` can be appended to a single `$` to access arguments by index. For example, the following
+code iterates through each function argument and prints it:
+
+    printAll = function {
+        for (i = 0; i < $n; ++i) {
+            print($[i]);
+        };
+    };
+    
+    printAll(1, 2, 3, 4); // Will print 1, 2, 3 and 4.
+
+ There is a global variable scope that is accessible from everywhere. Global variables are not destroyed until the
+entire language context is destroyed by the host. Prefix the symbol with the `::` operator to access this scope. E.g.,
+`::myGlobal = 'hello world'` will create a global `myGlobal` that can be accessed from any function. It is quite common
+to declare functions in the global scope, e.g `::newCoolFunction = function { /* do something nice */ }`.
+
+ Finally, the special variable prefix `^` allows you to "sneak" into a function caller's frame and access variables
+there. You rarely need to use this operator, but there are some special circumstances where it is useful. E.g. `^$0` is
+the first argument of the caller (as opposed to the first argument of this function), `^^$0` is the first argument of
+the caller's caller and so on. An example of how this feature can come in handy is the `args` function (from the
+standard library) which assigns arguments to named variables. Here is an illustration of how it was implemented and how
+you might use it:
+
+    // Definition of ::args from the standard libary.
+    
+    args = function {
+        if (^$n != $n) throw(if (^$n > $n) "Too many arguments" else "Too few arguments");
+        for (i = 0; i < $n; ++i) [$[i]] = ^$[i];
+    };
+    
+    // Never mind if that was complicated. It is easy to use:
+    
+    repeat = function {
+        args(@string, @count);
+        for (i = 0; i < count; ++i) output #= string;
+        output;
+    };
+    
+    print(repeat('All work and no play makes Jack a dull boy. ', 1000));
+
+ * There is actually a third type of function as well, which is the native function. It is described in the C++
+Interface section below.
+
+References
+==========
+
+ You can create references to variables, individual array elements and entire arrays in PikaScript using the reference
+operator `@` .* References may be stored in variables or passed as arguments in function calls. As mentioned earlier,
+references are very important in PikaScript because of how arrays are implemented. Since arrays cannot be stored
+directly in variables you cannot simply pass them as arguments either. Instead you need to pass references to arrays.
+E.g., this is *not* valid code:
+
+    a[0] = 'q';
+    a[1] = 'w';
+    a[2] = 'e';
+    sumArray(3, a);
+
+ This will just result in a missing variable error because `a` isn't actually declared (but `a.0`, `a.1` and `a.2` are).
+Instead the last line needs to look like this:
+
+    sumArray(3, @a);
+
+The difference here being that we pass a reference to `a` instead of trying to pass its value. We may then use this
+reference inside of the `sumArray` function together with the element operator `[]` to access the individual elements
+under `a`.
+
+ Dereferencing is done with the dereferencing operator which also happens to be `[]` .* For example, the `sumArray`
+function from the previous example may be implemented as follows:
+
+    sumArray = function {             // This is how you declare a function in PikaScript.
+        count = $0;                   // $0 is the first argument.
+        array = $1;
+        
+        sum = 0;
+        for (i = 0; i < count; ++i) {
+            sum += [array][i];        // Dereferencing [array] and addressing its element [i].
+        };
+        
+        sum;                          // The result of the last expression is returned, in this case 'sum'.
+    }
+
+ The internal representation of a reference starts with a /frame identifier/ (enclosed in colons) followed by the
+variable name. For example, printing the reference `@xwing` may display something like: `:a93:xwing`, where `:a93:`
+would be the unique identifier for the frame where the variable was declared. The global frame identifier is always
+`::`.
+
+ Notice that although you are allowed to return a reference to a local variable from a function, it will be useless to
+the caller since the frame is destroyed when the function returns (unless the function is a /lambda expression/ that
+shares the same variable scope as the caller of course). Here is an illustrative example:
+
+    myFunction = function { @myLocal };    // Returning reference to myLocal.
+    myReference = myFunction();            // This is ok, but myReference will be pretty useless.
+    [myReference] = 'not ok';              // Here you will get a "frame does not exist" error.
+    
+    myLambda => { @myLocal };              // This is different, myLocal is located in the same frame as myLambda.
+    [myLambda()] = 'ok';                   // This is ok, myLocal will now exist in the current scope.
+
+ * The primary reason why `@` and `[]` were chosen as reference and dereference operators and not `&` and `*` (which
+would be more consistent with C / C++) is that PikaScript references are radically different to C / C++ pointers. For
+example, you are allowed to create references to variables that do not even exist. More importantly, unlike C / C++
+pointers, references to arrays need to be dereferenced in order to access their elements, and the `[]` syntax was found
+more elegant for this purpose compared to using a prefix `*` operator like in C. For example, dereferencing an element
+in an array referenced by `array_ref` looks like this: `[[array_ref][index]]`. The intention of this expression is
+clearer than `*(*array_ref[index])` and more compact than `*((*array_ref)[index])`.
+
+Objects
+=======
+
+ Although PikaScript was not designed primarily for object orientated programming there are reflection features in the
+language that makes it possible to support at least rudementary OO-styled programming. The specific language feature
+that enables this is the special variable named `$callee`. `$callee` will contain the full name of the function
+currently being executed (that is, the name that the caller invoked the function through). The follow example
+gives you a hint of how this can be used to create methods for objects:
+
+    myFunction = function { print($callee) };
+    myFunction();                                 // Will print "myFunction".
+    myObject.myMethod = myFunction;               // This just assigns "myFunction" to variable name "myObject.myMethod".
+    myObject.myMethod();                          // Will print "myObject.myMethod".
+    ref = @myObject;
+    [ref].myMethod();                             // Will print "::myObject.myMethod".
+
+ The only thing that remains to get started with object orientation is a way to separate the object and method name and
+naturally the standard library provides functions to do this. The functions are called `this()` and `method()`. Finally,
+we need conventions and functions for object allocation, construction and destruction. A constructor is simply a
+function that sets up the object under `this()`. Here is an example:
+
+    Point = function {
+        args(@x, @y);
+        map(this()
+		    , 'x', x
+			, 'y', y
+			, 'add', function { t = this(); [t].x += [$0].x; [t].y += [$0].y; t }
+			, 'subtract', function { t = this(); [t].x -= [$0].x; [t].y -= [$0].y; t }
+			, 'print', function { t = this(); print([t].x # ',' # [t].y); t }
+			);
+	};
+
+ You use the standard library function `construct` or `new` to construct objects either on a designated target address
+or "allocated" on the "heap".
+
+    construct(@a, Point, 3, 5);
+    construct(@b, Point, 7, 6);
+	b.subtract(@a);                // Remember we must pass references to objects and arrays.
+	b.print();
+
+ The "heap" is also something of a pseudo-construction in PikaScript (that is, it doesn't exist as a concept in the
+run-time engine, but as a construction by the standard library). Every time you call `new` to construct an object, a
+global counter is incremented, this counter is used to name the object, the object is constructed under this name and a
+reference to it is returned. For example:
+
+    a = new(Point, 3, 5);
+	b = new(Point, 7, 6);          // Now, 'a' and 'b' are probably ::0 and ::1.
+	[b].subtract(a);               // This time around 'a' is already a reference, so no need for '@'.
+	[b].print();
+
+... or just for fun, everything in one line (this is possible cause `subtract()` returns a reference to `this()`):
+
+    [[new(Point, 7, 6)].subtract(new(Point, 3, 5))].print();
+
+ Finally, the standard library function gc() iterates all variables "on the heap" (that is variables with numerical
+names) and deletes any object that is "unreachable" through other references. It deletes the object by calling
+'destruct' which first invokes any 'destruct' member of the object and then "prunes" it.
+
+C++ Interface
+=============
+
+ ?? To be written. Include info on custom string class etc, qstrings, quickvars, how to sandbox, object interfacing ??
+
+Standard Native Functions
+=========================
+
+ Here is a list of standard library functions that have native implementations. These are declared by the
+`addStandardNatives` C++ functions which means they are available without having to run / include `stdlib.pika`.
+Naturally they also execute much much faster than functions written in PikaScript. Please see the PikaScript Standard
+Library Reference (help/index.html) for full documentation on all standard library functions.
+
+ `abs`, `acos`, `asin`, `atan`, `atan2`, `ceil`, `char`, `cos`, `cosh`, `delete`, `escape`, `exists`, `elevate`,
+`evaluate`, `exp`, `find`, `floor`, `foreach`, `input`*, `invoke`, `length`, `log`, `log10`, `load`*, `lower`,
+`mismatch`, `ordinal`, `pow`, `parse`, `precision`, `print`*, `radix`, `random`, `reverse`, `sin`, `sinh`, `save`*,
+`search`, `span`, `sqrt`, `system`*, `tan`, `tanh`, `time`, `throw`, `trace`, `try`, `upper`
+
+ There are two functions written in PikaScript that are also declared by `addStandardNatives`: `run` and `include`
+
+ Finally the global constant `VERSION` will contain the current PikaScript engine version.
+
+ * `input`, `load`, `print`, `save` and `system` can be excluded by calling `addStandardNatives` with a false
+`includeIO` argument.
+
+Further Reading
+===============
+
+ - PikaScript Standard Library Reference : help/index.html
+
+ - PikaScript C++ API Reference (Doxygen) : html/index.html
+
+Copyrights and Trademarks
+=========================
+
+ PikaScript is released under the "New Simplified BSD License".
+ http://www.opensource.org/licenses/bsd-license.php
+
+ Copyright (c) 2011, NuEdge Development / Magnus Lidström
+ All rights reserved.
+
+ *)  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
+    following conditions are met:
+
+ *)  Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+    disclaimer.
+
+ *)  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided with the distribution.
+
+ *)  Neither the name of the NuEdge Development nor the names of its contributors may be used to endorse or promote
+    products derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ The HTML version of this document was created with PikaScript.

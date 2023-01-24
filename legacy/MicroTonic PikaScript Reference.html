@@ -1,0 +1,299 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"> 
+<meta http-equiv="Content-Style-Type" content="text/css">
+<title>MicroTonic PikaScript API Reference</title>
+<style type="text/css">
+table, th, td { border: 1px solid black; padding: 5px; border-collapse:collapse; }
+th { text-align: left }
+img { border: 0 none }
+html {background:#faf8f3;}body {min-width:650px;max-width:960px;_width:650px;color:#000;margin:0;font-family:'Cambria',Georgia,'Times New Roman',Times,serif;height:100%;overflow:visible;padding:36px;}table {line-height:18px;margin-bottom:17px;border:1px solid #ccc;border-collapse:collapse;border-bottom-color:#aaa;border-radius:2px;box-shadow:0px 1px 0 #ddd;-moz-border-radius:2px;-moz-box-shadow:0px 1px 0 #ddd;-webkit-box-shadow:0px 1px 0 #ddd;}tr { background:#fff;vertical-align:top;}th,tr:nth-child(even) { background:#eee;}td {border:1px dotted #ccc;padding:2px 18px 4px 9px;font-size:0.9em;}th {background:#ddd;border:1px solid #bbb;color:#000;font-weight:normal;padding:4px 18px 4px 9px;text-align:left;font-size:0.85em;}tr:nth-child(1) th {background:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#ccc), to(#bbb));background:-moz-linear-gradient(top, #ccc, #bbb);border:1px solid #aaa;border-bottom-color:#999;border-top-color:#bbb;box-shadow:0px 1px 1px #ccc;-moz-box-shadow:0px 1px 1px #ccc;-webkit-box-shadow:0px 1px 1px #ccc;color:#333;padding:8px 18px 8px 9px;text-shadow:0 1px #ddd;}tt {color:#5d5d5d;padding-right:4px;padding-left:4px;}pre {border:1px solid #d0d0d0;overflow:auto;color:#5f5f5f;padding:0.4em;}ul {list-style-type:disc;padding-left:14px;list-style-position:inside;}h1,h2,h3,h4,h5,h6 {font-weight:bold;margin-bottom:18px;}h1,h2 { line-height:36px; }h3,h4 { line-height:18px; }h1 { font-size:2.0em; }h2 { font-size:1.5em; }h3 { font-size:1.3em; }h4 { font-size:1.2em; }h5 { font-size:1.1em; }h6 { font-size:1.0em; }a { text-decoration:none; }a[href]:hover { text-decoration:underline; }a sup{ font-size:0.7em; }
+</style>
+</head>
+<body>
+<h1><a name="MicroTonic_PikaScript_API_Reference_v1.0">MicroTonic PikaScript API Reference v1.0</a></h1>
+<p>Notice that help for the functions in the PikaScript standard library is available through the <tt>help()</tt> function, but the MicroTonic API is only documented here for now.</p>
+<h2><a name="Table_of_Contents">Table of Contents</a></h2>
+
+<ul>
+<li><a href="#Globals">Globals</a><br><br>
+<ul>
+<li><a href="#Build_Constants">Build Constants</a><br></li>
+<li><a href="#Directory_Constants">Directory Constants</a><br></li>
+<li><a href="#Execution_Constants">Execution Constants</a><br></li>
+<li><a href="#MicroTonic_Constants">MicroTonic Constants</a><br></li>
+<li><a href="#Parameter_Constants">Parameter Constants</a></li>
+</ul>
+<br></li>
+<li><a href="#Functions">Functions</a><br><br>
+<ul>
+<li><a href="#abort()">abort()</a><br></li>
+<li><a href="#ask()">ask()</a><br></li>
+<li><a href="#browse()">browse()</a><br></li>
+<li><a href="#createElement()">createElement()</a><br></li>
+<li><a href="#dir()">dir()</a><br></li>
+<li><a href="#display()">display()</a><br></li>
+<li><a href="#fullPath()">fullPath()</a><br></li>
+<li><a href="#getElement()">getElement()</a><br></li>
+<li><a href="#getParam()">getParam()</a><br></li>
+<li><a href="#isMarshaledFormat()">isMarshaledFormat()</a><br></li>
+<li><a href="#load()">load()</a><br></li>
+<li><a href="#marshal()">marshal()</a><br></li>
+<li><a href="#paramText()">paramText()</a><br></li>
+<li><a href="#paramValue()">paramValue()</a><br></li>
+<li><a href="#parseArray()">parseArray()</a><br></li>
+<li><a href="#parseStruct()">parseStruct()</a><br></li>
+<li><a href="#print()">print()</a><br></li>
+<li><a href="#random()">random()</a><br></li>
+<li><a href="#randomInt()">randomInt()</a><br></li>
+<li><a href="#readClipboard()">readClipboard()</a><br></li>
+<li><a href="#save()">save()</a><br></li>
+<li><a href="#select()">select()</a><br></li>
+<li><a href="#selected()">selected()</a><br></li>
+<li><a href="#setElement()">setElement()</a><br></li>
+<li><a href="#setParam()">setParam()</a><br></li>
+<li><a href="#unmarshal()">unmarshal()</a><br></li>
+<li><a href="#writeClipboard()">writeClipboard()</a></li>
+</ul>
+<br></li>
+<li><a href="#Structures">Structures</a><br><br>
+<ul>
+<li><a href="#drumPatch_Structure">drumPatch Structure</a><br></li>
+<li><a href="#midiConfig_Structure">midiConfig Structure</a><br></li>
+<li><a href="#pattern_Structure">pattern Structure</a><br></li>
+<li><a href="#preset_Structure">preset Structure</a></li>
+</ul>
+<br></li>
+<li><a href="#Built-in_PikaScript_Files">Built-in PikaScript Files</a></li>
+</ul>
+<h2><a name="Globals">Globals</a></h2>
+<hr>
+<h3><a name="Build_Constants">Build Constants</a></h3>
+<pre>PLATFORM.OS    = 'windows'|'mac'<br>PLATFORM.CPU   = 'x86'|'ppc'<br>BUILD.TARGET   = 'debug' | 'beta' | 'release'<br>BUILD.VERSION  = string (e.g. '3.0.1')<br>BUILD.NUMBER   = number (e.g. 34)<br>BUILD.DATE     = string (e.g. 'Feb 2 2011')<br>BULLD.TIME     = string (e.g. '12:15:16')<br>BUILD.COMPILER = string (e.g. 'GCC 4.0.1 (Apple Inc. build 5494)')<br>BUILD.LIBS     = string (e.g. 'OSXSDK 1040')<br></pre>
+<hr>
+<h3><a name="Directory_Constants">Directory Constants</a></h3>
+<pre>DIRS.DOCUMENTATION  <br>DIRS.PRESETS  <br>DIRS.DRUM_PATCHES<br>DIRS.SCRIPTS<br></pre>
+<p>Paths to various installation directories. These are always full absolute paths ending with a directory slash ('/' or '\'). <tt>DIRS.SCRIPTS</tt> is the default directory used when loading and saving files without specifying an absolute path.</p>
+<hr>
+<h3><a name="Execution_Constants">Execution Constants</a></h3>
+<pre>::isRepeating = true | false<br></pre>
+<p>If <tt>::isRepeating</tt> is true the user is running the script by shift-clicking the script menu button. Usually this means you should rerun the algorithms using the same parameters as last time without interrupting to ask the user for input.</p>
+<hr>
+<h3><a name="MicroTonic_Constants">MicroTonic Constants</a></h3>
+<p>By using these constants (instead of literal numbers) you can achieve future compatibility in case some configuration in MicroTonic is changed in a future version.</p>
+<hr>
+<pre>CHANNEL_COUNT = 8<br></pre>
+<p>Drum channel count. Drum channels are indexed from 1 to 8.</p>
+<hr>
+<pre>PATTERN_COUNT = 12<br></pre>
+<p>Pattern count. Patterns are indexed from 'a' to 'l'.</p>
+<hr>
+<pre>LAST_PATTERN = 'l'<br></pre>
+<p>Last pattern index. To iterate all patterns you could write:</p>
+<pre>for (ptn = 'a'; ptn &lt;= LAST_PATTERN; ptn = char(ordinal($0) + 1)) /* do something */<br></pre>
+<p>or</p>
+<pre>for (i = 0; i &lt; PATTERN_COUNT; ++i) { ptn = char(ordinal('a') + i); /* do something */ }<br></pre>
+<hr>
+<pre>PROGRAM_COUNT = 16<br></pre>
+<p>Number of programs. Programs are indexed from 1, e.g. to iterate all programs you could write:</p>
+<pre>for (pgm = 1; pgm &lt;= PROGRAM_COUNT; ++pgm) /* do something */<br></pre>
+<hr>
+<pre>PATTERN_STEP_COUNT = 16<br></pre>
+<p>Number of steps in a pattern. Pattern data is represented by strings containing '-' and '#'. The step count is the length of these strings.</p>
+<hr>
+<pre>GLOBAL_PARAM_COUNT = 15<br></pre>
+<p>Number of global parameters.</p>
+<hr>
+<pre>FREQ_VALUE_C4 = 0.4725600599127338<br></pre>
+<p>The frequency value for middle C (523.25 Hz) on "OscFreq", "NFilFrq" and "EQFreq".</p>
+<hr>
+<pre>OCTAVE_STEP = 0.1003433318879937<br></pre>
+<p>The parameter value step for a full octave.</p>
+<hr>
+<h3><a name="Parameter_Constants">Parameter Constants</a></h3>
+<hr>
+<pre>PARAMS.n   = 215<br>PARAMS.0   = 'Morph'<br>PARAMS.1   = 'Pattern'<br>    .<br>    .<br>PARAMS.15  = 'OscWave.1'<br>    .<br>    .<br>PARAMS.20  = 'ModRate.1'<br>    .<br>    .<br>PARAMS.40  = 'OscWave.2'<br>    .<br>    .<br>PARAMS.214 = 'ModVel.8'<br></pre>
+<pre>DRUM_PATCH_PARAMS.n  = 25<br>DRUM_PATCH_PARAMS.0  = 'OscWave'<br>DRUM_PATCH_PARAMS.1  = 'OscFreq'<br>    .<br>    .<br>DRUM_PATCH_PARAMS.5  = 'ModRate'<br>    .<br>    .<br>DRUM_PATCH_PARAMS.24 = 'ModVel'<br></pre>
+<p>Drum patch and global parameters are usually accessed via their symbolic names (although some functions also take an index). The <tt>PARAMS</tt> and <tt>DRUM_PATCH_PARAMS</tt> arrays can be used to look up symbolic names for specific parameters indexes. Notice that the <tt>PARAMS</tt> array contains parameters for all eight drum patches as well as global parameters.</p>
+<hr>
+<pre>PARAM_STEPS.OscWave.1 = 3<br>    etc<br></pre>
+<pre>DRUM_PATCH_PARAM_STEPS.OscWave = 3<br>    etc<br></pre>
+<p>The <tt>PARAM_STEPS</tt> and <tt>DRUM_PATCH_PARAM_STEPS</tt> arrays will give you the number of discrete steps for discrete parameters <br>
+("undefined" for continuous parameters, so you can check which parameters are discrete by using exists() ). </p>
+<hr>
+<h2><a name="Functions">Functions</a></h2>
+<hr>
+<h3><a name="abort()">abort()</a></h3>
+<pre>abort()<br></pre>
+<p>Terminates the script by throwing an "exception" that will not display any error message. (You can catch this exception with <tt>try()</tt>. The exception string will be empty.)</p>
+<p>See also: throw(), try()</p>
+<hr>
+<h3><a name="ask()">ask()</a></h3>
+<pre>+string = ask('question', ['defaultAnswer'])<br></pre>
+<p>Lets the user respond with a string to <tt>'question'</tt> through a simple text edit dialog. If the user clicks the cancel button, the script will be aborted with an "exception". (You can catch this exception with <tt>try()</tt>. The exception string will be empty.)</p>
+<p>See also: <a href="#display()">display()</a>, try()</p>
+<hr>
+<h3><a name="browse()">browse()</a></h3>
+<pre>'fullpath' = browse(['type'])<br></pre>
+<p>Opens a file browser window and returns the path browsed to. <tt>'type'</tt> can be <tt>'open'</tt> (default) or <tt>'save'</tt> (opens a "save as" file dialog). If the user presses cancel, the script will be aborted with an "exception". (You can catch this exception with <tt>try()</tt>. The exception string will be empty.)</p>
+<p>See also: <a href="#dir()">dir()</a>, <a href="#fullPath()">fullPath()</a>, <a href="#load()">load()</a>, <a href="#save()">save()</a>, try()</p>
+<hr>
+<h3><a name="createElement()">createElement()</a></h3>
+<pre>@target = createElement('type', @target)<br></pre>
+<p>Creates a new initialized preset, drum-patch, pattern or midi-config structure (<tt>'type'</tt> should be <tt>'preset'</tt>, <tt>'drumPatch'</tt>, <tt>'pattern'</tt> or <tt>'midiConfig'</tt>). Returns the input <tt>@target</tt>. See <a href="#Structures">Structures</a> for more info on the various element data.</p>
+<p>See also: <a href="#getElement()">getElement()</a>, <a href="#setElement()">setElement()</a></p>
+<hr>
+<h3><a name="dir()">dir()</a></h3>
+<pre>dir('path', &gt;callback)<br></pre>
+<p>List files in <tt>'path'</tt> and calls <tt>&gt;callback</tt> for every file. Forward slash ('/') in paths work on both Windows and OS X, backward slash ('\') only works on Windows. <tt>'path'</tt> is expected to be an UTF-8 encoded path. If the path is not an "absolute full path" it is considered relative to the script directory. <tt>&gt;callback</tt> will receive the following arguments:</p>
+
+<ul>
+<li>$0 = filename (incl. extension, but no path)<br></li>
+<li>$1 = attributes (3 chars, 'DRH' for directory, read-only and hidden, '-' = not)<br></li>
+<li>$2 = created (secs since 1970 as in C)<br></li>
+<li>$3 = modified (secs again)<br></li>
+<li>$4 = filesize (bytes)<br></li>
+<li>$5 = mac file type (4 chars)</li>
+</ul>
+<br>Suggestion: use the standard library <tt>wildmatch()</tt> to match filenames with "wildcard patterns".
+<p>See also: <a href="#browse()">browse()</a>, <a href="#fullPath()">fullPath()</a>, <a href="#load()">load()</a>, <a href="#save()">save()</a>, wildmatch()</p>
+<hr>
+<h3><a name="display()">display()</a></h3>
+<pre>'button' = display('message', ['type' = 'plain'], ['buttons' = 'ok'], ['defaultButton' = 'ok'])<br></pre>
+<p>Displays a message box (a so called "alert") and returns the name of the button pressed. <tt>'type'</tt> can be any of <tt>'plain'</tt>, <tt>'question'</tt>, <tt>'warning'</tt>, <tt>'info'</tt> and <tt>'error'</tt>. <tt>'buttons'</tt> can be <tt>'ok'</tt>, <tt>'ok cancel'</tt>, <tt>'retry cancel'</tt>, <tt>'yes no'</tt>, <tt>'yes no cancel'</tt> or <tt>'abort retry ignore'</tt>. Naturally, <tt>'defaultButton'</tt> can be any of the buttons just listed.</p>
+<p>See also: <a href="#ask()">ask()</a>, <a href="#print()">print()</a></p>
+<hr>
+<h3><a name="fullPath()">fullPath()</a></h3>
+<pre>'fullpath' = fullPath('base', 'path')<br></pre>
+<p>Canonicalizes the relative <tt>'path'</tt> against the <tt>'base'</tt> path (i.e. returns a distinct full path specification). E.g., <tt>fullPath("./", 'file')</tt> returns the absolute path to <tt>'file'</tt> in the current working dir. <tt>fullPath('file', "../")</tt> returns the absolute path to the parent directory for <tt>'file'</tt>. Pass <tt>void</tt> for <tt>'base'</tt> to make a path relative to the script folder.</p>
+<p>See also: <a href="#browse()">browse()</a>, <a href="#dir()">dir()</a>, <a href="#load()">load()</a>, <a href="#save()">save()</a></p>
+<hr>
+<h3><a name="getElement()">getElement()</a></h3>
+<pre>@target = getElement('type', @target)<br></pre>
+<p>Gets current preset, drum-patch (of current channel), pattern (currently selected) or midi-config into <tt>@target</tt> (<tt>'type'</tt> should be <tt>'preset'</tt>, <tt>'drumPatch'</tt>, <tt>'pattern'</tt> or <tt>'midiConfig'</tt>). Returns the input <tt>@target</tt>. See <a href="#Structures">Structures</a> for more info on the various element data.</p>
+<p>See also: <a href="#createElement()">createElement()</a>, <a href="#setElement()">setElement()</a></p>
+<hr>
+<h3><a name="getParam()">getParam()</a></h3>
+<pre>+float = getParam('param'|+index)<br></pre>
+<p>Retrieves the current setting of a single parameter. <tt>'param'</tt> is a string or number (e.g. <tt>'ModRate.1'</tt> and 20 is equivalent). The returned value is a floating point number between 0 and 1.</p>
+<p>See also: <a href="#getElement()">getElement()</a>, <a href="#paramText()">paramText()</a>, <a href="#setParam()">setParam()</a></p>
+<hr>
+<h3><a name="isMarshaledFormat()">isMarshaledFormat()</a></h3>
+<pre>?bool = isMarshaledFormat('type', 'string')<br></pre>
+<p>Returns true if <tt>'string'</tt> is valid MicroTonic file / clipboard format (<tt>'type'</tt> should be <tt>'preset'</tt>, <tt>'drumPatch'</tt>, <tt>'pattern'</tt> or <tt>'midiConfig'</tt>).</p>
+<p>See also: <a href="#marshal()">marshal()</a>, <a href="#unmarshal()">unmarshal()</a></p>
+<hr>
+<h3><a name="load()">load()</a></h3>
+<pre>'string' = load('path')<br></pre>
+<p>Loads a file. <tt>'path'</tt> is expected to be an UTF-8 encoded path. If the path is not an "absolute full path" it is considered relative to the script directory. Alternatively, if the file does not exist and a built-in resource exists with the name, the resource is loaded instead (e.g. <tt>'debug.pika'</tt>). Forward slash ('/') in paths work on both Windows and OS X, backward slash ('\') only works on Windows.</p>
+<p>See also: <a href="#browse()">browse()</a>, <a href="#dir()">dir()</a>, <a href="#fullPath()">fullPath()</a>, <a href="#save()">save()</a></p>
+<hr>
+<h3><a name="marshal()">marshal()</a></h3>
+<pre>'string' = marshal('type', @source)<br></pre>
+<p>Converts a structure (in <tt>@source</tt>) to MicroTonic file / clipboard format (<tt>'type'</tt> should be <tt>'preset'</tt>, <tt>'drumPatch'</tt>, <tt>'pattern'</tt> or <tt>'midiConfig'</tt>). See <a href="#Structures">Structures</a> for more info on the various element data.</p>
+<p>See also: <a href="#createElement()">createElement()</a>, <a href="#getElement()">getElement()</a>, <a href="#isMarshaledFormat()">isMarshaledFormat()</a>, <a href="#unmarshal()">unmarshal()</a></p>
+<hr>
+<h3><a name="paramText()">paramText()</a></h3>
+<pre>'text' = paramText('param'|+index, +value, [?highPrecision = false], [@context])<br></pre>
+<p>Converts a parameter value to a human readable string. <tt>+value</tt> must be a floating point number between 0 and 1. If <tt>?highPrecision</tt> is true, the returned text will have enough precision to preserve all the bits of the original floating-point value. <tt>@context</tt> is optional and if present should reference a "drumPatch" structure. Some parameter's textual representation depend on other parameter settings (such as "ModRate" depending on "ModMode"), and <tt>@context</tt> can be used to declare these settings. If <tt>@context</tt> is omitted, the currently active drum patch is used.</p>
+<p>See also: <a href="#getParam()">getParam()</a>, <a href="#paramValue()">paramValue()</a></p>
+<hr>
+<h3><a name="paramValue()">paramValue()</a></h3>
+<pre>+value = paramValue('param'|+index, 'text', [@context])<br></pre>
+<p>Converts a human readable string to a parameter value. <tt>paramValue()</tt> will return a default standard value (for the parameter) if it is not convertable. <tt>@context</tt> is optional and if present should reference a "drumPatch" structure. Some parameter's textual representation depend on other parameter settings (such as "ModRate" depending on "ModMode"), and <tt>@context</tt> can be used to declare these settings. If <tt>@context</tt> is omitted, the currently active drum patch is used.</p>
+<p>See also: <a href="#paramText()">paramText()</a>, <a href="#setParam()">setParam()</a></p>
+<hr>
+<h3><a name="parseArray()">parseArray()</a></h3>
+<pre>parseArray('string', @array)<br></pre>
+<p>Parses <tt>'string'</tt> that represents an array in "NumbStruck" format (the encoding scheme used for all file formats in Sonic Charge products). The result will be stored under <tt>@array</tt>. Notice that "NumbStruck" parsing is very forgiving. Any string is considered valid "NumbStruck" format, although only correctly formatted strings will actually generate any data.</p>
+<p>See also: <a href="#parseStruct()">parseStruct()</a></p>
+<hr>
+<h3><a name="parseStruct()">parseStruct()</a></h3>
+<pre>parseStruct('string', @struct)<br></pre>
+<p>Parses <tt>'string'</tt> that represents a struct / associative array in "NumbStruck" format (the encoding scheme used for all file formats in Sonic Charge products). The result will be stored under <tt>@struct</tt>. Notice that "NumbStruck" parsing is very forgiving. Any string is considered valid "NumbStruck" format, although only correctly formatted strings will actually generate any data.</p>
+<p>See also: <a href="#parseArray()">parseArray()</a></p>
+<hr>
+<h3><a name="print()">print()</a></h3>
+<pre>print('string')<br></pre>
+<p>Traces (use "DebugView" to view on Windows and "Console" on Mac). (Replacing the standard PikaScript <tt>print()</tt> function.)</p>
+<p>See also: <a href="#display()">display()</a></p>
+<hr>
+<h3><a name="random()">random()</a></h3>
+<pre>+float = random(+max)<br></pre>
+<p>Returns a pseudo-random number between 0 and <tt>+max</tt>. (Replacing the standard PikaScript <tt>random()</tt> function with a better implementation.)</p>
+<p>See also: <a href="#randomInt()">randomInt()</a></p>
+<hr>
+<h3><a name="randomInt()">randomInt()</a></h3>
+<pre>+integer = randomInt()<br></pre>
+<p>Returns a random 32-bit value ("unsigned").</p>
+<p>See also: random</p>
+<hr>
+<h3><a name="readClipboard()">readClipboard()</a></h3>
+<pre>'string' = readClipboard()<br></pre>
+<p>Reads a string from the clipboard. On Windows, CR LF ("\r\n") are automatically translated to LF ("\n").</p>
+<p>See also: <a href="#writeClipboard()">writeClipboard()</a></p>
+<hr>
+<h3><a name="save()">save()</a></h3>
+<pre>save('path', 'contents')<br></pre>
+<p>Saves a file. <tt>'path'</tt> is expected to be an UTF-8 encoded path. If the path is not an "absolute full path" it is considered relative to the script directory. Forward slash ('/') in paths work on both Windows and OS X, backward slash ('\') only works on Windows.</p>
+<p>See also: <a href="#browse()">browse()</a>, <a href="#dir()">dir()</a>, <a href="#fullPath()">fullPath()</a>, <a href="#load()">load()</a></p>
+<hr>
+<h3><a name="select()">select()</a></h3>
+<pre>select('type', +index|'pattern')<br></pre>
+<p>Selects the current program, drum channel or pattern (<tt>'type'</tt> should be <tt>'program'</tt>, <tt>'channel'</tt> or <tt>'pattern'</tt>). The range for programs are 1 to 16 (defined by <tt>PROGRAM_COUNT</tt>). The range for channels are 1 to 8 (defined by <tt>CHANNEL_COUNT</tt>). The range for patterns are 'a' to 'l' (defined by <tt>LAST_PATTERN</tt>).</p>
+<p>See also: <a href="#selected()">selected()</a></p>
+<hr>
+<h3><a name="selected()">selected()</a></h3>
+<pre>+index|'pattern' = selected('type')<br></pre>
+<p>Returns the currently selected program, drum channel or pattern (<tt>'type'</tt> should be <tt>'program'</tt>, <tt>'channel'</tt> or <tt>'pattern'</tt>). The range for programs are 1 to 16 (defined by <tt>PROGRAM_COUNT</tt>). The range for channels are 1 to 8 (defined by <tt>CHANNEL_COUNT</tt>). The range for patterns are 'a' to 'l' (defined by <tt>LAST_PATTERN</tt>).</p>
+<p>See also: <a href="#select()">select()</a></p>
+<hr>
+<h3><a name="setElement()">setElement()</a></h3>
+<pre>@source = setElement('type', @source)<br></pre>
+<p>Updates current preset, drum-patch (for current channel), pattern (currently selected) or midi-config from source (<tt>'type'</tt> should be <tt>'preset'</tt>, <tt>'drumPatch'</tt>, <tt>'pattern'</tt> or <tt>'midiConfig'</tt>). Returns the input <tt>@source</tt>.</p>
+<p>See also: <a href="#createElement()">createElement()</a>, <a href="#getElement()">getElement()</a></p>
+<hr>
+<h3><a name="setParam()">setParam()</a></h3>
+<pre>setParam('param'|+index, +value)<br></pre>
+<p>Updates a single parameter immediately. <tt>'param'</tt> is a string or number (e.g. 'ModRate.1' and 20 is equivalent). <tt>+value</tt> must be a floating point number between 0 and 1.</p>
+<p>See also: <a href="#setElement()">setElement()</a>, <a href="#getParam()">getParam()</a>, <a href="#paramValue()">paramValue()</a></p>
+<hr>
+<h3><a name="unmarshal()">unmarshal()</a></h3>
+<pre>@target = unmarshal('type', 'string', @target)<br></pre>
+<p>Converts MicroTonic file / clipboard format to a structure in <tt>@target</tt> (<tt>'type'</tt> should be <tt>'preset'</tt>, <tt>'drumPatch'</tt>, <tt>'pattern'</tt> or <tt>'midiConfig'</tt>). Returns the input <tt>@target</tt>.</p>
+<p>See also: <a href="#isMarshaledFormat()">isMarshaledFormat()</a>, <a href="#marshal()">marshal()</a>, <a href="#setElement()">setElement()</a></p>
+<hr>
+<h3><a name="writeClipboard()">writeClipboard()</a></h3>
+<pre>writeClipboard('string')<br></pre>
+<p>Puts a string to the clipboard. On Windows, LF ("\n") are automatically translated to CR LF ("\r\n").</p>
+<p>See also: <a href="#readClipboard()">readClipboard()</a></p>
+<hr>
+<h2><a name="Structures">Structures</a></h2>
+<p><a href="#createElement()">createElement()</a>, <a href="#getElement()">getElement()</a>, <a href="#setElement()">setElement()</a>, <a href="#marshal()">marshal()</a> and <a href="#unmarshal()">unmarshal()</a> work on entire presets, drum patches, patterns and midi configurations. In PikaScript these are represented by "monolithic" PikaScript structures.</p>
+<hr>
+<h3><a name="drumPatch_Structure">drumPatch Structure</a></h3>
+<pre>.Choke            = 0 | 1<br>.DistAmt          = 0 .. 1<br>.EQFreq           = 0 .. 1<br>.EQGain           = 0 .. 1<br>.Level            = 0 .. 1<br>.Mix              = 0 .. 1<br>.ModAmt           = 0 .. 1<br>.ModMode          = 0 (decay) | 0.5 (sine) | 1 (noise)<br>.ModRate          = 0 .. 1<br>.ModVel           = 0 .. 1<br>.NEnvAtk          = 0 .. 1<br>.NEnvDcy          = 0 .. 1<br>.NEnvMod          = 0 (exponential) | 0.5 (linear) | 1 (modulated)<br>.NFilFrq          = 0 .. 1<br>.NFilMod          = 0 (lp) | 0.5 (bp) | 1 (hp)<br>.NFilQ            = 0 .. 1<br>.NStereo          = 0 | 1<br>.NVel             = 0 .. 1<br>.OscAtk           = 0 .. 1<br>.OscDcy           = 0 .. 1<br>.OscFreq          = 0 .. 1<br>.OscVel           = 0 .. 1<br>.OscWave          = 0 (sine) | 0.5 (triangle) | 1 (sawtooth)<br>.Output           = 0 | 1<br>.Pan              = 0 .. 1<br>.modified         = false | true<br>.name             = string<br>.path             = string | void<br></pre>
+<p>Parameter names are capitalized and their values are normalized from 0 to 1 (inclusively). You can use <a href="#paramText()">paramText()</a> and <a href="#paramValue()">paramValue()</a> to convert values to and from their natural human readable units.</p>
+<hr>
+<h3><a name="midiConfig_Structure">midiConfig Structure</a></h3>
+<pre>.channelCC.1.Choke        = void | 0 .. 127<br>.channelCC.1.DistAmt      = void | 0 .. 127<br>.channelCC.1.EQFreq       = void | 0 .. 127<br>    .<br>    .<br>.channelCC.8.Pan          = void | 0 .. 127<br><br>.globalCC.FillRate        = void | 0 .. 127<br>.globalCC.MastVol         = void | 0 .. 127<br>.globalCC.Morph           = void | 0 .. 127<br>.globalCC.Pattern         = void | 0 .. 127<br>.globalCC.PlayStop        = void | 0 .. 127<br>.globalCC.StepRate        = void | 0 .. 127<br>.globalCC.Swing           = void | 0 .. 127<br><br>.improvedCCScaling        = false | true<br>.midiCCAutomates          = false | true<br>.midiCCOnSelectedChannel  = false | true<br>.midiNotesSelectChannel   = false | true<br>.midiReceiveChannel       = void | 1 .. 16<br>.midiTransmitChannel      = void | 1 .. 16<br><br>.notes.Mute.1             = void | 0 .. 127<br>.notes.Mute.2             = void | 0 .. 127<br>    .<br>    .<br>.notes.Mute.8             = void | 0 .. 127<br><br>.notes.Pattern.a          = void | 0 .. 127<br>.notes.Pattern.b          = void | 0 .. 127<br>    .<br>    .<br>.notes.Pattern.l          = void | 0 .. 127<br><br>.notes.Program.1          = void | 0 .. 127<br>.notes.Program.2          = void | 0 .. 127<br>    .<br>    .<br>.notes.Program.16         = void | 0 .. 127<br><br>.notes.Start              = void | 0 .. 127<br>.notes.Stop               = void | 0 .. 127<br><br>.notes.Trigger.1          = void | 0 .. 127<br>.notes.Trigger.2          = void | 0 .. 127<br>    .<br>    .<br>.notes.Trigger.8          = void | 0 .. 127<br><br>.patternNoteMode          = 'SwitchNext' | 'SwitchNow' | 'Retrigger' | 'RetriggerGated'<br>.patternsSendMidi         = false | true<br>.pitchWheelRange          = 1 | 2 | 3 | 4 | 7 | 12 | 19 | 24<br>.pitchedMode              = false | true<br>.supportMidiNoteOff       = false | true<br>.supportMidiProgramChange = false | true<br></pre>
+<hr>
+<h3><a name="pattern_Structure">pattern Structure</a></h3>
+<pre>.1.accents        = string (e.g. '----####----####')<br>.1.fills          = - " -<br>.1.triggers       = - " -<br>.2.accents<br>.2.fills<br>.2.triggers<br>    .<br>    .<br>.8.accents<br>.8.fills<br>.8.triggers<br>.length           = 1 .. 16<br></pre>
+<p><tt>accents</tt>, <tt>fills</tt> and <tt>triggers</tt> are arrays of 16 on / off switches in the form of strings where '-' equals off and '#' equals on.</p>
+<hr>
+<h3><a name="preset_Structure">preset Structure</a></h3>
+<pre>.FillRate              = 0 .. 1<br>.MastVol               = 0 .. 1<br><br>.Mute.1                = 0 | 1<br>.Mute.2                = 0 | 1<br>    .<br>    .<br>.Mute.8<br><br>.Pattern               = 0 .. 1 (in 1 / 12 steps)<br>.PlayStop              = 0 (forced stop) | 0.33333 (stop) | 0.66666 (play) | 1 (forced play)<br>.StepRate              = 0 (1/8) | 0.25 (1/8T) | 0.5 (1/16) | 0.75 (1/16T) | 1 (1/32)<br>.Swing                 = 0 .. 1<br><br>.drumPatches.1.Choke   = see drumPatch Structure<br>.drumPatches.1.DistAmt<br>.drumPatches.1.EQFreq<br>    .<br>    .<br>.drumPatches.8.path<br><br>.modified              = false | true<br>.name                  = string<br>.path                  = string | void<br><br>.patterns.a.1.accents  = see pattern Structure<br>.patterns.a.1.fills<br>.patterns.a.1.triggers<br>.patterns.a.chained    = false | true<br>    .<br>    .<br>.patterns.l.length     = 1 .. 16<br><br>.tempo                 = number<br></pre>
+<hr>
+<h2><a name="Built-in_PikaScript_Files">Built-in PikaScript Files</a></h2>
+<p>The following files are compiled into the binary. You can run or load them using their filenames only:</p>
+
+<ul>
+<li>debug.pika<br></li>
+<li>help.pika<br></li>
+<li>stdlib.pika<br></li>
+<li>unittests.pika</li>
+</ul>
+</body>
+</html>

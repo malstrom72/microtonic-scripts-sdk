@@ -1,0 +1,71 @@
+{
+  "name": "soniccharge",
+  "displayName": "Sonic Charge",
+  "description": "Syntax highlighting for Sonic Charge file formats",
+  "version": "1.0.0",
+  "publisher": "Sonic Charge",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "cushyschema",
+      "aliases": ["cushyschema", "cushyschema"],
+      "extensions": [".schema"],
+      "configuration": "./soniccharge.language-configuration.json"
+    },{
+      "id": "cushy",
+      "aliases": ["cushy", "cushy"],
+      "extensions": [".cushy"],
+      "configuration": "./soniccharge.language-configuration.json"
+    },{
+      "id": "makaron",
+      "aliases": ["makaron", "makaron"],
+      "extensions": [".makaron"],
+      "configuration": "./soniccharge.language-configuration.json"
+    },{
+      "id": "ivg",
+      "aliases": ["ivg", "ivg"],
+      "extensions": [".ivg"],
+      "configuration": "./soniccharge.language-configuration.json"
+    },{
+      "id": "ivgfont",
+      "aliases": ["ivgfont", "ivgfont"],
+      "extensions": [".ivgfont"],
+      "configuration": "./soniccharge.language-configuration.json"
+    },{
+      "id": "impd",
+      "aliases": ["impd", "impd"],
+      "extensions": [".impd"],
+      "configuration": "./soniccharge.language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "cushyschema",
+      "scopeName": "source.cushyschema",
+      "path": "./cushyschema.tmLanguage"
+    },{
+      "language": "cushy",
+      "scopeName": "source.cushy",
+      "path": "./cushy.tmLanguage"
+    },{
+      "language": "makaron",
+      "scopeName": "source.makaron",
+      "path": "./makaron.tmLanguage"
+    },{
+      "language": "ivg",
+      "scopeName": "source.ivg",
+      "path": "./ivg.tmLanguage"
+    },{
+      "language": "ivgfont",
+      "scopeName": "source.ivgfont",
+      "path": "./ivgfont.tmLanguage"
+    },{
+      "language": "impd",
+      "scopeName": "source.impd",
+      "path": "./impd.tmLanguage"
+    }]
+  }
+}
