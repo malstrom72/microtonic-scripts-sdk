@@ -51,10 +51,6 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#constant</string>
-				</dict>
-				<dict>
-					<key>include</key>
 					<string>#variable</string>
 				</dict>
 				<dict>
@@ -63,7 +59,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function</string>
+					<string>#boolean</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -111,7 +107,27 @@
 					<array>
 						<dict>
 							<key>include</key>
-							<string>#impd</string>
+							<string>#stringEscape</string>
+						</dict>
+						<dict>
+							<key>include</key>
+							<string>#string</string>
+						</dict>
+						<dict>
+							<key>include</key>
+							<string>#comment</string>
+						</dict>
+						<dict>
+							<key>include</key>
+							<string>#constant</string>
+						</dict>
+						<dict>
+							<key>include</key>
+							<string>#variable</string>
+						</dict>
+						<dict>
+							<key>include</key>
+							<string>#number</string>
 						</dict>
 						<dict>
 							<key>include</key>
@@ -175,8 +191,7 @@
 				</dict>
 				<dict>
 					<key>match</key>
-					<string>//.*(?=[
-])</string>
+					<string>//.*(?=\n)</string>
 					<key>name</key>
 					<string>comment.line.double-slash.impd</string>
 				</dict>
@@ -188,9 +203,17 @@
 			<array>
 				<dict>
 					<key>name</key>
-					<string>storage.impd</string>
+					<string>meta.assignment.impd</string>
 					<key>match</key>
-					<string>\b[a-zA-Z$_][a-zA-Z0-9$_]*(?=\s*=\s*)</string>
+					<string>\b([a-zA-Z$_][a-zA-Z0-9$_]*)\s*=\s*</string>
+					<key>captures</key>
+					<dict>
+						<key>1</key>
+						<dict>
+							<key>name</key>
+							<string>entity.name.variable.impd, variable.other.impd</string>
+						</dict>
+					</dict>
 				</dict>
 			</array>
 		</dict>
@@ -200,9 +223,17 @@
 			<array>
 				<dict>
 					<key>name</key>
-					<string>entity.name.label.impd</string>
+					<string>meta.label.impd</string>
 					<key>match</key>
-					<string>\b[a-zA-Z$_][a-zA-Z0-9$_]*(?=\s*:)</string>
+					<string>\b([a-zA-Z$_][a-zA-Z0-9$_]*)\s*:</string>
+					<key>captures</key>
+					<dict>
+						<key>1</key>
+						<dict>
+							<key>name</key>
+							<string>entity.name.label.impd, variable.parameter.impd</string>
+						</dict>
+					</dict>
 				</dict>
 			</array>
 		</dict>
@@ -212,13 +243,13 @@
 			<array>
 				<dict>
 					<key>name</key>
-					<string>variable.other.impd</string>
+					<string>entity.name.variable.impd, variable.other.impd</string>
 					<key>match</key>
-					<string>[$][a-zA-Z0-9$_.]+</string>
+					<string>(\$[a-zA-Z0-9$_.]+)</string>
 				</dict>
 			</array>
 		</dict>
-		<key>constant</key>
+		<key>boolean</key>
 		<dict>
 			<key>patterns</key>
 			<array>
@@ -228,12 +259,6 @@
 					<key>match</key>
 					<string>(?i)\b(yes|no)\b</string>
 				</dict>
-				<dict>
-					<key>name</key>
-					<string>constant.language.impd</string>
-					<key>match</key>
-					<string>(?i)\b(pi)\b</string>
-				</dict>
 			</array>
 		</dict>
 		<key>instruction</key>
@@ -241,23 +266,28 @@
 			<key>patterns</key>
 			<array>
 				<dict>
-					<key>begin</key>
-					<string>(?i)\bformat\s*(\S*)\s*requires\s*:\s*(\S*)</string>
-					<key>end</key>
-					<string>(?=.)</string>
+					<key>name</key>
+					<string>meta.format.impd</string>
+					<key>match</key>
+					<string>(?i)\b(format)\s*(\S*)\s*(requires)\s*:\s*(\S*)</string>
 					<key>captures</key>
 					<dict>
-						<key>0</key>
+						<key>1</key>
 						<dict>
 							<key>name</key>
-							<string>entity.name.function.impd</string>
+							<string>support.function.impd</string>
 						</dict>
-						<key>1</key>
+						<key>2</key>
 						<dict>
 							<key>name</key>
 							<string>string.other.impd</string>
 						</dict>
-						<key>2</key>
+						<key>3</key>
+						<dict>
+							<key>name</key>
+							<string>entity.name.label.impd, variable.parameter.impd</string>
+						</dict>
+						<key>4</key>
 						<dict>
 							<key>name</key>
 							<string>string.other.impd</string>
@@ -266,9 +296,34 @@
 				</dict>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.impd</string>
+					<string>support.function.impd</string>
 					<key>match</key>
-					<string>(?i)\b(format|meta|debug|trace|stop|call|include|local|return|if|repeat|for)\b</string>
+					<string>(?i)\b(meta|debug|trace)\b</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>meta.assignment.impd</string>
+					<key>match</key>
+					<string>(?i)\b(local|return)\s*([a-zA-Z$_][a-zA-Z0-9$_]*)(\s*=\s*)?</string>
+					<key>captures</key>
+					<dict>
+						<key>1</key>
+						<dict>
+							<key>name</key>
+							<string>storage.type.impd</string>
+						</dict>
+						<key>2</key>
+						<dict>
+							<key>name</key>
+							<string>entity.name.variable.impd</string>
+						</dict>
+					</dict>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>keyword.control.impd</string>
+					<key>match</key>
+					<string>(?i)\b(if|repeat|for|stop|call|include)\b</string>
 				</dict>
 			</array>
 		</dict>
@@ -304,7 +359,19 @@
 					<key>name</key>
 					<string>support.function.other.impd</string>
 					<key>match</key>
-					<string>(?i)\b(len)(?=\()</string>
+					<string>(?i)\b(def|len)(?=\()</string>
+				</dict>
+			</array>
+		</dict>
+		<key>constant</key>
+		<dict>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>name</key>
+					<string>constant.language.impd</string>
+					<key>match</key>
+					<string>(?i)\b(pi)\b</string>
 				</dict>
 			</array>
 		</dict>

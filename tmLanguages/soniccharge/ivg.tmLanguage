@@ -15,10 +15,6 @@
 	<key>patterns</key>
 	<array>
 		<dict>
-			<key>include</key>
-			<string>source.impd#stringEscape</string>
-		</dict>
-		<dict>
 			<key>name</key>
 			<string>meta.group.ivg</string>
 			<key>begin</key>
@@ -75,9 +71,75 @@
 		</dict>
 		<dict>
 			<key>name</key>
+			<string>meta.path.ivg</string>
+			<key>contentName</key>
+			<string>meta.group.impd</string>
+			<key>begin</key>
+			<string>(?i)\b(PATH)\s((svg):)\s*(\[)</string>
+			<key>end</key>
+			<string>(\])</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>support.function.instruction.ivg</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>meta.label.impd</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.label.impd, variable.parameter.impd</string>
+				</dict>
+				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>meta.group.impd</string>
+				</dict>
+			</dict>
+			<key>endCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>meta.group.impd</string>
+				</dict>
+			</dict>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.svg.path.ivg</string>
+					<key>match</key>
+					<string>(?i)[MLHVCSQTAZ]</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>entity.name.variable.impd, variable.other.impd</string>
+					<key>match</key>
+					<string>(\$[a-zA-Z0-9$_.]+)</string>
+				</dict>
+				<dict>
+					<key>name</key>
+					<string>constant.numeric.impd</string>
+					<key>match</key>
+					<string>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?(\s*%)?</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>source.impd</string>
+				</dict>
+			</array>
+		</dict>
+		<dict>
+			<key>name</key>
 			<string>support.function.instruction.ivg</string>
 			<key>match</key>
-			<string>(?i)\b(bounds|context|options|pen|fill|mask|reset|RECT|ELLIPSE|STAR|PATH|WIPE)\b</string>
+			<string>(?i)\b(bounds|context|options|pen|fill|mask|reset|RECT|ELLIPSE|PATH|STAR|WIPE)\b</string>
 		</dict>
 		<dict>
 			<key>name</key>
