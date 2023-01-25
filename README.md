@@ -18,25 +18,25 @@ The documentation in this repository was written for Microtonic version 3.3.4 (b
 
 Here is a brief list of the technologies used in Microtonic GUIs:
 
-- _Cushy_: the layout engine and file format for describing layouts, based on Numbstrict with Makaron support.
+- _Cushy_: the layout engine and file format for describing layouts, based on _Numbstrict_ with _Makaron_ support.
 - _ImpD_: a simple imperative computer language disguised as a data format, or the other way around.
 - _IVG_ (Imperative Vector Graphics): a language and file-format for 2D vector graphics, based on _ImpD_.
 - _Makaron_: a macro expansion syntax, used to make `.cushy` files easier to write.
 - _Numbstrict_: an object notation format similar to (but not compatible with) JSON.
-- _NuXJScript_: our JavaScript engine, fully EcmaScript 3 compliant with features from EcmaScript 5.
+- _NuXJScript_: our JavaScript engine, fully ECMAScript 3 compliant with features from ECMAScript 5.
 - _PikaScript_: our legacy script language used by older Microtonic scripts and offline tools.
 
 ## Repository Structure
 
 - `CushyLint`:
-	1. Command-line syntax checker for `.cushy` files.
-	2. Contains [`cushy.schema`](CushyLint/cushy.schema), the official reference for the `.cushy` format.
+    1. Command-line syntax checker for `.cushy` files.
+    2. Contains [`cushy.schema`](CushyLint/cushy.schema), the official reference for the `.cushy` format.
 
 - `docs`:
-	- [ImpD Documentation](docs/ImpD%20Documentation.md)
-	- [IVG Documentation](docs/IVG%20Documentation.md)
-	- [Makaron Documentation](docs/Makaron%20Documentation.md)
-	- [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md)
+    - [ImpD Documentation](docs/ImpD%20Documentation.md)
+    - [IVG Documentation](docs/IVG%20Documentation.md)
+    - [Makaron Documentation](docs/Makaron%20Documentation.md)
+    - [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md)
 
 - `ivgfiddle`: a browser "playground" for experimenting with _IVG_ (compiled with _emscripten_).
 
@@ -67,10 +67,10 @@ Here is an "outline" of the Cushy file structure:
 
     bounds: { <left>, <top>, <width>, <height> }
     autoexecs: {
-    	... actions to run on open, close, or regularly on a timer
+        ... actions to run on open, close, or regularly on a timer
     }
     transitions: {
-    	... visual transition effects applied when this Cushy is opened or closed
+        ... visual transition effects applied when this Cushy is opened or closed
     }
     translations: {
         ... special string translations used for this Cushy.
@@ -79,7 +79,7 @@ Here is an "outline" of the Cushy file structure:
         ... view definitions
     }
 
-In Cushy, it's often possible to write mathematical expressions where numeric constants are expected. In these places,
+In Cushy, it's often possible to write mathematical expressions where numerical constants are expected. In these places,
 `$` may be used to insert the default value for the field. E.g., `updateRate: $*2` would set `updateRate` to twice the
 default. For rectangles such as view bounds you can also use the following variables: `t`, `l`, `w`, `h`, `r`, `b`
 for _top_, _left_, _width_, _height_, _right_ and _bottom_ of the default rectangle. E.g.
@@ -106,8 +106,9 @@ information on how to write Cushy.
 ### IVGFiddle
 
 Included in this distribution is a standalone .html application called _IVGFiddle_. You can run it simply by opening the
-`ivgfiddle.html` file in your favorite browser (Google Chrome). It will let you experiment with IVG code and see the
-graphical output in real-time.
+[`ivgfiddle.html`](https://htmlpreview.github.io/?https://github.com/malstrom72/microtonic-scripts-sdk/blob/main/ivgfiddle/ivgfiddle.html)
+file in your favorite browser (Google Chrome). It will let you experiment with IVG code and see the graphical output in
+real-time.
 
 See [IVG Documentation](docs/IVG%20Documentation.md) for more information on IVG.
 
@@ -117,17 +118,17 @@ Cushy (and IVG) uses a proprietary file format for fonts: `.ivgfont`. You can us
 a _TrueType_ or _OpenType_ font to this format. To run, you must install [node.js](https://nodejs.org/en/). Then use
 it like this:
 
-	node IVGFontConverter.node.js <input> [ ?|-|<feature>[,<feature>,...] ] [ <charset>[,<charset>,...] ] > <output>
- 	
-	  ?          List all GSUB features
-	  -          No extra GSUB feature
-	  <feature>  Enable GSUB feature by [<script>.[<language>.]]<feature>
-	  <charset>  Convert Unicode characters [<hex>[-<hex>]] (default is ISO-8859-1)
- 	
-	Example: node IVGFontConverter.node.js font.otf >font.ivgfont
-	Example: node IVGFontConverter.node.js font.otf ss01 >font.ivgfont
-	         node IVGFontConverter.node.js font.ttf latn.ROM.locl,latn.ss01 >font.ivgfont
-	         node IVGFontConverter.node.js font.ttf - 0020-007f,a0-cf >font.ivgfont
+    node IVGFontConverter.node.js <input> [ ?|-|<feature>[,<feature>,...] ] [ <charset>[,<charset>,...] ] > <output>
+    
+      ?          List all GSUB features
+      -          No extra GSUB feature
+      <feature>  Enable GSUB feature by [<script>.[<language>.]]<feature>
+      <charset>  Convert Unicode characters [<hex>[-<hex>]] (default is ISO-8859-1)
+    
+    Example: node IVGFontConverter.node.js font.otf >font.ivgfont
+    Example: node IVGFontConverter.node.js font.otf ss01 >font.ivgfont
+             node IVGFontConverter.node.js font.ttf latn.ROM.locl,latn.ss01 >font.ivgfont
+             node IVGFontConverter.node.js font.ttf - 0020-007f,a0-cf >font.ivgfont
 
 ### JSConsole
 
@@ -144,7 +145,7 @@ them in the `tmLanguages` folder. We have tested them in [Sublime Text](https://
 [Visual Studio Code](https://code.visualstudio.com/). Installation instructions:
 
 - Sublime Text
-	
+    
   Use the menu `Preferences > Browse Packages...` to open `Packages` and copy the `soniccharge` folder into this folder.
 
 - Visual Studio Code
