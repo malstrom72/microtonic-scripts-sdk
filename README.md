@@ -33,10 +33,10 @@ Here is a brief list of the technologies used in Microtonic GUIs:
 	2. Contains [`cushy.schema`](CushyLint/cushy.schema), the official reference for the `.cushy` format.
 
 - `docs`:
-	- [ImpD Documentation](ImpD%20Documentation.md)
-	- [IVG Documentation](IVG%20Documentation.md)
-	- [Makaron Documentation](Makaron%20Documentation.md)
-	- [Microtonic JS Reference](Microtonic%20JS%20Reference.md)
+	- [ImpD Documentation](docs/ImpD%20Documentation.md)
+	- [IVG Documentation](docs/IVG%20Documentation.md)
+	- [Makaron Documentation](docs/Makaron%20Documentation.md)
+	- [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md)
 
 - `ivgfiddle`: a browser "playground" for experimenting with _IVG_ (compiled with _emscripten_).
 
@@ -97,10 +97,10 @@ be readable and contains lots of comments, thus also serving as a kind of offici
 files, available view types, and built-in actions.
 
 Furthermore, you can use macros when writing `.cushy` files for easier development and maintenance. See
-[Makaron Documentation](Makaron%20Documentation.md) for documentation on the macro expansion language we use. Macros
+[Makaron Documentation](docs/Makaron%20Documentation.md) for documentation on the macro expansion language we use. Macros
 you write are expanded when `.cushy` files are loaded inside the plugin, before they are parsed.
 
-See [`cushy.schema`](CushyLint/cushy.schema) and [Microtonic JS Reference](Microtonic%20JS%20Reference.md) for more
+See [`cushy.schema`](CushyLint/cushy.schema) and [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md) for more
 information on how to write Cushy.
 
 ### IVGFiddle
@@ -109,7 +109,7 @@ Included in this distribution is a standalone .html application called _IVGFiddl
 `ivgfiddle.html` file in your favorite browser (Google Chrome). It will let you experiment with IVG code and see the
 graphical output in real-time.
 
-See [IVG Documentation](IVG%20Documentation.md) for more information on IVG.
+See [IVG Documentation](docs/IVG%20Documentation.md) for more information on IVG.
 
 ### IVGFontConverter
 
