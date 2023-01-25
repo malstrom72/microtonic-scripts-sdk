@@ -76,15 +76,15 @@
 ## Engine
 
 The JavaScript engine in Microtonic is a proprietary JavaScript engine written by Magnus Lidström. It was designed to be
-small, fast, and easy to integrate into existing products. It is fully EcmaScript 3 compliant with partial EcmaScript 5
+small, fast, and easy to integrate into existing products. It is fully ECMAScript 3 compliant with partial ECMAScript 5
 support.
 
-Ecmascript 3 was chosen because it was the first widely adopted standardized version of JavaScript. It is a version many
+ECMAScript 3 was chosen because it was the first widely adopted standardized version of JavaScript. It is a version many
 programmers are familiar with, and it has everything you need from a scripting language. Naturally, more recent
-versions of Ecmascript offer improvements but at the cost of larger standard libraries and more complex
+versions of ECMAScript offer improvements but at the cost of larger standard libraries and more complex
 compilers/interpreters.
 
-With that said, a few features from Ecmascript 5 were “retrofitted” into this engine. Most notably: using `[ ]` for
+With that said, a few features from ECMAScript 5 were “retrofitted” into this engine. Most notably: using `[ ]` for
 reading individual characters from String objects and JSON support. Microtonic also sets up `Object.assign` and
 `Date.now` from ES6 using "polyfills".
 

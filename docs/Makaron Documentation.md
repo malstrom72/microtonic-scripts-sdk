@@ -1,7 +1,11 @@
 Makaron
 =======
 
-_Makaron_ is a macro expansion language designed to simplify and streamline your code. Makaron allows you to define and use macros for text substitution in your code, making it more readable and maintainable. The language includes features for defining string macros with [`@define`](#define), parametric macros with [`@begin`](#begin) and `@end`, and conditional output macros with [`@if`](#if). These macros can be [invoked](#invocation) by prefixing the macro name with "@" in the text.
+_Makaron_ is a macro expansion language designed to simplify and streamline your code. Makaron allows you to define and
+use macros for text substitution in your code, making it more readable and maintainable. The language includes
+features for defining string macros with [`@define`](#define), parametric macros with [`@begin`](#begin) and `@end`,
+and conditional output macros with [`@if`](#if). These macros can be [invoked](#invocation) by prefixing the macro
+name with "@" in the text.
 
 Table of Contents
 -----------------
@@ -34,9 +38,13 @@ Example:
 
 Any instance of `@color` will thereafter expand to `red`.
 
-Macro names can begin with `a` to `z`, `$` or `_,` but the rest may also contain `0` to `9`. You should not start the name with `@`. It is an error to define a macro with the same name twice. Use [`@redefine`](#redefine) if you want to reassign the value of a macro.
+Macro names can begin with `a` to `z`, `$` or `_,` but the rest may also contain `0` to `9`. You should not start the
+name with `@`. It is an error to define a macro with the same name twice. Use [`@redefine`](#redefine) if you want to
+reassign the value of a macro.
 
-The `<value>` definition will include everything until the end of the line unless you use a [_raw value_](#raw-value) (`@<` `@>`). This can lead to unexpected results if you have a comment at the end of the line. For example, suppose we define `viewWidth` like this: 
+The `<value>` definition will include everything until the end of the line unless you use a [_raw value_](#raw-value)
+(`@<` `@>`). This can lead to unexpected results if you have a comment at the end of the line. For example, suppose we
+define `viewWidth` like this: 
 
     @define viewWidth = 5 // end of line comment
 
@@ -44,7 +52,8 @@ If we later use `viewWidth`, for example in the expression `@viewWidth+100` it w
 
     5 // end of line comment+100
 
-Obviously, this is different from what you want. To avoid this situation, you can define the macro with a [_raw value_](#raw-value) value like this:
+Obviously, this is different from what you want. To avoid this situation, you can define the macro with a [_raw value_]
+(#raw-value) value like this:
 
     @define viewWidth = @<5@> // end of line comment
 
@@ -64,7 +73,9 @@ Example:
 
     @redefine color = green
 
-You cannot redefine a macro that has not already been defined. Furthermore, it is only possible to redefine _string macros_ defined with [`@define`](#define). It is not possible to redefine a _parametric macro_ that you have defined with [`@begin`](#begin).
+You cannot redefine a macro that has not already been defined. Furthermore, it is only possible to redefine _string
+macros_ defined with [`@define`](#define). It is not possible to redefine a _parametric macro_ that you have defined
+with [`@begin`](#begin).
 
 @begin
 ------
@@ -91,9 +102,13 @@ Example:
         }
     @end
 
-Macro names can begin with a to z, $ or _, but the rest may also contain 0 to 9. You should not start the name with `@`. It is an error to define a macro with the same name twice. Unlike _string macros_ created with [`@define`](#define) you are *not* allowed to redefine _parametric macros_ with [`@redefine`](#redefine).
+Macro names can begin with a to z, $ or _, but the rest may also contain 0 to 9. You should not start the name with `@`.
+It is an error to define a macro with the same name twice. Unlike _string macros_ created with [`@define`](#define) you
+are *not* allowed to redefine _parametric macros_ with [`@redefine`](#redefine).
 
-You are allowed to declare a _parametric macro_ without parameters, effectively creating a _string macro_. It is useful for creating macros that span several lines. The alternative is to use [`@define`](#define) with a [_raw value_](#raw-value). E.g. the following two examples are equivalent:
+You are allowed to declare a _parametric macro_ without parameters, effectively creating a _string macro_. It is useful
+for creating macros that span several lines. The alternative is to use [`@define`](#define) with a [_raw value_]
+(#raw-value). E.g. the following two examples are equivalent:
 
     @begin macro1
     expand
@@ -157,7 +172,8 @@ Example:
 
 Comparison always compares strings, character by character. E.g., `5.0` and `5` are _not_ considered equal.
 
-Don't forget to prefix _Makaron variables_ and _parameters_ with `@` inside the condition. Also, remember that literal strings in _Makaron_ are not enclosed in quotes, but you can use [_raw value_](#raw-value) syntax (`@<` `@>`).
+Don't forget to prefix _Makaron variables_ and _parameters_ with `@` inside the condition. Also, remember that literal
+strings in _Makaron_ are not enclosed in quotes, but you can use [_raw value_](#raw-value) syntax (`@<` `@>`).
 
 @include
 --------
@@ -174,7 +190,9 @@ Example:
 
     @include anotherFile.makaron
 
-The file can be an external file or an "asset" provided by the hosting application. Notice that you specify `<name>` using a regular _Makaron value_. This means you do not enclose it in quotes, but you are allowed to use [_raw value_](#raw-value) syntax (`@<` `@>`).
+The file can be an external file or an "asset" provided by the hosting application. Notice that you specify `<name>`
+using a regular _Makaron value_. This means you do not enclose it in quotes, but you are allowed to use
+[_raw value_](#raw-value) syntax (`@<` `@>`).
 
 invocation
 ----------
@@ -251,7 +269,8 @@ Example:
 
     E-mail me at johndoe@@acme.com
 
-Because `@` is used for executing _Makaron_ statements, you need to use `@@` for any `@` that you want to preserve in the output.
+Because `@` is used for executing _Makaron_ statements, you need to use `@@` for any `@` that you want to preserve in
+the output.
 
 raw value
 ---------
@@ -273,4 +292,5 @@ Example:
         lines
     @>
 
- Notice that macro expansion is still performed inside _raw values_. To include _at characters_, you need to use `@@` just like everywhere else.
+ Notice that macro expansion is still performed inside _raw values_. To include _at characters_, you need to use `@@`
+ just like everywhere else.

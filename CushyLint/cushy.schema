@@ -1,575 +1,56 @@
-/**
-    Schema syntax reference
+/***********************************************************************************************************************
 
-    ( )             : group
-    [ ]             : optional
-    |               : alternatives
-    < >             : use rule
-    < > =           : define rule
-    <-              : define peg
-    ' '             : literal text
-    " "             : literal string
-    *               : any (unquoted) text
-    *<peg>          : any text validated by peg
-    %               : any (quoted) string
-    %<peg>          : any string validated by peg
-    ?               : any value
-    ?file:<ext>     : check that resource of type <ext> exists
-    { k:v, k:v }    : structure
-    { k:v, *:v }    : structure, validate remaining fields against *
-    { v, v }        : list (exact match)
-    { v, ... }      : array (zero or more matches)
-    \group\tag      : collect and check against group rule
-    include:        : include another .schema file
-    resources:      : add a search path for resources
-**/
+     .d8888b. Y88b   d88P 888b    888 88888888888     d8888 Y88b   d88P 
+    d88P  Y88b Y88b d88P  8888b   888     888        d88888  Y88b d88P  
+    Y88b.       Y88o88P   88888b  888     888       d88P888   Y88o88P   
+     "Y888b.     Y888P    888Y88b 888     888      d88P 888    Y888P    
+        "Y88b.    888     888 Y88b888     888     d88P  888    d888b    
+          "888    888     888  Y88888     888    d88P   888   d88888b   
+    Y88b  d88P    888     888   Y8888     888   d8888888888  d88P Y88b  
+     "Y8888P"     888     888    Y888     888  d88P     888 d88P   Y88b 
 
-/**
-    PEGs
-**/
-intExpr             <- intGroup _ ([-+*/] _ intGroup _)*
-intGroup            <- ('-' _)* ('(' _ intExpr ')' / [0-9]+ / '$') _
-rectInt             <- rectIntGroup _ ([-+*/] _ rectIntGroup _)*
-rectIntGroup        <- ('-' _)* ('(' _ rectInt ')' / [0-9]+ / [$tlwhrb]) _
-floatExpr           <- floatGroup _ ([-+*/] _ floatGroup _)*
-floatGroup          <- ('-' _)* ('(' _ floatExpr ')' / [0-9]+ ('.' [0-9]+)? / '$') _
-_                   <- [ \t\r\n]*
-identifier          <- [a-zA-Z_$][a-zA-Z0-9_$.\[\]]*
-hex8                <- '0x' hex hex
-hex32               <- '0x' hex hex hex hex hex hex hex hex
-hex                 <- [0-9A-Fa-f]
-singleChar          <- .
-positiveIntLiteral  <- [+]? [0-9]+
-floatLiteral        <- [-+]? ('0' / [1-9] [0-9]*) ('.' [0-9]+)?
-hexColor            <- '#' hex hex hex hex hex hex (hex hex)?
-decimalColor        <- ('rgb(' / 'hsv(') floatExpr ',' floatExpr ',' floatExpr (',' floatExpr)? ')'
-numericColor        <- hexColor / decimalColor
+    Schema syntax reference:
 
-/**
-    Meta text
-**/
-metaText            <- (metaTag / metaChars)*
-metaChars           <- (metaTag / (!'[' (('\\' .) / .))+)
-metaTag             <- metaVar / metaWindows / metaMac / metaXLate / metaUppercase / metaLowercase / metaTrim
-                       / metaCapitalize / metaTitle
-metaVar             <- '[var]' (!'[/var]' metaTag / metaChars)* '[/var]'
-metaWindows         <- '[windows]' (!'[/windows]' metaTag / metaChars)* '[/windows]'
-metaMac             <- '[mac]' (!'[/mac]' metaTag / metaChars)* '[/mac]'
-metaXLate           <- '[xlate]' (!'[/xlate]' metaTag / metaChars)* '[/xlate]'
-metaUppercase       <- '[uppercase]' (!'[/uppercase]' metaTag / metaChars)* '[/uppercase]'
-metaLowercase       <- '[lowercase]' (!'[/lowercase]' metaTag / metaChars)* '[/lowercase]'
-metaTrim            <- '[trim]' (!'[/trim]' metaTag / metaChars)* '[/trim]'
-metaCapitalize      <- '[capitalize]' (!'[/capitalize]' metaTag / metaChars)* '[/capitalize]'
-metaTitle           <- '[title]' (!'[/title]' metaTag / metaChars)* '[/title]'
+        ( )             : group
+        [ ]             : optional
+        |               : alternatives
+        < >             : use rule
+        < > =           : define rule
+        <-              : define PEG
+        ' '             : literal text
+        " "             : literal string
+        *               : any (unquoted) text
+        *<peg>          : any text validated by PEG
+        %               : any (quoted) string
+        %<peg>          : any string validated by PEG
+        ?               : any value
+        ?file:<ext>     : check that resource of type <ext> exists
+        { k:v, k:v }    : structure
+        { k:v, *:v }    : structure, validate remaining fields against *
+        { v, v }        : list (exact match)
+        { v, ... }      : array (zero or more matches)
+        \group\tag      : collect and check against group rule
+        include:        : include another .schema file
+        resources:      : add a search path for resources
 
-/**
-    Meta variable
+    For info on PEG, see https://en.wikipedia.org/wiki/Parsing_expression_grammar
 
-    FUTURE: check actions and params of these too somehow
-    (maybe also variables)
-**/
-/*
-    TODO: add 'editable: <variable>' to cushy?
-*/
-metaVariable        <- 'can:' metaAction (',' metaParams)?
-                       / 'checked:' metaAction (',' metaParams)?
-                       / ('lowercase:'
-                         / 'modifiable:'
-                         / 'trimmed:'
-                         / 'uppercase:'
-                         / 'translated:'
-                       ) (metaVariable / identifier)
-                       / 'calculated:' _ metaCalced
-                       / 'text:' .*
-                       / 'metatext:' metaText
-metaCalced          <- metaCalcedGroup _ ([-+*/] _ metaCalcedGroup _)*
-metaCalcedGroup     <- ('-' _)* ('(' _ metaCalced ')' / [0-9]+ ('.' [0-9]+)? / metaCalcedSymbol) _
-metaCalcedSymbol    <- [a-zA-Z0-9$_.:]+
-metaAction          <- identifier
-metaParams          <- .*
+    Headlines made with http://patorjk.com/software/taag/#p=display&f=Colossal
 
-/**
-    Click masks
-    ===========
+***********************************************************************************************************************/
 
-    Masks are scanned bottom up, thus later masks have priority over earlier. The mask has to contain one (and only one)
-    "type mask" and zero or more "modifiers masks" combined with '+'.
+/***********************************************************************************************************************
 
-    Type Masks
-    ----------
-    "click"         Clicked a <click> view (also context clicks!) or pressed (and released) a <button> view (no context
-                    clicks!) (this is the default mask).
-
-    "context"       Context menu click (Windows: right mouse button up, Mac: right mouse button down or control-click)
-
-    "press"         Mouse button clicked (called once at the actual mouse press moment, not after released inside
-                    <button> view like "click"). Not issued for context clicks in <click> etc.
-
-    "release"       Button released (called once at the actual mouse release moment, before "click"). Remember that
-                    context-clicks do not get "release"!
-
-    "down"          Hit-tracking entered (e.g. <button> goes down)
-
-    "up"            Hit-tracking left (e.g. <button> goes up)
-
-    Modifier Masks
-    --------------
-    "shift"         Shift held
-
-    "control"       Control held
-
-    "alt"           Alt / option held
-
-    "command"       Command held (Mac only)
-
-    "windows"       We are on Windows
-
-    "mac"           We are on Mac
-**/
-/*
-    TODO: maybe implement in the future if we have the need. The problem now is that "context" is issued via WM_CONTEXT
-    on Windows after a WM_RBUTTONUP returns "not handled" and e.g. a "click" "nop" view will then steal the right-clicks
-    and WM_CONTEXT will never be issued.
-*/
-//  "left"          Left mouse button
-//  "right"         Right mouse button
-clickMask           <- typeMask ('+' modifierMask)*
-typeMask            <- 'click' / 'press' / 'release' / 'down' / 'up' / 'context'
-modifierMask        <- 'shift' / 'control' / 'alt' / 'command' / 'windows' / 'mac'
-
-/**
-    Primitives
-**/
-<bool>              = 'false'|'true'
-<real>              = *floatExpr
-<int>               = *intExpr
-<string>            = %
-<rect>              = { *rectInt, *rectInt, *rectInt, *rectInt }
-<var>               = *identifier | %metaVariable
-<value>             = % | *floatLiteral | 'false' | 'true'
-<pixels>            = <real>
-<percent>           = <real>
-<fps>               = <real>
-<secs>              = <real>
-<degrees>           = <real>
-<clickMask>         = %clickMask
-<modifierMask>      = %modifierMask
-<action>            = \actions\action
-<params>            = \actions\params
-<metaText>          = %metaText
-<hex8>              = *hex8
-<hex32>             = *hex32
-<uint>              = *positiveIntLiteral
-<chars>             = %
-<char>              = %singleChar
-<cursorName>        = "arrow" | "iBeam" | "cross" | "hand" | "sizeWE" | "sizeNS"
-<cursorNameWin>     = <cursorName> | "wait" | "upArrow" | "sizeAll" | "sizeNWSE" | "sizeNESW" | "appStarting" | "help"
-                      | "no"
-<cursorNameMac>     = <cursorName> | "closedHand" | "openHand" | "sizeW" | "sizeE" | "sizeN" | "sizeS"
-<floatRect>         = { <pixels>, <pixels>, <pixels>, <pixels> }
-<cursor>            = <cursorName> | <var> | { [ windows: <cursorNameWin> ], [ mac: <cursorNameMac> ] }
-<pngFile>           = ?file:png
-<ivgfontFile>       = ?file:ivgfont
-<ivgFile>           = ?file:ivg
-<cushyFile>         = ?file:cushy
-<numericColor>      = %numericColor
-<clickThru>         = <bool> | <var>
-<hitMask>           = <image> | { image: <image>, [ visible: <bool> ] }
-<mousePosition>     = <var> | { [xy: <var>], [x: <var>], [y: <var>], [ integer: <bool> /* = true */ ] }
-<editSpec>          = <string> | { label: <string>, [color: <color>], [selectedColor: <color>], [grid: <int>] }
-
-<builtInAction>     = <nop>
-                      | <reload>
-                      | <set>
-                      | <assign>
-                      | <switch>
-                      | <batch>
-                      | <execute>
-                      | <alert>
-                      | <hint>
-                      | <popup>
-                      | <edit>
-                      | <launch>
-                      | <assert>
-
-/**
-    `nop` does nothing. Most useful to override default actions and stop clicks to pass through click view. May also be
-    used to force a choice to be disabled / checked etc (e.g. for testing).
-**/
-<nop> = {
-    action: "nop"
-    [ params: {
-        [ enabled: <bool> ] // = true
-        [ checked: <bool> ] // = false
-    } ]
-}
-
-/**
-    "reload" and reinitiate entire layout from disk.
-**/
-<reload> = {
-    action: "reload"
-    [ params: "reset" ]                             // attempt to reset all global variables as if the windows is
-                                                    // re-opened from scratch (mainly for testing during development).
-}
-
-/**
-    `set` will be checked if `<var>` is (already) exactly `<value>`
-**/
-<set> = {
-    action: "set"
-    params: { <var>, <value> }
-}
-
-/**
-    `assign` will be checked if `<var>` is (already) exactly `<var>`
-**/
-<assign> = {
-    action: "assign"
-    params: { <var>, <var> }
-}
-
-/**
-    `switch` action
-**/
-<switch> = {
-    action: "switch"
-    params: {
-        variable: <var>
-        cases: {
-            *: { <action>, [ <params> ] }
-        }
-        [ default: { <action>, [ <params> ] } ]
-        [ checked: { <value>, ... } ]               // will be checked if variable is any of the values in the list
-    }
-}
-
-/**
-    Normally a "batch" action will be enabled if any of its actions can be performed, but it will only be checked if all
-    of its actions report checked state. This behavior can be overriden with ignoreChecked and ignoreEnabled.
-**/
-<batch> = {
-    action: "batch"
-    params: {
-        { <action>, [ <params> ], [ { [ ignoreChecked: <bool> /* false */ ], [ ignoreEnabled: <bool> /* false */ ] } ] }
-        ...
-    }
-}
-
-/**
-    Indirect execution of an action, action and / or params will be [var] expanded or may be retrieved from gui
-    variables.
-**/
-<execute> = {
-    action: "execute"
-    params: {
-        ( action: (<action> | <metaText>) | actionVariable: <var> )
-        [ params: (<params> | <metaText>) | paramsVariable: <var> ]
-    }
-}
-
-/**
-    `alert` action
-**/
-<alert> = {
-    action: "alert"
-    params: {
-        [                                           // Default = "plain"
-            type: "plain" | "question" | "warning"
-                  | "info" | "error"
-        ]
-        [                                           // Default = "ok"
-            buttons: "ok" | "ok cancel"
-                     | "retry cancel" | "yes no"
-                     | "yes no cancel"
-                     | "abort retry ignore"
-        ]
-        [                                           // Default = "ok"
-            default: "ok" | "cancel" | "retry"
-                     | "yes" | "no" | "abort"
-                     | "ignore"
-        ]
-        [ title: <metaText> ]                       // Window title, default = product name.
-        text: <metaText>
-        [ reactions: {
-            *: { <action>, [ <params> ] }           // One for each button (see above).
-        } ]
-    } | <metaText>
-}
-
-/**
-    `hint` action
-**/
-<hint> = {
-    action: "hint"
-    params: {
-        [
-            offset: { <int>, <int> }                // Disregards custom UI scale (standard settings would be { 0, 22 })
-
-            | position: { <int>, <int> }            // Parent cushy-view coordinates.
-        ]
-        [
-            extent: <int>                           // Max mouse travel in pixels for hint to stay up, default is 5
-                                                    // (disregarding custom UI scale).
-
-            | area: <rect>                          // Absolute area in parent cushy-view coordinates ($ etc are full
-                                                    // parent cushy bounds).
-
-            | stick: 'true'                         // No boundaries for staying up.
-        ]
-        [ duration: <secs> ]                        // Seconds (default is indefinitely).
-        text: <metaText>                            // empty text removes hint
-    } | <metaText>                                  // empty text removes hint
-}
-
-/**
-    `assert` action
-**/
-<assert> = {
-    action: "assert"
-    params: {
-        (
-            variable: <var>
-            ( is: <value>
-            | isNot: <value>
-            | sameAs: <var>
-            | differsFrom: <var>
-            )
-        )
-        |
-        (
-            action: <action>
-            [ params: <params> ]
-            [ enabled: <bool> ]
-            [ checked: <bool> ]
-        )
-    }
-}
-
-/**
-    `popup` action
-**/
-<popup> = {
-    action: "popup"
-    params: {
-        [
-            offset: { <int>, <int> }                // Disregards custom UI scale.
-
-            | position: { <int>, <int> }            // Parent cushy-view coordiates.
-        ]
-        items: {
-            { <metaText>, <action>, [ <params> ] }  // Notice: items with empty captions will be excluded from popup
-                                                    // (but still counted by autoDisable and autoCheck). Use & in text
-                                                    // to designate shortcut letters (e.g. "Re&name"). Use && to insert
-                                                    // a single & instead.
-
-            | '-'                                   // For divider.
-            ...
-        }
-        [ storeAction: <var> ]                      // Stores the chosen action into <var>, e.g. for use with "execute"
-                                                    // action to repeat last command.
-        [ storeParams: <var> ]
-        [ storeCaption: <var> ]                     // Stores the chosen menu caption (e.g. for repetition hints).
-
-        [ autoDisable: <bool> ]                     // Will disable this action if all item actions are unavailable
-                                                    // (i.e. grayed out), default = false.
-
-        [ autoCheck: <bool> ]                       // Will check this action if any item is checked, default = false.
-    }
-}
-
-/**
-    `edit` action
-**/
-<edit> = {
-    action: "edit"
-    params: {
-        /*
-            TODO: title: <window title>
-        */
-        text: <metaText>                            // [var] expanded
-        variable: <var>
-        [ default: <metaText> ]                     // =[var]variable[/var], [var] expanded
-        [ reaction: { <action>, [ <params> ] } ]    // run on ok
-    }
-}
-
-/**
-    `launch` action
-**/
-<launch> = {
-    action: "launch"
-    params: <metaText>                              // file or url, [var] expanded, utf8 expected
-}
-
-/**
-    Color Spec
-**/
-<color> = "aqua" | "black" | "blue" | "fuchsia"
-          | "gray" | "green" | "lime" | "maroon"
-          | "navy" | "olive" | "purple" | "red"
-          | "silver" | "teal" | "white" | "yellow"
-          | "transparent"
-          | <hex32>                                 // pre-multiplied alpha (0xAARRGGBB), e.g. 0x80808080 is full white
-                                                    // with 50% transparency
-          | <numericColor>
-
-/**
-    Pen Style
-**/
-<penStyle> =
-    <color> // stroke: 1, caps: butt, joints: bevel, quality: 1.0, no dashing
-    |
-    {
-        color: <color>
-        [ stroke: <pixels> ]                        // default might differ, but usually 1
-        [ caps: "butt" | "round" | "square" ]
-        [ (
-            joints: "bevel" | "curve"
-        ) | (
-            joints: "miter", [ miterLimit: <real> ]
-        ) ]
-        [ quality: <real> ]                         // default 1.0
-        [ dash: "none"|<pixels> ]
-        [ gap: <pixels> ]                           // default = dash
-        [ dashOffset: <pixels> ]                    // must be < dash + gap
-        /*
-            TODO: implement gamma
-        */
-    }
-
-/**
-    Image spec
-    ==========
-
-    Each unique image specification means a unique image in memory. The optional transformation specifiers (such as
-    `gamma` and `opacity`, but not `clip`) are "burned" into the image in memory. With the gamma tag you specify the
-    desired *target* gamma. I.e. 2.2 is good for PC. If source gamma value is found in image-file it will be used,
-    otherwise a source gamma of 2.2 will be assumed. If no gamma tag specified, no gamma conversion will be done.
-
-    The `rle` variants (short for "run length encoded") are optimizations only. Bigger images with lots of transparency
-    or spans with identical pixel values will draw faster if the `rle` format is used. However, certain views (such as
-    the slider view) cannot use rle encoded images.
-
-    `mask` (or `rlemask`) loads the image as an 8-bit alpha-channel-only image. Saving memory if the image is just used
-    as a hit mask for example.
-
-    If `trim` is true the transparent pixels around the picture will be trimmed away (as a last step after scaling etc).
-    It will improve performance but it will also change the boundaries of the image and may affect image alignment.
-
-    If `clip` and/or `offset` is specified, at least one instance of the full picture will be loaded into memory (but
-    possibly shared). To calculate on the full source picture bounds you may use simple math expressions with the
-    following variables: '$', 'l', 't', 'w', 'h', 'r', 'b'. Notice that in case of UI scaling the loaded image will be
-    scaled before cropping and in case the clip rectangle is "unaligned" with the scaling factor this will cause
-    misaligment and "bleeding".
-
-    `slices` (and `index`) is the way to go to get a single slice out of a "vertical film strip" (that has `slices`
-    number of frames). In this case, if UI scaling is active there will be no misalignment as with `clip`.
-
-    (`clip` and `offset` cannot be used when specifying images for "films".)
-**/
-
-<image> = <pngFile> | {
-    (
-        name: <pngFile>
-        [ gamma: <real> ]
-    ) | (
-        (                                           // notice, no access to cushy variables in this ivg-code, use vector
-            ivgCode: <string>                       // view for that
-            | ivgFile: <ivgFile>
-        )
-        [ defines: { *: <string> } ]
-    )
-    [ format: "rle"|"mask"|"rlemask" ]
-    [ opacity: <percent> ]
-    [ scale: <percent> ]
-    [ slices: <int>, index: <int> ]
-    [ trim: <bool> ]                                // = false
-    [ clip: <rect> ]
-    [ offset: { <int>, <int> } ]
-}
-
-/**
-    $width and $height will contain integer width and height of drawing area or desired shape (e.g. cap size for knobs
-    and sliders)
-**/
-<ivg> = {
-    ( code: <string> | variable: <var> | file: <ivgFile> )
-    [ guiVariables: <bool> ]                        // = false
-    [ scale: <percent> ]                            // = 100
-    [ blend: "add" | "multiply" | "normal" ]        // = normal
-    [ opacity: <percent> ]                          // = 100
-
-    [ defines: { *: <string> } ]                    // Constant definitions.
-
-    [ bindings: { *: <var> } ]                      // Looks up <var>.
-
-    [ clip: <rect> ]                                // Defining a clip rect might improve drawing and invalidation
-                                                    // performance (ivg bounds instruction cannot be used since this
-                                                    // rect must be known before executing the ivg).
-} | <ivgFile>
-
-<builtInFont> = "serif" | "sans-serif" | "monospace"
-
-<font> = {
-    ivgfont: <ivgfontFile> | <builtInFont>
-    [ size: <real> ]                                // = 10
-    [ color: <color> ]                              // = "black"
-    [ gamma: <real> ]
-    [ unknown: <char>|"" ]                          // = ""
-    [ curveQuality: <real> ]                        // = 1
-    [ cacheResolution: <int> ]                      // = tricky
-    [ outlineWidth: <pixels> ]                      // = 0.0
-    [ outlineColor: <color> ]                       // = "black"
-} | {
-    film: <image>
-    advance: <int>
-    [ ascent: <int> ]                               // = frame height
-    [ leading: <int> ]
-    [
-        (chars: <int>, first: <int>)
-        | charset: <chars>
-    ]
-    [ unknown: <char> | "" ]
-}
-
-<textAlignment> = "left" | "center" | "right"
-        | "top" | "middle" | "bottom"
-        | "top left" | "top center" | "top right"
-        | "middle left" | "middle center" | "middle right"
-        | "bottom left" | "bottom center" | "bottom right"
-
-<captionBoxSpec> = {
-    [ padding: { <int>, <int>, <int>, <int> } ]     // left, top, right, bottom padding of entire view (text, rectangle
-                                                    // and vector)
-
-    [ inset: { <int>, <int>, <int>, <int> } ]       // left, top, right, bottom shrinking of rectangle bounds
-                                                    // (not vector)
-    [ fill: <color> ]
-    [ rounded: { <pixels>, <pixels> } ]
-    [ frame: <penStyle> ]
-    [ opacity: <percent> ]
-    [ vector: <ivg> ]                               // vector is drawn under the rectangle
-}
-
-<transition> = {
-    [ restart: <bool> ]                             // default = false which means the transition will not start from
-                                                    // zero if another transition is running
-    [ time: <secs> ]
-    [ updateRate: <fps> ]                           // default = 50.0
-    [ opacity: <percent> ]
-    [ opacityCurve: <real> ]                        // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-                                                    // > 0.5 = quick start
-    [ scale: <percent> ]
-    [ scaleCurve: <real> ]                          // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-                                                    // > 0.5 = quick start
-    [ offset: { <pixels>, <pixels> } ]
-    [ offsetCurve: <real> ]                         // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-                                                    // > 0.5 = quick start
-    [ rotation: <degrees> ]
-    [ rotationCurve: <real> ]                       // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
-                                                    // > 0.5 = quick start
-}
+    8888888b.   .d88888b.   .d88888b. 88888888888 
+    888   Y88b d88P" "Y88b d88P" "Y88b    888     
+    888    888 888     888 888     888    888     
+    888   d88P 888     888 888     888    888     
+    8888888P"  888     888 888     888    888     
+    888 T88b   888     888 888     888    888     
+    888  T88b  Y88b. .d88P Y88b. .d88P    888     
+    888   T88b  "Y88888P"   "Y88888P"     888     
+                                              
+***********************************************************************************************************************/
 
 <root> = {
     [ translations: {                               // `translations` inside a sub-cushy are only active when the cushy
@@ -618,6 +99,23 @@ modifierMask        <- 'shift' / 'control' / 'alt' / 'command' / 'windows' / 'ma
     }
 }
 
+/***********************************************************************************************************************
+
+    888     888 8888888 8888888888 888       888  .d8888b.  
+    888     888   888   888        888   o   888 d88P  Y88b 
+    888     888   888   888        888  d8b  888 Y88b.      
+    Y88b   d88P   888   8888888    888 d888b 888  "Y888b.   
+     Y88b d88P    888   888        888d88888b888     "Y88b. 
+      Y88o88P     888   888        88888P Y88888       "888 
+       Y888P      888   888        8888P   Y8888 Y88b  d88P 
+        Y8P     8888888 8888888888 888P     Y888  "Y8888P"  
+                                              
+***********************************************************************************************************************/                                                        
+
+/**
+    The product is expected to define <view> in one of its own .schema files. <view> should declare custom product views
+    and include <builtInView> as an entry in the list.
+**/
 <builtInView> = <subCushy>
         | <group>
         | <paged>
@@ -798,8 +296,8 @@ modifierMask        <- 'shift' / 'control' / 'alt' / 'command' / 'windows' / 'ma
 }
 
 /**
- The cluster view displays an array of images from gui-variables. Optionally, the user can also click and drag over this
-array to "paint" values.
+    The cluster view displays an array of images from gui-variables. Optionally, the user can also click and drag over
+    this array to "paint" values.
 **/
 <cluster> = {
     type: "cluster"
@@ -880,23 +378,6 @@ array to "paint" values.
     }
     [ blend: "add" | "multiply" | "normal" ]
     [ opacity: <percent> ]
-}
-
-<bubbleStyle> = {
-    font: <font>
-    [ offset: { <int>, <int> } ]
-    [
-        frame: <penStyle>
-        [ margin: <pixels> ]
-        [ padding: <pixels> ]
-    ]
-    [ lineHeight: <int> ]
-    [
-        underline: <penStyle>
-        [ underlineOffset: <pixels> ]
-    ]
-    [ typingRate: <real> ]                          // delay in secs per character
-    [ align: "left" | "center" | "right" ]          // = "left"
 }
 
 <bubble> = {
@@ -1166,15 +647,6 @@ array to "paint" values.
     [ hitMask: <hitMask> ]
 }
 
-<buttonStyle> = {
-    [ image: <image> ]
-    [ fill: <color> ]
-    [ frame: <penStyle> ]
-    [ font: <font> ]
-    [ icon: <image> ]
-    [ rect: <floatRect> ]
-}
-
 <button> = {                                        // Default click mask is the standard button behavior,
                                                     // i.e. action on mouse-release within hit-box.
     type: "button"
@@ -1360,3 +832,654 @@ array to "paint" values.
         ...
     } ]
 }
+
+/***********************************************************************************************************************
+
+           d8888  .d8888b. 88888888888 8888888 .d88888b.  888b    888  .d8888b.  
+          d88888 d88P  Y88b    888       888  d88P" "Y88b 8888b   888 d88P  Y88b 
+         d88P888 888    888    888       888  888     888 88888b  888 Y88b.      
+        d88P 888 888           888       888  888     888 888Y88b 888  "Y888b.   
+       d88P  888 888           888       888  888     888 888 Y88b888     "Y88b. 
+      d88P   888 888    888    888       888  888     888 888  Y88888       "888 
+     d8888888888 Y88b  d88P    888       888  Y88b. .d88P 888   Y8888 Y88b  d88P 
+    d88P     888  "Y8888P"     888     8888888 "Y88888P"  888    Y888  "Y8888P"
+
+***********************************************************************************************************************/
+
+/**
+    The product is expected to define <actions> in one of its own .schema files. <actions> should declare custom product
+    actions and include <builtInAction> as an entry in the list.
+**/
+
+<builtInAction>     = <nop>
+                      | <reload>
+                      | <set>
+                      | <assign>
+                      | <switch>
+                      | <batch>
+                      | <execute>
+                      | <alert>
+                      | <hint>
+                      | <popup>
+                      | <edit>
+                      | <launch>
+                      | <assert>
+
+/**
+    `nop` does nothing. Most useful to override default actions and stop clicks to pass through click view. May also be
+    used to force a choice to be disabled / checked etc (e.g. for testing).
+**/
+<nop> = {
+    action: "nop"
+    [ params: {
+        [ enabled: <bool> ] // = true
+        [ checked: <bool> ] // = false
+    } ]
+}
+
+/**
+    "reload" and reinitiate entire layout from disk.
+**/
+<reload> = {
+    action: "reload"
+    [ params: "reset" ]                             // attempt to reset all global variables as if the windows is
+                                                    // re-opened from scratch (mainly for testing during development).
+}
+
+/**
+    `set` will be checked if `<var>` is (already) exactly `<value>`
+**/
+<set> = {
+    action: "set"
+    params: { <var>, <value> }
+}
+
+/**
+    `assign` will be checked if `<var>` is (already) exactly `<var>`
+**/
+<assign> = {
+    action: "assign"
+    params: { <var>, <var> }
+}
+
+/**
+    `switch` action
+**/
+<switch> = {
+    action: "switch"
+    params: {
+        variable: <var>
+        cases: {
+            *: { <action>, [ <params> ] }
+        }
+        [ default: { <action>, [ <params> ] } ]
+        [ checked: { <value>, ... } ]               // will be checked if variable is any of the values in the list
+    }
+}
+
+/**
+    Normally a "batch" action will be enabled if any of its actions can be performed, but it will only be checked if all
+    of its actions report checked state. This behavior can be overriden with ignoreChecked and ignoreEnabled.
+**/
+<batch> = {
+    action: "batch"
+    params: {
+        { <action>, [ <params> ], [ { [ ignoreChecked: <bool> /* false */ ], [ ignoreEnabled: <bool> /* false */ ] } ] }
+        ...
+    }
+}
+
+/**
+    Indirect execution of an action, action and / or params will be [var] expanded or may be retrieved from gui
+    variables.
+**/
+<execute> = {
+    action: "execute"
+    params: {
+        ( action: (<action> | <metaText>) | actionVariable: <var> )
+        [ params: (<params> | <metaText>) | paramsVariable: <var> ]
+    }
+}
+
+/**
+    `alert` action
+**/
+<alert> = {
+    action: "alert"
+    params: {
+        [                                           // Default = "plain"
+            type: "plain" | "question" | "warning"
+                  | "info" | "error"
+        ]
+        [                                           // Default = "ok"
+            buttons: "ok" | "ok cancel"
+                     | "retry cancel" | "yes no"
+                     | "yes no cancel"
+                     | "abort retry ignore"
+        ]
+        [                                           // Default = "ok"
+            default: "ok" | "cancel" | "retry"
+                     | "yes" | "no" | "abort"
+                     | "ignore"
+        ]
+        [ title: <metaText> ]                       // Window title, default = product name.
+        text: <metaText>
+        [ reactions: {
+            *: { <action>, [ <params> ] }           // One for each button (see above).
+        } ]
+    } | <metaText>
+}
+
+/**
+    `hint` action
+**/
+<hint> = {
+    action: "hint"
+    params: {
+        [
+            offset: { <int>, <int> }                // Disregards custom UI scale (standard settings would be { 0, 22 })
+
+            | position: { <int>, <int> }            // Parent cushy-view coordinates.
+        ]
+        [
+            extent: <int>                           // Max mouse travel in pixels for hint to stay up, default is 5
+                                                    // (disregarding custom UI scale).
+
+            | area: <rect>                          // Absolute area in parent cushy-view coordinates ($ etc are full
+                                                    // parent cushy bounds).
+
+            | stick: 'true'                         // No boundaries for staying up.
+        ]
+        [ duration: <secs> ]                        // Seconds (default is indefinitely).
+        text: <metaText>                            // empty text removes hint
+    } | <metaText>                                  // empty text removes hint
+}
+
+/**
+    `assert` action
+**/
+<assert> = {
+    action: "assert"
+    params: {
+        (
+            variable: <var>
+            ( is: <value>
+            | isNot: <value>
+            | sameAs: <var>
+            | differsFrom: <var>
+            )
+        )
+        |
+        (
+            action: <action>
+            [ params: <params> ]
+            [ enabled: <bool> ]
+            [ checked: <bool> ]
+        )
+    }
+}
+
+/**
+    `popup` action
+**/
+<popup> = {
+    action: "popup"
+    params: {
+        [
+            offset: { <int>, <int> }                // Disregards custom UI scale.
+
+            | position: { <int>, <int> }            // Parent cushy-view coordiates.
+        ]
+        items: {
+            { <metaText>, <action>, [ <params> ] }  // Notice: items with empty captions will be excluded from popup
+                                                    // (but still counted by autoDisable and autoCheck). Use & in text
+                                                    // to designate shortcut letters (e.g. "Re&name"). Use && to insert
+                                                    // a single & instead.
+
+            | '-'                                   // For divider.
+            ...
+        }
+        [ storeAction: <var> ]                      // Stores the chosen action into <var>, e.g. for use with "execute"
+                                                    // action to repeat last command.
+        [ storeParams: <var> ]
+        [ storeCaption: <var> ]                     // Stores the chosen menu caption (e.g. for repetition hints).
+
+        [ autoDisable: <bool> ]                     // Will disable this action if all item actions are unavailable
+                                                    // (i.e. grayed out), default = false.
+
+        [ autoCheck: <bool> ]                       // Will check this action if any item is checked, default = false.
+    }
+}
+
+/**
+    `edit` action
+**/
+<edit> = {
+    action: "edit"
+    params: {
+        /*
+            TODO: title: <window title>
+        */
+        text: <metaText>                            // [var] expanded
+        variable: <var>
+        [ default: <metaText> ]                     // =[var]variable[/var], [var] expanded
+        [ reaction: { <action>, [ <params> ] } ]    // run on ok
+    }
+}
+
+/**
+    `launch` action
+**/
+<launch> = {
+    action: "launch"
+    params: <metaText>                              // file or url, [var] expanded, utf8 expected
+}
+
+/***********************************************************************************************************************
+
+     .d8888b.  8888888b.  8888888888 .d8888b.   .d8888b.  
+    d88P  Y88b 888   Y88b 888       d88P  Y88b d88P  Y88b 
+    Y88b.      888    888 888       888    888 Y88b.      
+     "Y888b.   888   d88P 8888888   888         "Y888b.   
+        "Y88b. 8888888P"  888       888            "Y88b. 
+          "888 888        888       888    888       "888 
+    Y88b  d88P 888        888       Y88b  d88P Y88b  d88P 
+     "Y8888P"  888        8888888888 "Y8888P"   "Y8888P"  
+                                              
+***********************************************************************************************************************/
+
+<clickThru>         = <bool> | <var>
+<hitMask>           = <image> | { image: <image>, [ visible: <bool> ] }
+<mousePosition>     = <var> | { [xy: <var>], [x: <var>], [y: <var>], [ integer: <bool> /* = true */ ] }
+<editSpec>          = <string> | { label: <string>, [color: <color>], [selectedColor: <color>], [grid: <int>] }
+
+/**
+    Cursors
+**/
+<cursorName>        = "arrow" | "iBeam" | "cross" | "hand" | "sizeWE" | "sizeNS"
+<cursorNameWin>     = <cursorName> | "wait" | "upArrow" | "sizeAll" | "sizeNWSE" | "sizeNESW" | "appStarting" | "help"
+                      | "no"
+<cursorNameMac>     = <cursorName> | "closedHand" | "openHand" | "sizeW" | "sizeE" | "sizeN" | "sizeS"
+<cursor>            = <cursorName> | <var> | { [ windows: <cursorNameWin> ], [ mac: <cursorNameMac> ] }
+
+/**
+    Color Spec
+**/
+<color> = "aqua" | "black" | "blue" | "fuchsia"
+          | "gray" | "green" | "lime" | "maroon"
+          | "navy" | "olive" | "purple" | "red"
+          | "silver" | "teal" | "white" | "yellow"
+          | "transparent"
+          | <hex32>                                 // Pre-multiplied alpha (0xAARRGGBB), e.g. 0x80808080 is full white
+                                                    // with 50% transparency.
+
+          | <numericColor>                          // examples: `#C07030`, `#80708040`, `rgb(0.5,0.3,0.7)`,
+                                                    // `hsv(0.9,0.2,0.6,0.3)`
+
+/**
+    Pen Style
+**/
+<penStyle> =
+    <color> // stroke: 1, caps: butt, joints: bevel, quality: 1.0, no dashing
+    |
+    {
+        color: <color>
+        [ stroke: <pixels> ]                        // default might differ, but usually 1
+        [ caps: "butt" | "round" | "square" ]
+        [ (
+            joints: "bevel" | "curve"
+        ) | (
+            joints: "miter", [ miterLimit: <real> ]
+        ) ]
+        [ quality: <real> ]                         // default 1.0
+        [ dash: "none"|<pixels> ]
+        [ gap: <pixels> ]                           // default = dash
+        [ dashOffset: <pixels> ]                    // must be < dash + gap
+        /*
+            TODO: implement gamma
+        */
+    }
+
+/**
+    Image Spec
+    ==========
+
+    Each unique image specification means a unique image in memory. The optional transformation specifiers (such as
+    `gamma` and `opacity`, but not `clip`) are "burned" into the image in memory. With the gamma tag you specify the
+    desired *target* gamma. I.e. 2.2 is good for PC. If source gamma value is found in image-file it will be used,
+    otherwise a source gamma of 2.2 will be assumed. If no gamma tag specified, no gamma conversion will be done.
+
+    The `rle` variants (short for "run length encoded") are optimizations only. Bigger images with lots of transparency
+    or spans with identical pixel values will draw faster if the `rle` format is used. However, certain views (such as
+    the slider view) cannot use rle encoded images.
+
+    `mask` (or `rlemask`) loads the image as an 8-bit alpha-channel-only image. Saving memory if the image is just used
+    as a hit mask for example.
+
+    If `trim` is true the transparent pixels around the picture will be trimmed away (as a last step after scaling etc).
+    It will improve performance but it will also change the boundaries of the image and may affect image alignment.
+
+    If `clip` and/or `offset` is specified, at least one instance of the full picture will be loaded into memory (but
+    possibly shared). To calculate on the full source picture bounds you may use simple math expressions with the
+    following variables: '$', 'l', 't', 'w', 'h', 'r', 'b'. Notice that in case of UI scaling the loaded image will be
+    scaled before cropping and in case the clip rectangle is "unaligned" with the scaling factor this will cause
+    misaligment and "bleeding".
+
+    `slices` (and `index`) is the way to go to get a single slice out of a "vertical film strip" (that has `slices`
+    number of frames). In this case, if UI scaling is active there will be no misalignment as with `clip`.
+
+    (`clip` and `offset` cannot be used when specifying images for "films".)
+**/
+
+<image> = <pngFile> | {
+    (
+        name: <pngFile>
+        [ gamma: <real> ]
+    ) | (
+        (                                           // notice, no access to cushy variables in this ivg-code, use vector
+            ivgCode: <string>                       // view for that
+            | ivgFile: <ivgFile>
+        )
+        [ defines: { *: <string> } ]
+    )
+    [ format: "rle"|"mask"|"rlemask" ]
+    [ opacity: <percent> ]
+    [ scale: <percent> ]
+    [ slices: <int>, index: <int> ]
+    [ trim: <bool> ]                                // = false
+    [ clip: <rect> ]
+    [ offset: { <int>, <int> } ]
+}
+
+/**
+    $width and $height will contain integer width and height of drawing area or desired shape (e.g. cap size for knobs
+    and sliders)
+**/
+<ivg> = {
+    ( code: <string> | variable: <var> | file: <ivgFile> )
+    [ guiVariables: <bool> ]                        // = false
+    [ scale: <percent> ]                            // = 100
+    [ blend: "add" | "multiply" | "normal" ]        // = normal
+    [ opacity: <percent> ]                          // = 100
+
+    [ defines: { *: <string> } ]                    // Constant definitions.
+
+    [ bindings: { *: <var> } ]                      // Looks up <var>.
+
+    [ clip: <rect> ]                                // Defining a clip rect might improve drawing and invalidation
+                                                    // performance (ivg bounds instruction cannot be used since this
+                                                    // rect must be known before executing the ivg).
+} | <ivgFile>
+
+<builtInFont> = "serif" | "sans-serif" | "monospace"
+
+<font> = {
+    ivgfont: <ivgfontFile> | <builtInFont>
+    [ size: <real> ]                                // = 10
+    [ color: <color> ]                              // = "black"
+    [ gamma: <real> ]
+    [ unknown: <char>|"" ]                          // = ""
+    [ curveQuality: <real> ]                        // = 1
+    [ cacheResolution: <int> ]                      // = tricky
+    [ outlineWidth: <pixels> ]                      // = 0.0
+    [ outlineColor: <color> ]                       // = "black"
+} | {
+    film: <image>
+    advance: <int>
+    [ ascent: <int> ]                               // = frame height
+    [ leading: <int> ]
+    [
+        (chars: <int>, first: <int>)
+        | charset: <chars>
+    ]
+    [ unknown: <char> | "" ]
+}
+
+<textAlignment> = "left" | "center" | "right"
+        | "top" | "middle" | "bottom"
+        | "top left" | "top center" | "top right"
+        | "middle left" | "middle center" | "middle right"
+        | "bottom left" | "bottom center" | "bottom right"
+
+<captionBoxSpec> = {
+    [ padding: { <int>, <int>, <int>, <int> } ]     // left, top, right, bottom padding of entire view (text, rectangle
+                                                    // and vector)
+
+    [ inset: { <int>, <int>, <int>, <int> } ]       // left, top, right, bottom shrinking of rectangle bounds
+                                                    // (not vector)
+    [ fill: <color> ]
+    [ rounded: { <pixels>, <pixels> } ]
+    [ frame: <penStyle> ]
+    [ opacity: <percent> ]
+    [ vector: <ivg> ]                               // vector is drawn under the rectangle
+}
+
+<transition> = {
+    [ restart: <bool> ]                             // default = false which means the transition will not start from
+                                                    // zero if another transition is running
+    [ time: <secs> ]
+    [ updateRate: <fps> ]                           // default = 50.0
+    [ opacity: <percent> ]
+    [ opacityCurve: <real> ]                        // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+    [ scale: <percent> ]
+    [ scaleCurve: <real> ]                          // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+    [ offset: { <pixels>, <pixels> } ]
+    [ offsetCurve: <real> ]                         // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+    [ rotation: <degrees> ]
+    [ rotationCurve: <real> ]                       // curve value is from 0.0 to 1.0, 0.5 = linear, < 0.5 = slow start,
+                                                    // > 0.5 = quick start
+}
+
+<bubbleStyle> = {
+    font: <font>
+    [ offset: { <int>, <int> } ]
+    [
+        frame: <penStyle>
+        [ margin: <pixels> ]
+        [ padding: <pixels> ]
+    ]
+    [ lineHeight: <int> ]
+    [
+        underline: <penStyle>
+        [ underlineOffset: <pixels> ]
+    ]
+    [ typingRate: <real> ]                          // delay in secs per character
+    [ align: "left" | "center" | "right" ]          // = "left"
+}
+
+<buttonStyle> = {
+    [ image: <image> ]
+    [ fill: <color> ]
+    [ frame: <penStyle> ]
+    [ font: <font> ]
+    [ icon: <image> ]
+    [ rect: <floatRect> ]
+}
+
+/**
+    Click Masks
+    ===========
+
+    Masks are scanned bottom up, thus later masks have priority over earlier. The mask has to contain one (and only one)
+    "type mask" and zero or more "modifiers masks" combined with '+'.
+
+    Type Masks
+    ----------
+    "click"         Clicked a <click> view (also context clicks!) or pressed (and released) a <button> view (no context
+                    clicks!) (this is the default mask).
+
+    "context"       Context menu click (Windows: right mouse button up, Mac: right mouse button down or control-click)
+
+    "press"         Mouse button clicked (called once at the actual mouse press moment, not after released inside
+                    <button> view like "click"). Not issued for context clicks in <click> etc.
+
+    "release"       Button released (called once at the actual mouse release moment, before "click"). Remember that
+                    context-clicks do not get "release"!
+
+    "down"          Hit-tracking entered (e.g. <button> goes down)
+
+    "up"            Hit-tracking left (e.g. <button> goes up)
+
+    Modifier Masks
+    --------------
+    "shift"         Shift held
+
+    "control"       Control held
+
+    "alt"           Alt / option held
+
+    "command"       Command held (Mac only)
+
+    "windows"       We are on Windows
+
+    "mac"           We are on Mac
+**/
+/*
+    TODO: maybe implement "left" and "right" in the future if we have the need. The problem now is that "context" is
+    issued via WM_CONTEXT on Windows after a WM_RBUTTONUP returns "not handled" and e.g. a "click" "nop" view will then
+    steal the right-clicks and WM_CONTEXT will never be issued.
+*/
+clickMask           <- typeMask ('+' modifierMask)*
+typeMask            <- 'click' / 'press' / 'release' / 'down' / 'up' / 'context'
+modifierMask        <- 'shift' / 'control' / 'alt' / 'command' / 'windows' / 'mac'
+
+/***********************************************************************************************************************
+
+8888888b.  8888888b.  8888888 888b     d888 8888888 88888888888 8888888 888     888 8888888888 .d8888b.  
+888   Y88b 888   Y88b   888   8888b   d8888   888       888       888   888     888 888       d88P  Y88b 
+888    888 888    888   888   88888b.d88888   888       888       888   888     888 888       Y88b.      
+888   d88P 888   d88P   888   888Y88888P888   888       888       888   Y88b   d88P 8888888    "Y888b.   
+8888888P"  8888888P"    888   888 Y888P 888   888       888       888    Y88b d88P  888           "Y88b. 
+888        888 T88b     888   888  Y8P  888   888       888       888     Y88o88P   888             "888 
+888        888  T88b    888   888   "   888   888       888       888      Y888P    888       Y88b  d88P 
+888        888   T88b 8888888 888       888 8888888     888     8888888     Y8P     8888888888 "Y8888P"  
+
+***********************************************************************************************************************/
+
+<bool>              = 'false'|'true'
+<real>              = *floatExpr                                    // real value expression (e.g. `5e-3 or 3.0/7`)
+<int>               = *intExpr                                      // integer expression (e.g. `5` or `3*($+23)`)
+<string>            = %                                             // quoted string (`"` or `'`)
+<rect>              = { *rectInt, *rectInt, *rectInt, *rectInt }    // rects are { left, top, width, height }
+<var>               = *identifier | %metaVariable
+<value>             = % | *floatLiteral | 'false' | 'true'
+<pixels>            = <real>
+<percent>           = <real>
+<fps>               = <real>
+<secs>              = <real>
+<degrees>           = <real>
+<clickMask>         = %clickMask                                    // see "Click Masks" specification
+<modifierMask>      = %modifierMask                                 // see "Click Masks" specification
+<action>            = \actions\action                               // <action> + <param> is checked against <actions>
+<params>            = \actions\params
+<metaText>          = %metaText                                     // see "Meta" section
+<hex8>              = *hex8
+<hex32>             = *hex32
+<uint>              = *positiveIntLiteral
+<chars>             = %
+<char>              = %singleChar
+<floatRect>         = { <pixels>, <pixels>, <pixels>, <pixels> }
+<pngFile>           = ?file:png
+<ivgfontFile>       = ?file:ivgfont
+<ivgFile>           = ?file:ivg
+<cushyFile>         = ?file:cushy
+<numericColor>      = %numericColor
+
+/**
+    PEGs
+**/
+intExpr             <- intGroup _ ([-+*/] _ intGroup _)*
+intGroup            <- ('-' _)* ('(' _ intExpr ')' / [0-9]+ / '$') _
+rectInt             <- rectIntGroup _ ([-+*/] _ rectIntGroup _)*
+rectIntGroup        <- ('-' _)* ('(' _ rectInt ')' / [0-9]+ / [$tlwhrb]) _
+floatExpr           <- floatGroup _ ([-+*/] _ floatGroup _)*
+floatGroup          <- ('-' _)* ('(' _ floatExpr ')' / [0-9]+ ('.' [0-9]+)? / '$') _
+_                   <- [ \t\r\n]*
+identifier          <- [a-zA-Z_$][a-zA-Z0-9_$.\[\]]*
+hex8                <- '0x' hex hex
+hex32               <- '0x' hex hex hex hex hex hex hex hex
+hex                 <- [0-9A-Fa-f]
+singleChar          <- .
+positiveIntLiteral  <- [+]? [0-9]+
+floatLiteral        <- [-+]? ('0' / [1-9] [0-9]*) ('.' [0-9]+)?
+hexColor            <- '#' hex hex hex hex hex hex (hex hex)?
+decimalColor        <- ('rgb(' / 'hsv(') floatExpr ',' floatExpr ',' floatExpr (',' floatExpr)? ')'
+numericColor        <- hexColor / decimalColor
+
+/***********************************************************************************************************************
+
+    888b     d888 8888888888 88888888888     d8888 
+    8888b   d8888 888            888        d88888 
+    88888b.d88888 888            888       d88P888 
+    888Y88888P888 8888888        888      d88P 888 
+    888 Y888P 888 888            888     d88P  888 
+    888  Y8P  888 888            888    d88P   888 
+    888   "   888 888            888   d8888888888 
+    888       888 8888888888     888  d88P     888 
+
+***********************************************************************************************************************/
+
+/**
+    Meta text. Supported meta tags are:
+
+        [var]<var>[/var]                    // insert variable <var>
+        [windows]<text>[/windows]           // only include if running Windows
+        [mac]<text>[/mac]                   // only include if running Mac
+        [xlate]<text>[/xlate]               // run <text> through the translation table (see `translations` in root)
+        [lowercase]<text>[/lowercase]       // convert <text> to lowercase
+        [uppercase]<text>[/uppercase]       // convert <text> to uppercase
+        [trim]<text>[/trim]                 // remove leading and trailing white spaces from <text>
+        [capitalize]<text>[/capitalize]     // capitalize <text> (convert first letter to uppercase)
+        [title]<text>[/title]               // title-case <text> (convert first letter in each word to uppercase)
+
+    Any <text> can contain further meta tags.
+**/
+metaText            <- (metaTag / metaChars)*
+metaChars           <- (metaTag / (!'[' (('\\' .) / .))+)
+metaTag             <- metaVar / metaWindows / metaMac / metaXLate / metaUppercase / metaLowercase / metaTrim
+                       / metaCapitalize / metaTitle
+metaVar             <- '[var]' (!'[/var]' metaTag / metaChars)* '[/var]'
+metaWindows         <- '[windows]' (!'[/windows]' metaTag / metaChars)* '[/windows]'
+metaMac             <- '[mac]' (!'[/mac]' metaTag / metaChars)* '[/mac]'
+metaXLate           <- '[xlate]' (!'[/xlate]' metaTag / metaChars)* '[/xlate]'
+metaUppercase       <- '[uppercase]' (!'[/uppercase]' metaTag / metaChars)* '[/uppercase]'
+metaLowercase       <- '[lowercase]' (!'[/lowercase]' metaTag / metaChars)* '[/lowercase]'
+metaTrim            <- '[trim]' (!'[/trim]' metaTag / metaChars)* '[/trim]'
+metaCapitalize      <- '[capitalize]' (!'[/capitalize]' metaTag / metaChars)* '[/capitalize]'
+metaTitle           <- '[title]' (!'[/title]' metaTag / metaChars)* '[/title]'
+
+/**
+    A meta variable can be used anywhere a <var> is used. They are always read-only. The following meta variables are
+    supported:
+
+        can:<action>[,<params>]     // converts to `false` or `true` if it is possible to execute <action>
+        checked:<action>[,params>]  // converts to `false` or `true` if it the <action> is "checked"
+        lowercase:<var>             // converts <var> to lowercase
+        uppercase:<var>             // converts <var> to uppercase
+        translated:<var>            // runs <var> through the translation table (see `translations` in root)
+        calculated:<expression>     // calculates <expression> using + - * / ( ), decimal constants and <var> lookup
+        text:<text>                 // use literal <text>
+        metatext:<text>             // use <text> processed with meta tags
+
+    FUTURE: check actions and params of these too somehow (maybe also variables).
+    TODO: add 'editable: <variable>' to cushy?
+**/
+metaVariable        <- 'can:' metaAction (',' metaParams)?
+                       / 'checked:' metaAction (',' metaParams)?
+                       / ('lowercase:'
+                         / 'modifiable:'
+                         / 'trimmed:'
+                         / 'uppercase:'
+                         / 'translated:'
+                       ) (metaVariable / identifier)
+                       / 'calculated:' _ metaCalced
+                       / 'text:' .*
+                       / 'metatext:' metaText
+metaCalced          <- metaCalcedGroup _ ([-+*/] _ metaCalcedGroup _)*
+metaCalcedGroup     <- ('-' _)* ('(' _ metaCalced ')' / [0-9]+ ('.' [0-9]+)? / metaCalcedSymbol) _
+metaCalcedSymbol    <- [a-zA-Z0-9$_.:]+
+metaAction          <- identifier
+metaParams          <- .*
