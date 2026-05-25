@@ -1,0 +1,13 @@
+include: ../../../Resources/microtonic.schema
+resources: ../
+resources: ../../../Resources
+
+<actions> = <microtonicAction>
+        | { action: "euclideanBeat.syncFromPreset" }
+        | { action: "euclideanBeat.triggers.onsets", params: <string> }
+        | { action: "euclideanBeat.accents.onsets", params: <string> }
+        | { action: "euclideanBeat.triggers.rotation", params: <string> }
+        | { action: "euclideanBeat.accents.rotation", params: <string> }
+        | { action: "euclideanBeat.enable" }
+
+<view> = <microtonicView>

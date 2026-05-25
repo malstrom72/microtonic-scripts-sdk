@@ -1,0 +1,14 @@
+include: ../../../Resources/microtonic.schema
+resources: ../
+resources: ../../../Resources
+
+<actions> = <microtonicAction>
+        | { action: "mixConsole.checkSolo" }
+        | { action: "mixConsole.updateVisuals" }
+        | { action: "mixConsole.switch", params: { channel: <int>, param: <string> } }
+        | { action: "mixConsole.mute", params: <int> }
+        | { action: "mixConsole.solo", params: <int> }
+        | { action: "mixConsole.triggerChannel", params: { <int>, <int> } }
+        | { action: "mixConsole.selectChannel", params: <int> }
+
+<view> = <builtInView>

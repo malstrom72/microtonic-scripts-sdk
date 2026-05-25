@@ -1,0 +1,9 @@
+include: ../../../Resources/microtonic.schema
+resources: ../
+resources: ../../../Resources
+
+<actions> = <microtonicAction>
+        | { action: "fmTool.reloadPatch" }
+        | { action: "fmTool.toggleIndexPolarity" }
+
+<view> = <microtonicView>

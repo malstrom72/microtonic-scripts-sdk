@@ -1,4 +1,4 @@
-@include common.makaron
+@include scriptSupport.makaron
 
 @define script=macroTweak
 @define uiHue=0.45

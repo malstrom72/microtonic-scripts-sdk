@@ -1,4 +1,4 @@
-@include common.makaron
+@include scriptSupport.makaron
 
 @define script=mixConsole
 @define uiHue=0.7
@@ -78,7 +78,7 @@ autoexecs: {
 	}
 	{
 		action: "set"
-		params: { "@script.stripWidth", @stripWidth }
+		params: { @script.stripWidth, @stripWidth }
 	}
 	{
 		action: "@script.checkSolo"
