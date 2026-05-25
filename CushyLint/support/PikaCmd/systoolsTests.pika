@@ -1,0 +1,242 @@
+#! /usr/local/bin/PikaCmd
+
+include('stdlib.pika');
+include('systools.pika');
+
+function {
+	SLOW_FILE_COUNT = 5;
+	TEST_FILE_COUNT = 500;
+	print('Current working dir: ' # currentDir());
+	assert(> appendDirSlash('abcd' # DIR_SLASH) == 'abcd' # DIR_SLASH);
+	assert(> appendDirSlash('abcd') == 'abcd/');
+	assert(> dirOfPath('abcd') == void);
+	assert(> dirOfPath('abcd.efg') == void);
+	assert(> dirOfPath('hijk/') == 'hijk/');
+	assert(> dirOfPath('hijk' # DIR_SLASH # 'abcd') == 'hijk' # DIR_SLASH);
+	assert(> dirOfPath('hijk/abcd') == 'hijk/');
+	assert(> dirOfPath('hijk/abcd.efg') == 'hijk/');
+	assert(> dirOfPath('hijk.lmn/abcd') == 'hijk.lmn/');
+	assert(> dirOfPath('hijk.lmn/abcd.efg') == 'hijk.lmn/');
+	assert(> dirOfPath('hijk.lmn/abcd.efg.xyz') == 'hijk.lmn/');
+	assert(> filenameOfPath('abcd') == 'abcd');
+	assert(> filenameOfPath('abcd.efg') == 'abcd.efg');
+	assert(> filenameOfPath('hijk/') == void);
+	assert(> filenameOfPath('hijk' # DIR_SLASH # 'abcd') == 'abcd');
+	assert(> filenameOfPath('hijk/abcd') == 'abcd');
+	assert(> filenameOfPath('hijk/abcd.efg') == 'abcd.efg');
+	assert(> filenameOfPath('hijk.lmn/abcd') == 'abcd');
+	assert(> filenameOfPath('hijk.lmn/abcd.efg') == 'abcd.efg');
+	assert(> filenameOfPath('hijk.lmn/abcd.efg.xyz') == 'abcd.efg.xyz');
+	assert(> basenameOfPath('abcd') == 'abcd');
+	assert(> basenameOfPath('abcd.efg') == 'abcd');
+	assert(> basenameOfPath('hijk/') == void);
+	assert(> basenameOfPath('hijk' # DIR_SLASH # 'abcd') == 'abcd');
+	assert(> basenameOfPath('hijk/abcd') == 'abcd');
+	assert(> basenameOfPath('hijk/abcd.efg') == 'abcd');
+	assert(> basenameOfPath('hijk.lmn/abcd') == 'abcd');
+	assert(> basenameOfPath('hijk.lmn/abcd.efg') == 'abcd');
+	assert(> basenameOfPath('hijk.lmn/abcd.efg.xyz') == 'abcd.efg');
+	assert(> extensionOfPath('abcd') == void);
+	assert(> extensionOfPath('abcd.efg') == '.efg');
+	assert(> extensionOfPath('hijk/') == void);
+	assert(> extensionOfPath('hijk' # DIR_SLASH # 'abcd') == void);
+	assert(> extensionOfPath('hijk/abcd') == void);
+	assert(> extensionOfPath('hijk/abcd.efg') == '.efg');
+	assert(> extensionOfPath('hijk.lmn/abcd') == void);
+	assert(> extensionOfPath('hijk.lmn/abcd.efg') == '.efg');
+	assert(> extensionOfPath('hijk.lmn/abcd.efg.xyz') == '.xyz');
+	assert(function { splitPath('abcd', @dir, @name, @ext); dir == void && name == 'abcd' && ext == void } );
+	assert(function { splitPath('abcd.efg', @dir, @name, @ext); dir == void && name == 'abcd' && ext == '.efg' } );
+	assert(function { splitPath('hijk/', @dir, @name, @ext); dir == 'hijk/' && name == void && ext == void } );
+	assert(function { splitPath('hijk' # DIR_SLASH # 'abcd', @dir, @name, @ext); dir == 'hijk' # DIR_SLASH && name == 'abcd' && ext == void } );
+	assert(function { splitPath('hijk/abcd', @dir, @name, @ext); dir == 'hijk/' && name == 'abcd' && ext == void } );
+	assert(function { splitPath('hijk/abcd.efg', @dir, @name, @ext); dir == 'hijk/' && name == 'abcd' && ext == '.efg' } );
+	assert(function { splitPath('hijk.lmn/abcd', @dir, @name, @ext); dir == 'hijk.lmn/' && name == 'abcd' && ext == void } );
+	assert(function { splitPath('hijk.lmn/abcd.efg', @dir, @name, @ext); dir == 'hijk.lmn/' && name == 'abcd' && ext == '.efg' } );
+	assert(function { splitPath('hijk.lmn/abcd.efg.xyz', @dir, @name, @ext); dir == 'hijk.lmn/' && name == 'abcd.efg' && ext == '.xyz' } );
+	assert(function { splitPath('hij?k.lmn/ab*cd.efg.xyz', @dir, @name, @ext); dir == 'hij?k.lmn/' && name == 'ab*cd.efg' && ext == '.xyz' } );
+	if (::PLATFORM == 'UNIX') {
+		assert(> dirOfPath('hijk\.lmn/abcd') == 'hijk\.lmn/');
+		assert(> basenameOfPath('hijk.lmn/abc:d.efg') == 'abc:d');
+		assert(> extensionOfPath('hijk.lmn/abcd.efg.xy\z') == '.xy\z');
+		assert(function { splitPath('hi:j?k.lmn/ab*cd.ef\g.xyz', @dir, @name, @ext); dir == 'hi:j?k.lmn/' && name == 'ab*cd.ef\g' && ext == '.xyz' } );
+	};
+	t = time();
+	print('2 seconds delay');
+	sleep(2);
+	assert(>time() > t && time() < t + 5);
+	testDir = TEMP_DIR # 'systools test ' # time() # '/';
+	if (!pathExists(testDir)) makeDir(testDir);
+	assert(> pathExists(testDir));
+	try(> { makeDir(testDir); assert(false, "expected makeDir to fail"); });
+	makeDir(testDir # 'oneDeep');
+	makeDir(testDir # 'oneDeep/twoDeep');
+	assert(> pathExists(testDir # 'oneDeep/twoDeep'));
+	removeDir(testDir # 'oneDeep/twoDeep');
+	assert(> !pathExists(testDir # 'oneDeep/twoDeep'));
+	assert(> pathExists(testDir # 'oneDeep'));
+	makeDir(testDir # 'oneDeep/twoDeep');
+	assert(> pathExists(testDir # 'oneDeep/twoDeep'));
+	makeDir(testDir # 'oneDeep/twoDeep/threeDeep');
+	assert(> pathExists(testDir # 'oneDeep/twoDeep/threeDeep'));
+	save(testDir # 'oneDeep/twoDeep/afile', 'hubbahubba');
+	assert(> pathExists(testDir # 'oneDeep/twoDeep/afile'));
+	wipeTempDir(testDir # 'oneDeep/twoDeep');
+	assert(> !pathExists(testDir # 'oneDeep/twoDeep/threeDeep'));
+	assert(> !pathExists(testDir # 'oneDeep/twoDeep/afile'));
+	assert(> !pathExists(testDir # 'oneDeep/twoDeep'));
+	wipeTempDir(testDir # 'doesntexist'); // make sure it doesn't fail
+	removeDir(testDir # 'oneDeep');
+	assert(> !pathExists(testDir # 'oneDeep'));
+
+	assert(> try(>wipeTempDir('/somewherenottemp/cantwipethis')) == 'Cannot wipe directories that are not temporary');
+
+	save(testDir # 'testfile1.txt', 'abracadabra');
+	s = load(testDir # 'testfile1.txt');
+	assert(> s == 'abracadabra');
+	assert(> pathExists(testDir # 'testfile1.txt'));
+	assert(> pathExists(testDir # '*.txt'));
+	assert(> pathExists(testDir # 'testfile?.txt'));
+	eraseFile(testDir # 'testfile2.txt');
+	renameFile(testDir # 'testfile1.txt', 'testfile2.txt');
+	assert(> !pathExists(testDir # 'testfile1.txt'));
+	assert(> pathExists(testDir # 'testfile2.txt'));
+	y = 2463534242;
+	for (i = 0; i < TEST_FILE_COUNT; ++i) {
+		y ^= y << 13;
+		y ^= y >> 17;
+		y = y ^ (y << 5);
+		fileIDs[i] = radix(y & 0xFFFFF, 16, 6);
+		fileContents[i] = repeat(char(round(random(25)) + ordinal('a')), round(random(2000)));
+		fileIDsReverse[fileIDs[i]] = i;
+	};
+	print(bake('Creating {TEST_FILE_COUNT} test files (first {SLOW_FILE_COUNT} with 2 secs delay in between)...'));
+	nt = time();
+	for (i = 0; i < TEST_FILE_COUNT; ++i) {
+		save(testDir # 'testfile ' # fileIDs[i] # '.test', fileContents[i]);
+		if (i < SLOW_FILE_COUNT) sleep(2);
+		if ((t = time()) > nt) {
+			nt = t + 1;
+			print((i + 1) # '...');
+		}
+	};
+	print(i # '!');
+	for (i = 0; i < TEST_FILE_COUNT; ++i)
+		assert(> load(testDir # 'testfile ' # fileIDs[i] # '.test') == fileContents[i]);
+	print('Checking that dir() finds all files...');
+	prune(@found);
+	dir(testDir, >{
+		assert(upper($0) == 'TESTFILE2.TXT' || extensionOfPath($0) == '.test', "upper($0) == 'TESTFILE2.TXT' || extensionOfPath($0) == '.test'");
+		set(@found, upper($0));
+	});
+	for (i = 0; i < TEST_FILE_COUNT; ++i)
+		assert(> exists(@found[upper('testfile ' # fileIDs[i] # '.test')]));
+	prune(@found);
+	dir(testDir # 'testfile*.test', >{
+		assert(extensionOfPath($0) == '.test', "extensionOfPath($0) == '.test'");
+		set(@found, upper($0));
+	});
+	for (i = 0; i < TEST_FILE_COUNT; ++i)
+		assert(> exists(@found[upper('testfile ' # fileIDs[i] # '.test')]));
+	prune(@found);
+	count = 0;
+	found = '';
+	dir(chop(testDir, 1), >{ ++count; found = $0; });
+	assert(> count == 1);
+	assert(> right(found, 1) === '/');
+	assert(> upper(removeDirSlash(found)) === upper(filenameOfPath(removeDirSlash(testDir))));
+	print("Checking that sort-order 'name' works...");
+	last = void;
+	dir(testDir # 'testfile*.test', >{
+		assert((last == void || $0 > last), '(last == void || $0 > last)');
+		last = $0;
+	}, 'name', false);
+	last = void;
+	dir(testDir # 'testfile*.test', >{
+		assert((last == void || $0 < last), '(last == void || $0 < last)');
+		last = $0;
+	}, 'name', true);
+	print("Checking that sort-order 'time' works...");
+	i = 0;
+	dir(testDir # 'testfile*.test', >{
+		name = upper($0);
+		assert(> i >= SLOW_FILE_COUNT || name == upper('testfile ' # fileIDs[i] # '.test'));
+		i++;
+	}, 'time', false);
+	assert(i == TEST_FILE_COUNT);
+	dir(testDir # 'testfile*.test', >{
+		name = upper($0);
+		--i;
+		assert(> i >= SLOW_FILE_COUNT || name == upper('testfile ' # fileIDs[i] # '.test'));
+	}, 'time', true);
+	assert(i == 0);
+	print("Checking that sort-order 'size' works...");
+	last = 0;
+	dir(testDir # 'testfile*.test', >{
+		success = wildmatch($0, 'testfile {[0-9a-fA-F]??????}.test', @id);
+		assert(> success);
+		l = length(fileContents[fileIDsReverse[id]]);
+		assert(> l >= last);
+		last = l;
+	}, 'size', false);
+	dir(testDir # 'testfile*.test', >{
+		success = wildmatch($0, 'testfile {[0-9a-fA-F]??????}.test', @id);
+		assert(> success);
+		l = length(fileContents[fileIDsReverse[id]]);
+		assert(> l <= last);
+		last = l;
+	}, 'size', true);
+	print('Erasing all test files...');
+	// for (i = 0; i < TEST_FILE_COUNT; ++i) eraseFile(testDir # 'testfile ' # fileIDs[i] # '.test');
+	eraseFile(testDir # 'testfile *.test');
+	copyFile(testDir # 'testfile2.txt', testDir # 'testfile3.txt');
+	assert(> pathExists(testDir # 'testfile*.txt'));
+	assert(> load(testDir # 'testfile3.txt') == 'abracadabra');
+	try(>makeDir(testDir # 'sub'));
+	assert(> pathExists(testDir # 'sub'));
+	copyFile(testDir # 'testfile2.txt', testDir # 'sub/testfile4.txt');
+	assert(> load(testDir # 'sub/testfile4.txt') == 'abracadabra');
+	moveFile(testDir # 'sub/testfile4.txt', testDir # 'testfile5.txt');
+	assert(> !pathExists(testDir # 'sub/testfile4.txt'));
+	assert(> pathExists(testDir # 'testfile5.txt'));
+	moveFile(testDir # 'testfile5.txt', testDir # 'sub/testfile4.txt');
+	assert(> pathExists(testDir # 'sub/testfile4.txt'));
+	assert(> !pathExists(testDir # 'testfile5.txt'));
+	print('Another 2 seconds delay');
+	sleep(2);
+	save(testDir # 'sub/testfile6.txt', 'hocuspocus');
+	concatFiles(testDir # 'testfile2.txt', testDir # 'sub/testfile6.txt', testDir # 'testfile2.txt'
+			, testDir # 'concatted');
+	assert(> load(testDir # 'concatted') == 'abracadabrahocuspocusabracadabra');
+	eraseFile(testDir # 'concatted');
+// FIX : drop, Windows version not reliable enough
+//	print('Time of testfile2.txt: ' # fileTime(testDir # 'testfile2.txt'));
+//	print('Time of testfile6.txt: ' # fileTime(testDir # 'sub/testfile6.txt'));
+	print('Size of testfile2.txt: ' # fileSize(testDir # 'testfile2.txt'));
+	print('Size of testfile6.txt: ' # fileSize(testDir # 'sub/testfile6.txt'));
+	print("Creating big file");
+	for (s = 'All work and no play makes Jack a dull boy'; length(s) < 2048 * 1024; s #= s) ;
+	save(testDir # 'bigfile.txt', s);
+	assert(> fileSize(testDir # 'bigfile.txt') == length(s));
+	print("File size matches (" # length(s) # " bytes)");
+	s = '';
+	eraseFile(testDir # 'bigfile.txt');
+	assert(> isFileNewer(testDir # 'sub/testfile6.txt', testDir # 'sub/testfile4.txt'));
+	assert(> isFileNewer(testDir # 'sub/testfile6.txt', testDir # 'sub/notexisting.txt'));
+	assert(> !isFileNewer(testDir # 'sub/testfile4.txt', testDir # 'sub/testfile6.txt'));
+	assert(> !isFileNewer(testDir # 'sub/notexisting.txt', testDir # 'sub/testfile4.txt'));
+	eraseFile(testDir # 'testfile2.txt');
+	eraseFile(testDir # 'testfile3.txt');
+	eraseFile(testDir # 'sub/testfile4.txt');
+	eraseFile(testDir # 'sub/testfile6.txt');
+	assert(> !pathExists(testDir # 'testfile2.txt'));
+	assert(> !pathExists(testDir # 'testfile3.txt'));
+	assert(> !pathExists(testDir # 'testfile*.txt'));
+	assert(> !pathExists(testDir # 'sub/testfile4.txt'));
+	removeDir(testDir # 'sub');
+	dir(testDir # 'testfile*.test', >assert(false));
+	removeDir(testDir);
+	assert(> !pathExists(testDir));
+	try(> { removeDir(testDir); assert(false, "expected removeDir to fail"); });
+	print('OK!');
+}();

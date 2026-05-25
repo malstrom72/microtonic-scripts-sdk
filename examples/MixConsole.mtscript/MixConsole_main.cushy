@@ -1,0 +1,242 @@
+@include common.makaron
+
+@define script=mixConsole
+@define uiHue=0.7
+@define backgroundColor=hsv(@uiHue,0.1,1.0)
+@define frameColor=hsv(@uiHue,0.4,0.5)
+@define fillColor=hsv(@uiHue,0.2,0.9)
+@define strokeColor=hsv(@uiHue,0.5,0.5)
+@define slitColor=hsv(@uiHue,0.3,0.3)
+@begin captionFont(size) { ivgfont: "sans-serif", size: @size, color: "hsv(@uiHue,0.5,0.3)" } @end
+@define stripWidth=50
+
+@begin knob(x, y, title, variable, from, to, hintPrefix, hintSuffix, extra)
+	{
+		//edit: { label: "@title", color: "black" }
+		type: "knob"
+		bounds: { @x, @y, 30, 30 }
+		variable: @script.@variable
+		range: { @from, @to }
+		default: 0.5
+		cap: {
+			size: 28
+			color: "@fillColor"
+			frame: { color: "@strokeColor", stroke: 1 }
+			dial: { color: "@strokeColor", stroke: 2, dash: 8, gap: 8, dashOffset: 13 }
+		}
+		hint: "@hintPrefix = [var]@script.@variable.human[/var]@hintSuffix"
+		@extra
+	}
+	{
+		type: "click"
+		bounds: { @x, @y, 30, 30 }
+		mask: "context"
+		action: "popup"
+		params: { items: {
+			{ "Enter Exact Value...", "edit", { text: "Enter exact value for @hintPrefix", variable: @script.@variable.human } }
+			{ "Reset to Default", "set", { @script.@variable, 0.5 } }
+		} }
+	}
+@end
+
+@begin button(x, y, caption, action, params, hint, extra)
+	{
+		type: "button"
+		bounds: { @x, @y, 18, 15 }
+		rounded: { 2, 2 }
+		action: "@script.@action"
+	@if (params != @<@>)
+		params: @params
+	@endif
+		hint: "@hint"
+		caption: { text: @caption, offset: { 0, -1 } }
+		mask: "press"
+		standard: { frame: "@strokeColor", font: @captionFont(14) }
+		checked: { fill: "@fillColor" }
+		@extra
+	}
+@end
+
+transitions: {
+	open: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+	close: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+}
+
+autoexecs: {
+	{
+		action: "set"
+		params: { @script.windowZOrder, 0 }
+		onReload: false
+	}
+	{
+		action: "set"
+		params: { "@script.stripWidth", @stripWidth }
+	}
+	{
+		action: "@script.checkSolo"
+		onChanged: {
+			@script.mutes.0, @script.mutes.1, @script.mutes.2, @script.mutes.3,
+			@script.mutes.4, @script.mutes.5, @script.mutes.6, @script.mutes.7
+		}
+	}
+	{
+		action: "@script.updateVisuals"
+		delay: 0
+		repeat: 1/50
+	}
+}
+
+@begin channelStrip(channel)
+	{
+		type: "group"
+		bounds: { @channel * @stripWidth, $, @stripWidth, $ }
+		views: {
+			{
+				type: "rectangle"
+				bounds: { $, -10, $, $+20 }
+				fill: "@backgroundColor"
+				frame: { color: "hsv(@uiHue,0.4,0.5,0.1)" }
+			}
+			@knob(10, 0, eqGain, eqGains.@channel, 0, 1, eqGain,,snap:{ value: 0.5 })
+			@knob(10, 35, eqFreq, eqFreqs.@channel, 0, 1, eqFreq,,)
+			@knob(10, 70, pan, pans.@channel, 0, 1, pan,,snap:{ value: 0.5 })
+			{
+				type: "slider"
+				bounds: { 15, 100, 20, 140 }
+				hint: "Level = [var]@script.levels.@channel.human[/var]"
+				variable: @script.levels.@channel
+				default: 0.8365888595581055
+				cap: {
+					size: { 16, 24 }
+					rounded: 30
+					color: "@fillColor"
+					frame: { color: "@strokeColor", stroke: 1 }
+					image: { ivgCode: "bounds 0,0,16,16; pen hsv(@uiHue,0.3,0.8); path svg:M3,3h10M3,8h10M3,13h10" }
+				}
+				slit: {
+					start: { 10, 120 }
+					end: { 10, 20 }
+					color: "@slitColor"
+					thickness: 1
+				}
+				snap: true
+			}
+			{
+				type: "click"
+				bounds: { 15, 100, 20, 140 }
+				mask: "context"
+				action: "popup"
+				params: { items: {
+					{ "Enter Exact Value...", "edit", { text: "Enter exact value for level", variable: @script.levels.@channel.human } }
+					{ "Reset to Default", "set", { @script.levels.@channel, 0.8365888595581055 } }
+				} }
+			}
+			@button(5, 240, "", switch, { channel: @channel, param: 'NStereo' }, @<Stereo #[var]@script.channelLabels.@channel[/var]@>, )
+			{ type: "vector", bounds: { 5+2, 240+2, 14, 11 }, code: "pen hsv(@uiHue,0.45,0.55); path svg:M2,5.5a3,3,0,1,0,6,0a3,3,0,1,0,-6,0M6,5.5a3,3,0,1,0,6,0a3,3,0,1,0,-6,0" }
+			@button(27, 240, "", switch, { channel: @channel, param: 'Choke' }, @<Choke #[var]@script.channelLabels.@channel[/var]@>, )
+			{ type: "vector", bounds: { 27+2, 240+2, 14, 11 }, code: "pen hsv(@uiHue,0.45,0.55); fill hsv(@uiHue,0.45,0.55); path svg:M5.5,5.5a1.5,1.5,0,1,0,3,0a1.5,1.5,0,1,0,-3,0ZM2.5,1.4v8M11.5,1.4v8M4.2,3.1L9.7,7.8" }
+			@button(5, 260, "m", mute, @channel, @<Mute #[var]@script.channelLabels.@channel[/var]@>, )
+			@button(27, 260, "s", solo, @channel, @<Solo #[var]@script.channelLabels.@channel[/var]@>, )
+			{
+				type: "button"
+				bounds: { 10, h-65, w-20, 30 }
+				rounded: { 4, 4 }
+				actions: {
+					{ "press", "@script.triggerChannel", { @channel, 64 } }
+					{ "press+alt+mac", "@script.triggerChannel", { @channel, 127 } }
+					{ "press+control+windows", "@script.triggerChannel", { @channel, 127 } }
+				}
+				caption: "[var]@script.channelLabels.@channel[/var]"
+				standard: { frame: "@strokeColor", font: { ivgfont: "sans-serif", size: 26, color: "hsv(@uiHue,0.5,0.3)" } }
+				checked: { fill: "@fillColor" }
+			}
+			{
+				type: "rectangle"
+				bounds: { 10, h-32, w-20, 7 }
+				frame: { color: "hsv(@uiHue,0.4,0.5,0.1)", stroke: 1 }
+			}
+			{
+				type: "vector"
+				bounds: { 10, h-32, w-20, 7 }
+				guiVariables: true
+				code: "wipe hsv(@uiHue,0.4,0.5,$@script.triggerIndicators.@channel)"
+			}
+			{
+				type: "dragArea"
+				bounds: { 0, h-25, @stripWidth, 18 }
+				cursor: "sizeWE"
+				clamp: "full"
+				positionVariable: @script.channelDrags.@channel
+				bringToFront: true
+			}
+			{
+				type: "vector"
+				bounds: { (@stripWidth-12)/2, h-22, 20, 15 }
+				code: "pen hsv(@uiHue,0.2,0.9); path svg:M1,1v12M6,1v12M11,1v12"
+			}
+			{
+				type: "click"
+				action: "@script.selectChannel"
+				params: @channel
+				thru: true
+			}
+		}
+	}
+@end
+
+translations: {
+	"@script.undoLabel.NStereo": "Noise Stereo"
+	"@script.undoLabel.Choke": "Choke"
+	"@script.undoLabel.Level": "Level"
+	"@script.undoLabel.EQGain": "EQ Gain"
+	"@script.undoLabel.EQFreq": "EQ Frequency"
+	"@script.undoLabel.Pan": "Pan"
+	"@script.undoLabel.Mute": "Mute Channel"
+	"@script.undoLabel.Solo": "Solo Channel"
+}
+
+@window(40, 40, 460, 374, "MixConsole", @backgroundColor, @frameColor, white, @script, @<
+	{
+		type: "group"
+		bounds: { 55, 5, (8 * @stripWidth), $-5 }
+		views: {
+			@channelStrip(0)
+			@channelStrip(1)
+			@channelStrip(2)
+			@channelStrip(3)
+			@channelStrip(4)
+			@channelStrip(5)
+			@channelStrip(6)
+			@channelStrip(7)
+		}
+	}
+	{
+		type: "caption"
+		bounds: { 0, 11, 50, 16 }
+		font: @captionFont(14)
+		text: "eq gain"
+		align: "middle right"
+	}
+	{
+		type: "caption"
+		bounds: { 0, 46, 50, 16 }
+		font: @captionFont(14)
+		text: "eq freq"
+		align: "middle right"
+	}
+	{
+		type: "caption"
+		bounds: { 0, 81, 50, 16 }
+		font: @captionFont(14)
+		text: "pan"
+		align: "middle right"
+	}
+@>)

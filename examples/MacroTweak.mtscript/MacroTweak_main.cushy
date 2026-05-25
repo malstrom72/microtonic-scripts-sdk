@@ -1,0 +1,106 @@
+@include common.makaron
+
+@define script=macroTweak
+@define uiHue=0.45
+@define backgroundColor=hsv(@uiHue,0.07,1.0)
+@define frameColor=hsv(@uiHue,0.4,0.4)
+@define fillColor=hsv(@uiHue,0.2,0.8)
+@define downColor=hsv(@uiHue,0.4,0.5)
+@define strokeColor=hsv(@uiHue,0.5,0.4)
+@define captionFont={ ivgfont: "sans-serif", size: 14, color: "hsv(@uiHue,0.5,0.3)" }
+
+@begin knob(x, y, name, variable, hintSuffix, extra)
+	{
+		type: "knob"
+		bounds: { @x, @y, 60, 40 }
+		variable: @script.@variable
+		range: { -1, 1 }
+		cap: {
+			size: 40
+			color: "@fillColor"
+			frame: { color: "@strokeColor", stroke: 1 }
+			dial: { color: "@strokeColor", stroke: 2, dash: 12, gap: 20, dashOffset: 28 }
+		}
+		hint: "@name = [var]@script.@variable.human[/var]@hintSuffix"
+		@extra
+	}
+	{
+		type: "caption"
+		bounds: { @x, @y + 45, 60, 15 }
+		text: '@name'
+		font: @captionFont
+		align: "center"
+	}
+	{
+		type: "click"
+		bounds: { @x, @y, 60, 40 }
+		mask: "context"
+		action: "popup"
+		params: { items: {
+			{ "Enter Exact Value...", "edit", { text: "Enter exact value for @name", variable: @script.@variable.human } }
+		} }
+	}
+@end
+
+@begin channelsChoice(layout, setting)
+	{
+		@layout
+		type: "button"
+		action: "set"
+		params: { @script.channelsChoice, @setting }
+		standard: { frame: "@strokeColor", font: { ivgfont: "sans-serif", size: 12.5, color: "hsv(@uiHue,0.5,0.3)" }, fill: "@backgroundColor" }
+		down: { fill: "@downColor" }
+		checked: { fill: "@fillColor" }
+		checkedDown: { fill: "@downColor" }
+	}
+@end
+
+transitions: {
+	open: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+	close: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+}
+
+autoexecs: {
+	{
+		action: "set"
+		params: { @script.windowZOrder, 0 }
+		onReload: false
+	}
+	{
+		onChanged: @script.identity
+		action: "@script.checkAndReset"
+	}
+}
+
+@window(45, 105, 224, 154, "MacroTweak", @backgroundColor, @frameColor, white, @script, @<
+	@knob(10, 10, pitch, pitch, @< semis@>, @<
+		transmission: {
+			vertical: 240,
+			horizontal: 240,
+			resolution: 5,
+			fine: 1
+		}
+	@>)
+	@knob(80, 10, time, time, x, )
+	@knob(150, 10, dynamics, dynamics, %, )
+
+	@channelsChoice(@< bounds: {  10, 84, 70, 20 }, rounded: { 2, 4 }, caption: { offset: { -2, 0 }, text: "SELECTED" }	@>, "selected")
+	@channelsChoice(@< bounds: { 140, 84, 70, 20 }, rounded: { 2, 4 }, caption: { offset: { 2, 0 }, text: "ALL" }	@>, "all")
+	@channelsChoice(@< bounds: {  75, 84, 70, 20 }, rounded: { 0, 0 }, caption: { offset: { 0, 0 }, text: "UNMUTED" }	@>, "unmuted")	
+	{
+		type: "caption"
+		bounds: { (w-60)/2, 84 + 25, 60, 15 }
+		text: 'channels'
+		font: @captionFont
+		align: "center"
+	}
+@>)
+

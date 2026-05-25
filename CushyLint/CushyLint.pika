@@ -29,10 +29,10 @@ include('include/objects.pika');
 
 if (PLATFORM === "UNIX") {
 	MAKARON_EXE_PATH = ::run.root # 'build/MakaronCmd';
-	BUILD_MAKARON_PATH = ::run.root # 'support/buildMakaron.sh';
+	BUILD_MAKARON_PATH = ::run.root # 'support/bootstrapMakaron.sh';
 } else {
 	MAKARON_EXE_PATH = ::run.root # 'build\MakaronCmd.exe';
-	BUILD_MAKARON_PATH = ::run.root # 'support\buildMakaron.cmd';
+	BUILD_MAKARON_PATH = ::run.root # 'support\bootstrapMakaron.cmd';
 };
 
 calcLineAndColumn = function {
@@ -714,9 +714,7 @@ if ($n < 2) {
 	pwd = currentDir();
 	::run.root = fullPath(pwd, ::run.root);
 
-	if (!pathExists(MAKARON_EXE_PATH)) {
-		shell(quotePath(BUILD_MAKARON_PATH));
-	};
+	shell(quotePath(BUILD_MAKARON_PATH));
 
 	::inputPath = fullPath(pwd, $1);
 	if (appendDirSlash(::inputPath) !== ::inputPath) {

@@ -1,3 +1,5 @@
 #!/bin/bash
+set -e
 cd "$(dirname "$0")"
+./support/bootstrapPikaCmd.sh
 ./build/PikaCmd ./CushyLint.pika "$@"

@@ -668,6 +668,7 @@ See also: [readClipboard](#readclipboard)
                 fills:      array                       // [ boolean * 16 ]
             } * 8
         ]
+        chained?:           boolean                     // this field only exists for the first 11 elements in `patterns` of a `preset` object
     }
 
 ### preset object

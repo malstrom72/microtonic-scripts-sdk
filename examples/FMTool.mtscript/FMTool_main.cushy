@@ -1,0 +1,157 @@
+@include common.makaron
+
+@define script=fmTool
+@define uiHue=0.9
+@define backgroundColor=hsv(@uiHue,0.1,1.0)
+@define frameColor=hsv(@uiHue,0.4,0.5)
+@define fillColor=hsv(@uiHue,0.2,0.9)
+@define downColor=hsv(@uiHue,0.2,0.6)
+@define strokeColor=hsv(@uiHue,0.5,0.5)
+@define captionFont={ ivgfont: "sans-serif", size: 14, color: "hsv(@uiHue,0.5,0.3)" }
+
+@begin knob(x, y, title, variable, from, to, hintPrefix, hintSuffix, extra)
+	{
+		type: "knob"
+		bounds: { @x, @y, 60, 40 }
+		variable: @script.@variable
+		range: { @from, @to }
+		cap: {
+			size: 35
+			color: "@fillColor"
+			frame: { color: "@strokeColor", stroke: 1 }
+			dial: { color: "@strokeColor", stroke: 2, dash: 11, gap: 20, dashOffset: 28 }
+		}
+		hint: "@hintPrefix = [var]@script.@variable.human[/var]@hintSuffix"
+		@extra
+	}
+	{
+		type: "caption"
+		bounds: { @x, @y + 40, 60, 15 }
+		text: '@title'
+		font: @captionFont
+		align: "center"
+	}
+	{
+		type: "click"
+		bounds: { @x, @y, 60, 40 }
+		mask: "context"
+		action: "popup"
+		params: { items: {
+			{ "Enter Exact Value...", "edit", { text: "Enter exact value for @hintPrefix", variable: @script.@variable } }
+			{ "Reset to Default", "set", { @script.@variable, 0 } }
+		} }
+	}
+@end
+
+@begin checkbox(x, y, title, action, hint, extra)
+	{
+		type: "button"
+		rounded: { 3, 3 }
+		bounds: { @x + 20, @y + 10, 20, 20 }
+		action: "@script.@action"
+		hint: "@hint"
+		mask: "press"
+		standard: { frame: "@strokeColor" }
+		@extra
+	}
+	{
+		type: "paged"
+		index: @script.@action.checked
+		pages: {
+			"true": {
+				{
+					type: "rectangle"
+					rounded: { 3, 3 }
+					bounds: { @x + 22, @y + 12, 16, 16 }
+					fill: "hsv(@uiHue,0.4,0.7)"
+				}
+			}
+		}
+	}
+	{
+		type: "caption"
+		bounds: { @x, @y + 40, 60, 15 }
+		align: "middle center"
+		font: @captionFont
+		text: "@title"
+	}
+@end
+
+transitions: {
+	open: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+	close: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+}
+
+autoexecs: {
+	{
+		action: "set"
+		params: { @script.windowZOrder, 0 }
+		onReload: false
+	}
+	{
+		action: "@script.reloadPatch",
+		onChanged: {
+			@script.sourceOscFreq
+			@script.sourceModAmount
+			@script.sourceModRate
+			@script.sourceModVel
+			@script.sourceModMode
+		}
+	}
+}
+
+@window(240, 355, 224, 190, "FMTool", @backgroundColor, @frameColor, white, @script, @<
+	@knob(5, 10, octave, pitchOct, -5, 5, octave,,)
+	@knob(55, 10, semis, pitchSemi, 0, 11, semitones,,)
+	@knob(105, 10, cents, pitchCent, -50, 50, cents,, snap: true)
+	@knob(155, 10, un-acc, unaccentedTransposition, -24, 0, @<unaccented transposition@>, @< semitones@>, @<
+		transmission: {
+			vertical: 240,
+			horizontal: 240,
+			resolution: 10,
+			fine: 1
+		}
+	@>)
+
+	@knob(5, 70, index, index, 0, 4, fm index,,)
+	@knob(55, 70, ratio, ratioCoarse, -8, 8, fm ratio coarse,,)
+	@knob(105, 70, fine, ratioFine, -0.499, 0.499, fm ratio fine,,)
+	@checkbox(155, 70, invert, toggleIndexPolarity, Inverse FM Index,)
+	{
+		type: "group"
+		visibility: @script.clipWarning
+		bounds: { 15, 130, w-30, 25 }
+		views: {
+			{
+				type: "button"
+				bounds: { 0, 0, w-1, h-1 }
+				action: "@script.reloadPatch"
+				hint: "Click to adjust settings"
+				mask: "click"
+				rounded: { 8, 8 }
+				standard: { fill: "hsv(@uiHue,0.05,1.0)", frame: "@strokeColor" }
+				down: { fill: "@fillColor" }
+				cursor: "hand"
+			}
+			{
+				type: "vector"
+				bounds: { 6, 4, 25, 23 }
+				code: "scale 0.8; mask [ pen #ff caps:round width:2.5; path svg:M13,16l0,0M13,12L13,7 ] inverted:yes; color=#C01010; fill $color; pen $color width:3 joints:curve; star 13,13,3,10"
+			}
+			{
+				bounds: { 35, 0, 142, h },
+				type: "caption",
+				text: "Settings out of range"
+				font: { ivgfont: "sans-serif", size: 16, color: 0xFFC01010 }
+			}
+		}
+	}
+@>)

@@ -1,0 +1,34 @@
+format IVG-1 requires:IMPD-1
+bounds 0,0,100,100
+offset 50,50
+scale 1.0,1.0
+pen hsv(0.6,0.4,0.5)
+n=$euclideanBeat.stepCount
+d={360/$n}
+context [
+    mask [ mask [ ellipse 0,0,40 ] inverted:yes; ellipse 0,0,48 ]
+    // pen width:  16 steps = 0.3 -> 192 steps = 0.05
+    pen width:{0.3-($n-16)*0.25/176}
+    t={acos(-1)/180*$d}
+    p=[M0,0L0,-100L{sin($t)*100},{cos($t)*-100}L0,0]
+    if {$n==2} p=[M0,100l0,-200l100,0l0,200z]
+    if {$n==1} p=[M-100,-100l200,0l0,200l-200,0z]
+    colors.0=none
+    // trig color: 16 steps = 0.3 -> 192 steps = 0.5
+    x={($n<16?0:$n-16)*0.2/176}
+    colors.1=hsv(0.6,{0.3+$x},1.0)
+    // acc color:  16 steps = 0.6 -> 192 steps = 0.8
+    colors.2=hsv(0.6,{0.6+$x},1.0)
+    rotate {$d/-2}
+    for c in:$euclideanBeat.stepColors [
+        fill {$colors.$c}
+        path svg:$p
+        rotate {$d}
+    ]
+]
+fill none
+ellipse 0,0,48
+ellipse 0,0,40
+fill hsv(0.6,0.6,0.5)
+rotate {$d * $euclideanBeat.triggers.rotation.value}
+ellipse 0,-44,1,1

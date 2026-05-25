@@ -1,0 +1,22 @@
+format IVG-1 requires:IMPD-1
+bounds 0,0,100,100
+offset 50,50
+scale 1.0,1.0
+pp=$euclideanBeat.playPosition
+if {$pp>=0} [
+    context [
+        mask [ mask [ ellipse 0,0,40 ] inverted:yes; ellipse 0,0,48 ]
+        n=$euclideanBeat.stepCount
+        d={360/$n}
+        t={acos(-1)/180*$d}
+        p=[M0,0L0,-100L{sin($t)*100},{cos($t)*-100}L0,0]
+        if {$n==2} p=[M0,100l0,-200l100,0l0,200z]
+        if {$n==1} p=[M-100,-100l200,0l0,200l-200,0z]
+        rotate {$d*($pp-0.5)}
+        // fill sat:   16 steps 1.0  -> 192 steps 0.7
+        // fill alpha: 16 steps 0.25 -> 192 steps 0.5
+        x={($n<16?0:$n-16)/176}
+        fill hsv(0.33,1.0,{1-$x*0.3},{0.25+$x*0.25})
+        path svg:$p
+    ]
+]

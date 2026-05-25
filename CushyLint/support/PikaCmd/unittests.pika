@@ -1,0 +1,611 @@
+/*
+	unittests.pika v0.97
+
+	PikaScript is released under the "New Simplified BSD License". http://www.opensource.org/licenses/bsd-license.php
+	
+	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	All rights reserved.
+*/
+
+include('stdlib.pika');
+include('help.pika');
+
+defaults(@MORE_TESTS, false);
+report = coalesce(@report, print);
+test = function {
+//////////////////////////
+
+report("TESTING PARSER");
+
+	  { a   =   /* inline comment here /* // */ 1   ;
+     b=   2;c=3;//end of line comment here
+    ;{d=4} ; ;;  ;truelse=true;falsecond=truelse
+ };
+
+//////////////////////////
+
+report("TESTING ASSERT");
+
+assert(a == 1);
+assert(> b == 2);
+assert(b == 2);
+assert(>c == 3);
+assert(d == 4);
+if (try(>assert(a == 0)) == void) throw("Broken assert");
+if (try(>assert(> b == 1)) == void) throw("Broken assert");
+
+//////////////////////////
+
+report("TESTING VOIDS");
+
+assert(> classify(void) === "void" );
+assert(> { } === void );
+assert(> { 1; { } } !== void ); /* { } will not affect the last result (1) here. */
+assert(> { 1; { } } == 1 );	/* { } will not affect the last result (1) here. */
+assert(> { 1; { 2 } } == 2 );
+assert(> void === void );
+
+//////////////////////////
+
+report("TESTING BOOLEANS");
+assert(> !false );
+b = false;
+assert(> classify(b) === "boolean" );
+assert(> !b );
+assert(> b || true );
+c = true;
+assert(> b || c );
+assert(> !(b && c) );
+assert(> b || false || c );
+assert(> c && true && !b );
+d = false;
+assert(> !(b && (d = true)) );
+assert(> !d );
+assert(> c || (d = true) );
+assert(> !d );
+
+//////////////////////////
+
+report("TESTING NUMBERS");
+
+n = 0;
+assert(> classify(n) === "number" );
+assert(> n == 0 );
+assert(> n + 1 == 1 );
+assert(> ++n == 1 );
+assert(> n++ == 1 );
+assert(> n == 2 );
+assert(> n-- == 2 );
+assert(> n == 1 );
+assert(> -n == -1 );
+assert(> --n == 0 );
+assert(> n == 0 );
+assert(> (n += 10) == 10 );
+assert(> (n -= 10) == 0 );
+assert(> n == 0.0 );
+assert(> (n += 1234.5678) == "1234.5678" );
+assert(> (n - 1001.1001) == "233.4677" );
+assert(> n * 2 == "2469.1356" );
+assert(> (n *= 2) == "2469.1356" );
+assert(> n / 2 == "1234.5678" );
+assert(> (n /= 2) == "1234.5678" );
+assert(> (n %= 358) == "160.5678" );
+assert(> (n % 123.123) == "37.4448" );
+assert(> 0xFF == 255 );
+/* FIX : must decide how this should work 
+assert(> 0xFFFFFFFFFFFFFFFF == 0xFFFFFFFF );
+if (0x100000000 == 0xFFFFFFFF) {
+	assert(> 0x80000000 == (-0x80000000 & -1) );
+} else {
+	assert(> 0x8000000000000000 == -0x8000000000000000 );
+};
+*/
+compose(@tests, 0.0, "0", 0.000000000000000000000001, "1e-24", 1.000000000000000000000001, "1"
+		, 1.0e-400, "0", 1.0e-250, "1e-250", 1.0e+250, "1e+250", 0.09999999999999995, "0.1", 999999999999999, "1e+15"
+		, 0.99999999999999, "0.99999999999999", 9.99999999999995, "10", 0.9999999999999999999999999999999, "1"
+		, 1.2345678901234, "1.2345678901234", 1.23456789012344, "1.2345678901234", 1.23456789012346, "1.2345678901235"
+		, 1.2345678901234e3, "1234.5678901234", 1.2345678901234e-3, "0.0012345678901234"
+		, 1.23456789012346e10, "12345678901.235", 1.234567890123444e100, "1.234567890123e+100"
+		, 1.234567890123464e-10, "1.2345678901235e-10", 1.234567890123444e-100, "1.234567890123e-100");
+for (i = 0; i < tests.n; i += 2) {
+	assert(> tests[i + 0] == tests[i + 1] , tests[i + 0] # ' == ' # tests[i + 1]);
+	assert(> -tests[i + 0] == "-" # tests[i + 1] );
+	assert(> !(tests[i + 0] < tests[i + 0]) );
+	assert(> +tests[i + 0] == tests[i + 0] );
+	assert(> +tests[i + 1] == tests[i + 1] );
+};
+assert(> precision(1, 5) === "1" );
+assert(> precision(-1, 5) === "-1" );
+assert(> precision(0.009, 1) === "0.009" );
+assert(> precision(0.0099, 1) === "0.01" );
+assert(> precision(0.1, 1) === "0.1" );
+assert(> precision(1.1, 1) === "1" );
+assert(> precision(10.1, 1) === "1e+1" );
+assert(> precision(12345, 5) === "12345" );
+assert(> precision(123456, 5) === "1.2346e+5" );
+assert(> precision(0.0012345, 5) === "0.0012345" );
+assert(> precision(0.00123456, 5) === "0.0012346" );
+assert(> precision(0.000000123456, 5) === "1.2346e-7" );
+
+assert(> +'0' == 0 );
+assert(> +'0.0' == 0 );
+assert(> +'0e0' == 0 );
+assert(> +'0.0e0' == 0 );
+assert(> +'1.1e+1' == 11 );
+assert(> +'-1.1e-1' == -0.11 );
+
+assert(> try(> +'.') !== void );
+assert(> try(> +'-') !== void );
+assert(> try(> +'-.') !== void );
+assert(> try(> +'-X') !== void );
+assert(> try(> +'0.') !== void );
+assert(> try(> +'.0') !== void );
+assert(> try(> +'-.0') !== void );
+assert(> try(> +'00') !== void );
+assert(> try(> +'01') !== void );
+assert(> try(> +'1.') !== void );
+assert(> try(> +'.1') !== void );
+assert(> try(> +'.X') !== void );
+assert(> try(> +'1.X') !== void );
+assert(> try(> +'-1.X') !== void );
+assert(> try(> +'e') !== void );
+assert(> try(> +'-e') !== void );
+assert(> try(> +'e0') !== void );
+assert(> try(> +'-e0') !== void );
+assert(> try(> +'e+0') !== void );
+assert(> try(> +'e-0') !== void );
+assert(> try(> +'.e+0') !== void );
+assert(> try(> +'1.e+0') !== void );
+assert(> try(> +'.1e+0') !== void );
+assert(> try(> +'1.1e') !== void );
+assert(> try(> +'1.1e+') !== void );
+assert(> try(> +'1.1e-') !== void );
+assert(> try(> +'1.1eX') !== void );
+
+//////////////////////////
+
+report("TESTING STRINGS");
+
+s = "abcd";
+assert(> classify(s) === 'string' );
+s = '';
+assert(> classify(s) === 'void' );
+assert(> s === '' ); assert(> (s #= "abcd") === "abcd" ); assert(> ( s = s # "ghij" ) === "abcdghij" );
+assert(> s{:2} === "ab" ); assert(> s{2:2} === "cd" ); assert(> s{4:} === "ghij" );
+s = '"';
+assert(>s === '"'); assert(> s === "\"" );
+s = 'xxx"xxx';
+t = "xxx\"xxx";
+assert(> s === t );
+s = 'xxx"xxx' # char(10);
+t = "xxx\"xxx\n";
+assert(> s === t );
+s = "\10\11\12\13\14\15\x10\x11\x12\x13\x14\u0015";
+for (i = 0; i < length(s); ++i) assert(> ordinal(s{i}) == 10 + i );
+
+assert(> '0' == '-0'); assert(> '0' !== '-0');
+assert(> '0' == '0.0'); assert(> '0' !== '0.0');
+assert(> '1' == '1e0'); assert(> '1' !== '1e0');
+assert(> '10' == '1e1'); assert(> '10' !== '1e1');
+assert(> '0.1' == '1e-1'); assert(> '0.1' !== '1e-1');
+assert(> '-1' == '-1e0'); assert(> '-1' !== '-1e0');
+assert(> '-10' == '-1e1'); assert(> '-10' !== '-1e1');
+assert(> '-0.1' == '-1e-1'); assert(> '-0.1' !== '-1e-1');
+assert(> '01' != '1'); assert(> '01' !== '1');
+assert(> '01' == '01'); assert(> '01' === '01' );
+assert(> '0' < 'A' );
+assert(> 'A' < 'AA' );
+assert(> 'AA' < 'AB' );
+assert(> 'A' < 'a' );
+assert(> 'a' < 'aa' );
+assert(> 'aa' < 'ab' );
+assert(> '0' < ' ' );
+assert(> '0' < '00' );
+assert(> ' ' < '00' );
+assert(> '0' < '1' );
+assert(> '0.1' < '1' );
+assert(> '1' < '10' );
+assert(> '2' < '10' );
+assert(> '2e1' < '1e10' );
+assert(> '-2' < '0' );
+assert(> '-20' < '10' );
+
+//////////////////////////
+
+report("TESTING FLOW CONTROL");
+
+// FIX : move parse testing up
+// Just testing parsing
+dummy = function { for(;;) };
+dummy = function { for(;;){} };
+dummy = function { for (;;) { }; };
+dummy = function {  for  ( ; ; )  ;  };
+dummy = function { if (false) { }; };
+dummy = function {  if  ( false )  { } ; };
+dummy = function { if(false) 1 };
+dummy = function { if (false)  1 ; };
+dummy = function {  if  ( false )  1  ; };
+dummy = function { if(false){}else 1 };
+dummy = function { if (false) { } else 1; };
+dummy = function {  if  ( false )  { } else 1; };
+dummy = function { if(false) 1 else{} };
+dummy = function { if (false) 1 else { }; };
+dummy = function {  if  ( false )  1  else  {  } ; };
+dummy = function { if(false) 1 else 2 };
+dummy = function { if (false) 1 else 2; };
+dummy = function {  if  ( false )  1  else  2 ; };
+i = 0;
+for ( ; i < 10 ; ) ++ i ;
+assert(> i == 10 );
+for ( { j = 0 ; i = 0 ; } ; i < 10 ; ) { ++ i ; j += i ; };
+assert(> i == 10 );
+assert(> j == 55 );
+for ( ; false ; ) ;
+for(;false;) ++i;
+assert(>i == 10 );
+assert(>(3+{0; if (false) 5}) == 3);
+assert(>('a'#(if(false)'b')#(if(true)'c')#if(false)'d'else'e') === 'ace');
+assert(>({3; for(i=0;i<10;++i)'g'}) === 'g');
+assert(>({3; for(i=0;i<10;++i)}) == 3);
+assert(>({3; for(i=5;i<-1;++i)'g'}) == 3);
+assert(>({3; for(;false;) 7}) == 3);
+
+//////////////////////////
+
+report("TESTING CLOSURES");
+
+::gv = lv = 789;
+::gf = function { lv = 123; assert(> lv == 123); assert(> ^lv == 789); };
+lf = function { lv = 456; assert(> lv == 456); assert(> ^lv == 789); };
+gf();
+lf();
+::gf = function {
+	lf = function { lv = 1111; assert(> lv == 1111); assert(> ^lv == 2222); assert(> ^^lv == 789); };
+	lv = 2222;
+	lf();
+	assert(> lv == 2222);
+};
+gf();
+::gf = function {
+	lf = function { [$0] = [$1]; };
+	lb = 999;
+	lf(@la, @lb); assert(> la == 999);
+	lf(@la, @^lv); assert(> la == 789);
+	lf(@::gb, @::gv); assert(> gb == 789);
+	lf($0, $1);
+};
+lb = 10101;
+gf(@ga, @lb);
+assert(> ga == 10101);
+::gf = function { lv = 'yo'; $0($1, @lv) };
+gf(>lv=$0, 'yeah');
+assert(> lv === 'yeah');
+gf(>lv=[$1], 'yeah');
+assert(> lv === 'yo');
+::gf = function { >print("Not valid no") };
+::gv = gf();
+assert(> try(> gv()) !== void);
+lf = function { x = 1234; lambda => ::gv = x; lambda(); assert(> x == 1234); };
+lf();
+
+//////////////////////////
+
+report("TESTING OPERATORS");
+
+assert(> { a = b = 3; (a == 3 && b == 3 && a == b); });
+assert(> true || false);
+assert(> false || true);
+assert(> true || true);
+assert(> !(false || false));
+assert(> !(true && false));
+assert(> !(false && true));
+assert(> true && true);
+assert(> !(false && false));
+assert(> (0x8000 | 0x800 | 0x80 | 0x8) == 0x8888);
+assert(> (0x8000 | 0x8800 | 0x880 | 0x88 | 0x8) == 0x8888);
+assert(> (0x8000 ^ 0x8800 ^ 0x880 ^ 0x88 ^ 0x8) == 0);
+assert(> (0x8000 & 0x800 & 0x80 & 0x8) == 0);
+assert(> (0x8000 & 0x8800 & 0x880 & 0x88 & 0x8) == 0);
+assert(> (0x8888 & 0x0880) == 0x0880);
+assert(> 3 != 2);
+assert(> '' != 'x');
+assert(> 3 !== '3.0');
+assert(> 3 == '3.0');
+assert(> 3 === 3);
+assert(> 4 > 3);
+assert(> !(3 > 3));
+assert(> 4 >= 3);
+assert(> 3 >= 3);
+assert(> 3 <= 3);
+assert(> 2 <= 3);
+assert(> !(3 < 3));
+assert(> 2 < 3);
+assert(> 'd' > 3);
+assert(> !(3 > 3));
+assert(> 'd' >= 'c');
+assert(> 'c' >= 'c');
+assert(> 'c' <= 'c');
+assert(> 'b' <= 'c');
+assert(> !('c' < 'c'));
+assert(> 'b' < 'c');
+assert(> 'aaaa' >= 'aaa');
+assert(> 'aaa' >= 'aaa');
+assert(> 'aaa' <= 'aaa');
+assert(> 'aa' <= 'aaa');
+assert(> !('aaa' < 'aaa'));
+assert(> 'aa' < 'aaa');
+assert(> 3000 < void);
+assert(> 3000 < '!');
+assert(> 3000 < '0300');
+assert(> !(3000 < '300'));
+assert(> void # void # 'xy' # 'zzy' # void === 'xyzzy');
+assert(> (1 << 8) == 256);
+assert(> (256 >> 8) == 1);
+assert(> (0xFFFFFFFF >> 16) == 0xFFFF);
+assert(> 101 - 99 == 2);
+assert(> 99 - 101 == -2);
+assert(> 101 + 99 == 200);
+assert(> 99 + 101 == 200);
+assert(> 101 + -99 == 2);
+assert(> 101 % 99 == 2);
+assert(> 101 / 99 * 99 == 101);
+assert(> (101 / 99) * 99 == 101);
+assert(> 101 * 99 == 9999);
+assert(> 101 * 99 / 101 == 99);
+assert(> (107 \ 31) * 31 + (107 % 31) == 107);
+assert(> (-107 \ 31) * 31 + (-107 % 31) == -107);
+assert(> (107 \ -31) * -31 + (107 % -31) == 107);
+assert(> (-107 \ -31) * -31 + (-107 % -31) == -107);
+assert(> { b = 3; --b } == 2);
+assert(> { b = 3; ++b } == 4);
+assert(> -(3) == -3);
+assert(> +(3) == +3);
+assert(> (~1 & 0xFFFFFFFF) == 0xFFFFFFFE);
+assert(> (~0xAAAAAAAA & 0xFFFFFFFF) == 0x55555555);
+assert(> !false == true);
+assert(> !true == false);
+assert(> @b == @[void] # 'b');
+assert(> { b = 3; b-- } == 3 && b == 2);
+assert(> { b = 3; b++ } == 3 && b == 4);
+assert(> 'abcdefgh'{3} == 'd');
+assert(> 'abcdefgh'{3:2} == 'de');
+assert(> 'abcdefgh'{:2} == 'ab');
+assert(> 'abcdefgh'{3:} == 'defgh');
+assert(> 'abcdefgh'{3:-1} == '');
+assert(> 'abcdefgh'{-1:2} == 'a');
+assert(> 'abcdefgh'{3:58} == 'defgh');
+assert(> 'abcdefgh'{-58:2} == '');
+assert(> 'abcdefgh'{-58:193} == 'abcdefgh');
+assert(> { a[3] = 7; a[2+1] == 7 });
+assert(> { a[2+1] = 5; a.3 == 5 });
+
+assert(> (0xFF00 | 0x00FF ^ 0x0080 & 0x0080) == (0xFF00 | (0x00FF ^ (0x0080 & 0x0080))));
+assert(> (1 # 8 >> 1 << 3 - 1) == (1 # ((8 >> 1) << (3 - 1))));
+assert(> (5 + 9 % 5 / 2 * 11) == (5 + (((9 % 5) / 2) * 11)));
+assert(> (false || false && true) == (false || (false && true)));
+assert(> (true && false || true) == ((true && false) || true));
+assert(> (false && true || true) == ((false && true) || true));
+
+//////////////////////////
+
+report("TESTING STANDARD LIBRARY");
+
+assertn = function { for (i = 0; i < $n; ++i) assert($[i]) };
+assertn(> trunc(acos(cos(0.858)),10) == "0.858", > cos(0) == "1", > cos(PI) == "-1", > sin(PI/2) == "1" );
+assertn(> trunc(asin(sin(0.349)),10) == "0.349", > cosh(1.0) == "1.5430806348152", > trunc(atan(tan(0.94)),10) == "0.94" );
+assertn(> ordinal('A') == 65, > char(65) === 'A', > ordinal(char(96)) == 96, > ordinal(char(230)) == 230 );
+assertn(> ceil(0.79) == "1", > ceil(-1.79) == "-1" );
+assertn(> exp(1) == "2.718281828459", > trunc(exp(-1),10) == trunc(1.0/exp(1),10) );
+assertn(> length("") == 0, > length("abcd") == 4 );
+/* FIX : the rest */
+
+::begone = void;
+::hurray[1972] = void;
+::aglobal = void;
+::users['magnus lidstrom'] = void;
+compose(@::myArray, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20);
+compose(@::breakMe, 'first', 'second', 'third', 'fourth', 'fifth', 'sixth');
+compose(@::outputArray, void);
+compose(@::sourceArray1, 1, 3, 5, 7);
+compose(@::sourceArray2, 'a', 'b', 'c');
+resetQueue(@::dq);
+pushBack(@::dq, 'one');
+pushBack(@::dq, 'two');
+compose(@::removeNumberThree, 0, 1, 2, 3, 4, 5, 6);
+compose(@::drop1and2, 0, 1, 2, 3, 4, 5, 6);
+compose(@::firstArray, 'a', 'b', 'c', 'd');
+clone(@::firstArray, @::secondArray);
+::username = 'magnus';
+::days = 77;
+set(@::skiptests
+		, 'name = input("What''s your name? ")'
+		, "throw('Does not compute')"
+		, "bake('Welcome back {username}. It has been {days} days since your last visit.')"
+		, 'args(@x, @y)'
+		, "coalesce(maybeVoid, perhapsThisAintVoid, 'nowIAmDefinitelyNotVoid')"
+		, "invoke('max', , @values)"
+		, "invoke('(callback)', $0, @$, 1, 4)"
+		, "data = load('myfolder/myfile.txt')"
+		, 'qsort(0, myArray.n, >myArray[$0] - myArray[$1], >swap(@myArray[$0], @myArray[$1]))'
+		, 'qsort(0, scrambleMe.n, >random(2) - 1, >swap(@scrambleMe[$0], @scrambleMe[$1]))'
+		, "run('chess.pika')"
+		, "save('myfolder/myfile.txt', 'No, sir, away! A papaya war is on!')"
+		, "save('AllGlobals.pika', sourceFor(@::))"
+		, 'swap(@master, @slave)'
+		, 'elapsed = time() - lastcheck'
+		, 'vargs(@required1, @required2, , @optional1, @optional2)'
+		, "htmlCode = run('makeHTML.pika', 'Make This Text HTML')"
+);
+testHelpExamples = function {
+	args(@category);
+	foreach(@::help._categories[category], >{
+		$page = $1;
+		if (exists(@::help[$page].examples)) {
+			tokenize(::help[$page].examples, >{
+				expr = $0;
+				if (!exists(@::skiptests[expr])) {
+//print('Testing: ' # expr);
+					x = try(>v = evaluate(expr, @::));
+					if (x !== void) report("FAILED : " # escape(expr))
+					else if (classify(v) === 'boolean') assert(v, expr);
+				}
+			});
+		};
+	});
+};
+wasPrint = ::print;
+//::print = function { };
+testHelpExamples('#arrays');
+testHelpExamples('#containers');
+testHelpExamples('#queues');
+testHelpExamples('#math');
+testHelpExamples('#strings');
+testHelpExamples('#utils');
+//::print = wasPrint;
+assert(> equal(sort(compose(@a, 1.1, 10.3, -5, 1.5, 17, 0x10, 'xyzzy', 'abc', 'def', 'abc'))
+		, compose(@b, -5, 1.1, 1.5, 10.3, 0x10, 17, 'abc', 'abc', 'def', 'xyzzy')));
+if (MORE_TESTS) {
+	a.n = 0;
+	for (i = 0; i < 100000; ++i) a[i] = random;
+	sort(@a);
+	for (i = 1; i < 100000; ++i) assert(> a[i] >= a[i - 1]);
+	rsort(@a);
+	for (i = 1; i < 100000; ++i) assert(> a[i] <= a[i - 1]);
+};
+
+//////////////////////////
+
+report("TESTING WILDMATCH");
+
+assert(>wildmatch('x', 'x'));
+assert(>wildmatch('X', 'X'));
+assert(>!wildmatch('x', 'X'));
+assert(>!wildmatch('X', 'x'));
+assert(>!wildmatch('xx', 'x'));
+assert(>!wildmatch('', 'x'));
+assert(>wildmatch('magnus', 'magnus'));
+assert(>!wildmatch('magnus', 'mognus'));
+assert(>!wildmatch('mognus', 'magnus'));
+assert(>wildmatch('magnus', 'm?gnus'));
+assert(>wildmatch('magnus', 'm??nus'));
+assert(>wildmatch('magnus', 'm*nus'));
+assert(>wildmatch('magnus', '*'));
+assert(>wildmatch('magnus', '*magnus'));
+assert(>wildmatch('magnus', 'magnus*'));
+assert(>wildmatch('magnus', '*magnus*'));
+assert(>!wildmatch('magnus', '*mognus*'));
+assert(>!wildmatch('magnus', 'mAgnus'));
+assert(>!wildmatch('Magnus', 'magnus'));
+assert(>wildmatch('mAgnus', 'mAgnus'));
+assert(>wildmatch('magnus', 'magn[u]s'));
+assert(>!wildmatch('magns', 'magn[u]s'));
+assert(>wildmatch('[magnus]', '[[]magnus[]]'));
+assert(>wildmatch('magnus', 'magn~s'));
+assert(>wildmatch('magns', 'magn~s'));
+assert(>wildmatch('magnus', 'magn~~s'));
+assert(>wildmatch('magns', 'magn~~s'));
+assert(>wildmatch('magnus', 'magn?~s'));
+assert(>wildmatch('magnuus', 'magn?~s'));
+assert(>wildmatch('g', '[magnus]'));
+assert(>wildmatch('g', '[magnus'));
+assert(>wildmatch('magnus', '[magnus]*'));
+assert(>wildmatch('magnus', '[magnus]??????'));
+assert(>wildmatch('sungam', '[magnus]??????'));
+assert(>!wildmatch('magnus', '[magnu]??????'));
+assert(>wildmatch('magnus', '[magnu]?????[]?'));
+assert(>wildmatch('magnus', '[magnus]~~~~~~'));
+assert(>wildmatch('magnus', '[magnus]~~~~~~~'));
+assert(>!wildmatch('magnus', '[magnus]~~~~~'));
+assert(>wildmatch('magnus', '[magnus]???~~~'));
+assert(>!wildmatch('magnuus', '[magnus]???~~~'));
+assert(>wildmatch('mag', '[magnus]???~~~'));
+assert(>!wildmatch('ma', '[magnus]???~~~'));
+assert(>wildmatch('magnus', '[magnus]???*'));
+assert(>wildmatch('mag', '[magnus]???*'));
+assert(>!wildmatch('ma', '[magnus]???*'));
+assert(>!wildmatch('magnus', '[^s]???????'));
+assert(>wildmatch('magnus', '[^s]?????[^magnu]*'));
+assert(>wildmatch('abcdefgh', '[a-d]????[c-ehgf]????'));
+assert(>wildmatch('abcdefgh', '[a-d]????[c-ehgf]????'));
+assert(>wildmatch('---', '[-]???'));
+assert(>wildmatch('x-x', '[x-]???'));
+assert(>wildmatch('x-x', '[-x]???'));
+assert(>wildmatch('xyz', '[]???'));
+assert(>wildmatch(']]]', '[]]???'));
+assert(>wildmatch('^^^', '[^]???'));
+assert(>!wildmatch('xyz', '[^]???'));
+assert(>wildmatch('^]^', '[]^]???'));
+assert(>!wildmatch('xyz', '[]^]???'));
+assert(>!wildmatch('^]^', '[^]]???'));
+assert(>wildmatch('^^^', '[^]]???'));
+assert(>wildmatch('xxxx', '*xxxx'));
+assert(>wildmatch('xxxxx', '*xxxx'));
+assert(>wildmatch('xxxxxxxxxxxxxxxxxxxxxx', '*xxxx'));
+assert(>wildmatch('xxxx', 'x*?x'));
+assert(>wildmatch('xxxx', 'x?*x'));
+assert(>!wildmatch('x____yzzy', 'x{[a]*}yzzy'));
+assert(>wildmatch('xxxx', '?*{[x]*}x', @a) && a === 'xx');
+assert(>wildmatch('y', '[x]*y'));
+assert(>wildmatch('xxyyxx', '*{[y]*}[x]*', @a) && a === 'yy');
+assert(>wildmatch('word1_word2', '{*}_{*}', @w1, @w2) && w1 === 'word1' && w2 === 'word2');
+assert(>wildmatch('word1_word2', '{*}[^word12]{*}', @w1, @w2) && w1 === 'word1' && w2 === 'word2');
+assert(>wildmatch('word1_word2', '{?????}_{?????}', @w1, @w2) && w1 === 'word1' && w2 === 'word2');
+assert(>wildmatch('word1_word2', '{[a-zA-Z0-9]*}[^a-zA-Z0-9]{[a-zA-Z0-9]*}', @w1, @w2) && w1 === 'word1' && w2 === 'word2');
+assert(>wildmatch('word1_word2', '{[a-zA-Z0-9]*}[^a-zA-Z0-9][]~{[a-zA-Z0-9]*}', @w1, @w2) && w1 === 'word1' && w2 === 'word2');
+assert(>wildmatch('word1_word2', '{[a-zA-Z0-9]*}[^a-zA-Z0-9][X]*{[a-zA-Z0-9]*}', @w1, @w2) && w1 === 'word1' && w2 === 'word2');
+assert(>wildmatch('word1_word2', '{[^_]*}[_]?{*}', @w1, @w2) && w1 === 'word1' && w2 === 'word2');
+assert(>wildmatch('xxxx', 'x*{?}x', @a) && a === 'x');
+assert(>wildmatch('xxxx', 'x{?}*x', @a) && a === 'x');
+assert(>wildmatch('xxxx', 'x{??}x', @a) && a === 'xx');
+assert(>wildmatch('xxxx', 'x{*}*{*}x', @a, @b) && a === '' && b === 'xx');
+assert(>wildmatch('xxxx', 'x{[]*}[]*{[]*}x', @a, @b) && a === '' && b === 'xx');
+assert(>wildmatch('xxxx', 'x{[]*}[]*{[]*}x', @a, @b) && a === '' && b === 'xx');
+assert(>wildmatch('xxxx', 'x{[]*}[y]*{[]*}x', @a, @b) && a === '' && b === 'xx');
+assert(>wildmatch('xxxx', 'x{[]*}[]*{[y]*}x', @a, @b) && a === '' && b === '');
+assert(>wildmatch('xxxx', 'x{[y]*}[]*{[]*}x', @a, @b) && a === '' && b === 'xx');
+assert(>wildmatch('xxxx', 'x{[]*}[y]*{[y]*}x', @a, @b) && a === 'xx' && b === '');
+assert(>wildmatch('1234____5678', '*{[0-9]?*}[^0-9]*', @a) && a === '5678');
+assert(>wildmatch('____1234____5678', '*{[0-9]?*}[^0-9]*', @a) && a === '5678');
+assert(>wildmatch('____1234____5678____', '*{[0-9]?*}[^0-9]*', @a) && a === '5678');
+assert(>wildmatch('1234____5678', '*{[0-9]?*}[^0-9][]*', @a) && a === '1234');
+assert(>wildmatch('____1234____5678', '*{[0-9]?*}[^0-9][]*', @a) && a === '1234');
+assert(>wildmatch('____1234____5678____', '*{[0-9]?*}[^0-9][]*', @a) && a === '1234');
+
+//////////////////////////
+
+report("MISC TESTS");
+
+concat = function { s = ""; for (i = 0; i < $n; ++i) s #= coalesce(@$[i]) # '|'; s };
+assertn(> concat() === "", > concat(,) === "||", > concat(   ,   ) === "||", > concat("one") === "one|"
+		, > concat("one","two") === "one|two|", > concat(  "one", , "two") === "one||two|", > concat(, "one" , ,"two" ,) === "|one||two||" );
+
+count = function { args(@n, @array, @func); sum = 0; for (i = 0; i < n; ++i) if (func([array][i])) ++sum; sum };
+compose(@a, 1, 2, 3, 2, 2, 3, 1, 2, 2);
+c = count(9, @a, > $0 == 1 );
+assert(>c == 2);
+c = count(9, @a, > $0 == 2 );
+assert(>c == 5);
+c = count(9, @a, > $0 >= 2 );
+assert(>c == 7);
+
+//////////////////////////
+
+report("REGRESSION TESTS");
+
+// 0.94 -> 0.941
+
+assert(> try(>unescape('"\')) != void);			// Crash bug: access outside end of string.
+assert(> try(>unescape('"\+"')) != void);		// Syntax bug: accepted + only as a number
+assert(> try(>evaluate("a=3e;")) != void);		// Syntax bug: accepted non-existing number after e.
+assert(> try(>evaluate("a=3e+(3)")) != void);	// - " -
+assert(> try(>{a="3e+";+a}) != void);			// - " -
+
+//////////////////////////
+
+report("DONE!");
+};
+
+if (!exists(@::assert) || ::assert == function { }) run('debug.pika');
+// run('help.pika');
+test();
+traceErrors();

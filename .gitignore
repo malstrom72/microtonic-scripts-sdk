@@ -1,2 +1,5 @@
 
 .DS_Store
+CushyLint/build/*.sha256
+CushyLint/build/*.tmp
+CushyLint/build/*.tmp.exe
