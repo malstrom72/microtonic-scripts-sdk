@@ -4,6 +4,27 @@ This guide is for using an AI coding assistant with the Microtonic Scripts SDK.
 The SDK should be treated as the source of truth for documentation, examples,
 schemas, resources, and validation tools.
 
+## Starter Prompt For Codex, Claude, Or ChatGPT
+
+Copy this into a fresh agent session to bootstrap a Microtonic script project:
+
+```text
+I want to build Sonic Charge Microtonic scripts with this SDK:
+
+https://github.com/malstrom72/microtonic-scripts-sdk
+
+Before writing any script logic, clone the latest SDK from GitHub into:
+
+references/microtonic-scripts-sdk/
+
+Then read and follow the latest project bootstrap instructions in:
+
+references/microtonic-scripts-sdk/agents/microtonic-script-writer/instructions.md
+
+Set up the project exactly as those instructions describe, then wait for my
+script idea.
+```
+
 ## Recommended Project Layout
 
 Keep your own scripts in a separate project and use this SDK as a reference:
@@ -73,7 +94,9 @@ Use the SDK checkout as the source of truth for docs, examples, schemas,
 resources, and CushyLint validation.
 ```
 
-For Claude Code, add the same pointer in `CLAUDE.md`.
+Claude and ChatGPT can use the same starter prompt. The SDK also includes thin
+tool-specific wrappers under `agents/microtonic-script-writer/`, but the shared
+`instructions.md` file is the source of truth.
 
 ## Choosing Script Type
 

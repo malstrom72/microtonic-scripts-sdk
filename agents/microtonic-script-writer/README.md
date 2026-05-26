@@ -5,12 +5,16 @@ debugging Microtonic scripts with this SDK as the source of truth.
 
 For a practical workflow guide, see [`vibe-coding.md`](vibe-coding.md).
 
-Use the canonical instruction files directly, or use one of the platform
-wrappers:
+Use [`instructions.md`](instructions.md) as the canonical instruction file.
+The platform-specific files are thin wrappers for tools that expect a particular
+entry-point format:
 
 - Codex: [`codex/SKILL.md`](codex/SKILL.md)
 - Claude: [`claude/CLAUDE.md`](claude/CLAUDE.md)
 - ChatGPT: [`chatgpt/instructions.md`](chatgpt/instructions.md)
+
+They all point back to the same shared instructions and should not be treated
+as separate documentation sets.
 
 The package is intentionally stored inside the SDK so agents can inspect the
 same documentation, examples, schemas, resources, and validation tools that

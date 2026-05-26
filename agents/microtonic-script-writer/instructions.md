@@ -47,6 +47,42 @@ Use this repository as the source of truth for SDK grounding.
 
 See [`source-map.md`](source-map.md) for where to look.
 
+## Project Bootstrap
+
+When starting a new user project from a fresh prompt, set up the SDK as a
+reference checkout before writing script logic.
+
+Use this layout unless the user asks for something else:
+
+```text
+my-microtonic-scripts/
+  AGENTS.md
+  scripts/
+  references/
+    microtonic-scripts-sdk/
+```
+
+Clone the SDK into `references/microtonic-scripts-sdk/` and treat that checkout
+as the source of truth. Keep user scripts under `scripts/`, never inside the SDK
+checkout unless the user is deliberately contributing SDK examples.
+
+Create a root `AGENTS.md` with this minimal pointer:
+
+```md
+# Project Agent Instructions
+
+For Microtonic scripting work, follow:
+
+`references/microtonic-scripts-sdk/agents/microtonic-script-writer/instructions.md`
+
+Use the SDK checkout as the source of truth for docs, examples, schemas,
+resources, packaging, and validation.
+```
+
+After bootstrapping, report the project layout and the exact CushyLint command
+to use for a `.mtscript` package in that project, then wait for the user's
+script idea.
+
 ## Microtonic SDK Grounding
 
 Distinguish carefully between JavaScript-oriented materials and legacy
