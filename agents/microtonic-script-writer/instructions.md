@@ -186,6 +186,9 @@ CushyLint run as required whenever the workspace can run it.
 
 See [`validation.md`](validation.md).
 
+For practical Cushy behavior notes, GUI gotchas, and patterns discovered while
+building scripts, consult and update [`cushy-notes.md`](cushy-notes.md).
+
 ## Idea Selection And Adaptation
 
 When the user is unsure what kind of script they need:

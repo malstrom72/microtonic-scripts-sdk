@@ -8,4 +8,5 @@ Start with [`instructions.md`](agents/microtonic-script-writer/instructions.md),
 - [`source-map.md`](agents/microtonic-script-writer/source-map.md) for authoritative references.
 - [`validation.md`](agents/microtonic-script-writer/validation.md) for CushyLint commands.
 - [`packaging.md`](agents/microtonic-script-writer/packaging.md) for classic scripts vs `.mtscript` packages.
+- [`cushy-notes.md`](agents/microtonic-script-writer/cushy-notes.md) for Cushy details, gotchas, tricks, and tips.
 - [`vibe-coding.md`](agents/microtonic-script-writer/vibe-coding.md) for recommended project setup and AI-assisted workflow.
