@@ -1,0 +1,4 @@
+resources: ./
+<actions> = <microtonicAction>
+<view> = <microtonicView>
+		| { type: "mainContent", [ bounds: <rect> ] }

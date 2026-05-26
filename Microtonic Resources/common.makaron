@@ -1,0 +1,122 @@
+@define ENABLE_EDITS = false
+
+@begin edit(label)
+	@if (@ENABLE_EDITS == true)
+		edit: { label: "@label", color: "green", selectedColor: "fuchsia", grid: 4 },
+	@endif
+@end
+
+@begin toggle(variable, value1, value2)
+	{
+		variable: @variable
+		cases: { @value2: { "set", { @variable, @value1 } } }
+		default: { "set", { @variable, @value2 } }
+		checked: { @value2 }
+	}
+@end
+
+@begin dynamicGroup(contents)
+	{
+		type: "group"
+		varExpansion: true
+		views: {
+			@contents
+		}
+	}
+@end
+
+// alignment rules for the currently supported ui scales:
+// `width` should be divisible by 4 and `height` +/- 2 should be divisible by 4
+@begin window(left, top, width, height, windowTitle, backgroundColor, frameColor, titleColor, script, contents)
+	// shadowX and shadowY must be <= shadowExpand
+	@define shadowBlur=8
+	@define shadowExpand=4
+	@define shadowX=0
+	@define shadowY=2
+	@define shadowIntensity=0.33
+	@define titleBarHeight=24
+	@define roundness=4
+
+	bounds: { @left-@shadowExpand+@shadowX, @top-@shadowExpand+@shadowY, @width+@shadowExpand*2, @height+@shadowExpand*2 }
+
+	views: {
+		// Drop shadow and background (using masks to multiply four gradient fades in each direction)
+		{
+			type: "vector"
+			file: "rectDropShadow"
+			defines: {
+				"shadowBlur": "@shadowBlur"
+				"shadowIntensity": "@shadowIntensity"
+			}
+		}
+		// Click has to be before dragArea
+		{
+			type: "click"
+			bounds: { @shadowExpand-@shadowX, @shadowExpand-@shadowY, w-@shadowExpand*2, h-@shadowExpand*2 }
+			action: "nop"
+			hint: "" // empty hint removes hints by underlying views from popuping up
+			cursor: "arrow"
+		}
+		// dragArea can't be in a group, or we'll just drag within that group.
+		{
+			type: "dragArea"
+			bounds: { @shadowExpand-@shadowX, @shadowExpand-@shadowY, w-@shadowExpand*2, @titleBarHeight }
+			hint: "Drag window"
+			bringToFront: "auto"
+			positionVariable: @script.windowPosition
+			zOrderVariable: @script.windowZOrder
+		}
+		{
+			type: "group"
+			bounds: { @shadowExpand-@shadowX, @shadowExpand-@shadowY, w-@shadowExpand*2, h-@shadowExpand*2 }
+			views: {
+				// Background
+				{
+					type: "rectangle"
+					rounded: { @roundness, @roundness }
+					fill: "@backgroundColor"
+					frame: { color: "@frameColor", stroke: 2, joints: "miter" }
+				}
+
+				// Window contents
+				{
+					type: "group"
+					bounds: { 2, @titleBarHeight, w-4, h-@titleBarHeight-2 }
+					views: {
+						@contents
+					}
+				}
+
+				// Window title and frame
+				{
+					type: "group"
+					bounds: { 0, 0, w, @titleBarHeight }
+					views: {
+						{
+							type: "rectangle"
+							rounded: { @roundness, @roundness }
+							fill: "@frameColor"
+						}
+
+						{
+							type: "caption"
+							font: { ivgfont: "sans-serif", size: 16, color: "@titleColor" }
+							text: @windowTitle
+							align: "middle center"
+						}
+
+						{
+							bounds: { r - 20, t + 4, 16, 16 }
+							type: "button"
+							action: "closeCushy"
+							standard: { image: { ivgCode: "bounds 0,0,16,16; pen @titleColor; path svg:M3,3L13,13M13,3L3,13" } }
+							down: { image: { ivgCode: "bounds 0,0,16,16; pen @titleColor; path svg:M4,4L12,12M12,4L4,12" } }
+							hint: "Close window"
+							cursor: "arrow"
+						}
+					}
+				}
+			}
+		}
+	}
+@end

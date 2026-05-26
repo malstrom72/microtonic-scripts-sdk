@@ -1,0 +1,39 @@
+<microtonicAction> = <builtInAction>
+        | { action: "morphContextMenu" }
+        | { action: "programPopup", params: { position:{ <int>, <int> }, [ modifier: "shift" ] } }
+        | { action: "scriptPopup",  params: { position:{ <int>, <int> }, [ modifier: "shift" ] } }
+        | { action: "undo" }
+        | { action: "redo" }
+        | { action: "register" }
+        | { action: "toggleAbout" }
+        | { action: "focusToMain" }
+        | { action: "MidiNoteOff.toggle" }
+        | { action: "PitchedMode.toggle" }
+        | { action: "po32Mode.changed" }
+        | { action: "SelectWithMidi.toggle" }
+        | { action: "modal.toggle", params: <var> }
+        | { action: "flushCachedMidiConfig" }
+        | { action: "closeCushy" }
+        | <po32actions>
+
+<po32actions> = { action: "po32.animate" }
+        | { action: "po32.preview.changed" }
+        | { action: "po32.isRegistered.changed" }
+        | { action: "po32.transferSound.again" }
+        | { action: "po32.page.switch", params: <int> }
+        | { action: "po32.window.close" }
+        | { action: "po32.transferSound.transmit", params: <int> }
+        | { action: "po32.transferSound.reset", params: <int> }
+        | { action: "po32.transferPattern.bank.set", params: <int> }
+        | { action: "po32.transferPattern.transmit" }
+        | { action: "po32.optimize" }
+        
+<microtonicView> = <builtInView>
+        | <midiLabel>
+
+<midiLabel> = {
+	type: "midiLabel"
+	[ bounds: <rect> ]
+	[ subType: "globalCC" | "note" ]
+	param: <var>
+}

@@ -1,0 +1,99 @@
+bounds: { 5, 5, 200, 60 }
+views: {
+	{	/*** No click-through or hints ***/
+		type: "click"
+		action: "nop"
+		hint: "" // empty hint removes hints by underlying views from popuping up
+		cursor: "arrow"
+	}
+	{	/*** Background ***/
+		type: "rectangle"
+		fill: 0xF6333333
+		rounded: { 3, 3 }
+		frame: { color: 0x4F0F0F0F, stroke: 3 }
+	}
+	
+	@begin buttonStyle(size, gamma)
+		standard: { fill: 0xFF444444, font: { ivgfont: "sans-serif", size:@size, color:0xFFAAAAAA, gamma: @gamma }, frame: { color: 0xFFAAAAAA, stroke: 1 } }
+		disabled: { fill: 0xFF333333, font: { ivgfont: "sans-serif", size:@size, color:0xFF666666 }, frame: { color: 0xFF777777, stroke: 1 } }
+		down:     { fill: 0xFFBBBBBB, font: { ivgfont: "sans-serif", size:@size, color:0xFF444444 } }
+	@end
+
+	{
+		type: "group"
+		bounds:{ 21, 19, 100, 25 }
+		views: {
+			{
+				type: "button"
+				bounds:{ 0, 0, 26, 22 }
+				rounded: { 3, 3 }
+				caption: { text: "-", offset: { -1, -1 } }
+				action: "switch"
+				params: {
+					variable: uiScale
+					cases: {
+						 "3/4":{ "set", { uiScale, "1/2" } },
+						 "1/1":{ "set", { uiScale, "3/4" } },
+						 "5/4":{ "set", { uiScale, "1/1" } },
+						 "3/2":{ "set", { uiScale, "5/4" } },
+						 "7/4":{ "set", { uiScale, "3/2" } },
+						 "2/1":{ "set", { uiScale, "7/4" } }
+					}
+				}
+				hint: "Zoom out"
+				@buttonStyle(18, 2.0)
+			}
+
+			{
+				type: "button"
+				bounds: { 68, 0, 26, 22 }
+				rounded: { 3, 3 }
+				caption: { text: "+", offset: { 1, 0 } }
+				action: "switch"
+				params: {
+					variable: uiScale
+					cases: {
+						 "1/2":{ "set", { uiScale, "3/4" } },
+						 "3/4":{ "set", { uiScale, "1/1" } },
+						 "1/1":{ "set", { uiScale, "5/4" } },
+						 "5/4":{ "set", { uiScale, "3/2" } },
+						 "3/2":{ "set", { uiScale, "7/4" } },
+						 "7/4":{ "set", { uiScale, "2/1" } }
+					}
+				}
+				hint: "Zoom in"
+				@buttonStyle(18, 1.7)
+			}
+			{
+				type: "button"
+				bounds: { 22, 0, 50, 22 }
+				caption: "[xlate]zoom:[var]uiScale[/var][/xlate]"
+				action: "popup"
+				mask: "down"
+				params: {
+					items: {
+						{ "50%", "set", { uiScale,  "1/2" } },
+						{ "75%", "set", { uiScale,  "3/4" } },
+						{ "100%", "set", { uiScale, "1/1" } },
+						{ "125%", "set", { uiScale, "5/4" } },
+						{ "150%", "set", { uiScale, "3/2" } },
+						{ "175%", "set", { uiScale, "7/4" } },
+						{ "200%", "set", { uiScale, "2/1" } }
+					}
+					autoDisable: true
+				}
+				@buttonStyle(14, 1.0)
+			}			
+		}
+	}
+	{
+		type: "button"
+		bounds: { 132, 19, 45, 22 }
+		rounded: { 3, 3 }
+		caption: "close"
+		action: "set"
+		params: { zoomLayout, "" } 
+		hint: "close"
+		@buttonStyle(14, 1.7)
+	}
+}

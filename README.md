@@ -28,6 +28,12 @@ Here is a brief list of the technologies used in Microtonic GUIs:
 
 ## Repository Structure
 
+- `agents`:
+    - Agent instruction packages for AI assistants working with this SDK. See
+      [`agents/microtonic-script-writer`](agents/microtonic-script-writer/).
+      For a project setup and iteration workflow, see
+      [`vibe-coding.md`](agents/microtonic-script-writer/vibe-coding.md).
+
 - `CushyLint`:
     1. Command-line syntax checker for `.cushy` files.
     2. Contains [`cushy.schema`](CushyLint/cushy.schema), the official reference for the `.cushy` format.
@@ -37,6 +43,7 @@ Here is a brief list of the technologies used in Microtonic GUIs:
     - [IVG Documentation](docs/IVG%20Documentation.md)
     - [Makaron Documentation](docs/Makaron%20Documentation.md)
     - [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md)
+    - [Microtonic User Guide](docs/Microtonic%20User%20Guide.md)
 
 - `ivgfiddle`: a browser "playground" for experimenting with _IVG_ (compiled with _emscripten_).
 
@@ -45,6 +52,8 @@ Here is a brief list of the technologies used in Microtonic GUIs:
 - `JSConsole.mtscript`: an interactive Javascript console for Microtonic.
 
 - `legacy`: contains documentation for the legacy scripting engine (based on _PikaScript_).
+
+- `tools`: utilities for maintaining generated documentation and repository support files.
 
 - `tmLanguages`: syntax highlighting support for Sonic Charge formats and languages.
 
@@ -137,6 +146,53 @@ JavaScript code interactively, see traces, reload all resources and see script p
 
 Install it by copying `JSConsole.mtscript` to the `Microtonic Scripts` folder. (You can easily find this folder by
 choosing `Open Scripts Folder` from the "puzzle menu" in Microtonic.)
+
+Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
+editing a GUI script, use the reload button at the top of the JSConsole window to flush cached resources and rebuild the
+open GUI. You can also close and reopen the GUI window to force a reload. Shift-clicking the JSConsole reload button
+performs a full JavaScript engine reset, which clears memory and starts from a clean scripting environment.
+
+### Development Scripts Folder
+
+For quicker round-trips during development, keep a project-local copy of the entire `Microtonic Scripts` folder and
+link Microtonic's scripts folder to it. Copy the current scripts folder into your project first so existing scripts are
+preserved.
+
+On macOS, Microtonic's scripts folder is normally:
+
+```text
+/Library/Application Support/Sonic Charge/Microtonic Scripts/
+```
+
+Copy it into your project, move the original aside, then create a symbolic link:
+
+```sh
+mkdir -p "/path/to/my-microtonic-scripts"
+cp -R "/Library/Application Support/Sonic Charge/Microtonic Scripts" \
+  "/path/to/my-microtonic-scripts/scripts"
+sudo mv "/Library/Application Support/Sonic Charge/Microtonic Scripts" \
+  "/Library/Application Support/Sonic Charge/Microtonic Scripts.backup"
+sudo ln -s "/path/to/my-microtonic-scripts/scripts" \
+  "/Library/Application Support/Sonic Charge/Microtonic Scripts"
+```
+
+On Windows, use `Open Scripts Folder` in Microtonic to confirm the exact folder. The common location is:
+
+```text
+%PROGRAMFILES%\Sonic Charge\Microtonic Scripts
+```
+
+Copy it into your project, move the original aside, then create a directory junction:
+
+```bat
+xcopy "%PROGRAMFILES%\Sonic Charge\Microtonic Scripts" ^
+  "C:\path\to\my-microtonic-scripts\scripts\" /E /I
+ren "%PROGRAMFILES%\Sonic Charge\Microtonic Scripts" "Microtonic Scripts.backup"
+mklink /J "%PROGRAMFILES%\Sonic Charge\Microtonic Scripts" ^
+  "C:\path\to\my-microtonic-scripts\scripts"
+```
+
+After linking, scripts edited in your project-local `scripts` directory are the same scripts Microtonic sees.
 
 ### Syntax Highlighting
 

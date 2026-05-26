@@ -1,0 +1,12 @@
+offset 2.5,2.5
+scale 1
+for i from:0 to:15 [
+  col = { $i % 4 }
+  row = { floor($i / 4) }
+  ch = { $i - $po32.transferPattern.bank.selected * 8 + 1 }
+  flash = {$po32.transferPattern.Instrument.($i+1).flash}
+  fill { $flash == 0 ? [none] : $flash == 1 ? [#c30e0e] :
+    $ch < 1 || $ch > 8 ? [#445566] : $po32.transferPattern.mutes.$ch == true ? [#4e5e6e] : [#b3c2dc]
+  }
+  ELLIPSE {$col * 5},{$row * 6},1.8
+]

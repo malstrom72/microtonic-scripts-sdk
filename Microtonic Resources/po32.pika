@@ -1,0 +1,791 @@
+if (needsInitialization('po32', 1)) {
+
+	/* DO NOT MODIFY THIS FILE. USE "BEFORE CLEANUP" VERSION INSTEAD. */
+
+	po32.predChar = function { char(ordinal($0) - 1) };
+	po32.succChar = function { char(ordinal($0) + 1) };
+	po32.char16 = function { char($0 & 0xFF) # char(($0 >> 8) & 0xFF) };
+
+	po32.chainGroupStart = function {
+	    args(@preset, @pattern);
+
+	    for (; pattern != 'a' && [preset].patterns[po32.predChar(pattern)].chained; pattern = po32.predChar(pattern));
+	    ( pattern )
+	};
+	po32.chainGroupLength = function {
+		args(@preset, @pattern);
+
+		pattern = po32.chainGroupStart(preset, pattern);
+		for (l = 0; pattern < LAST_PATTERN && [preset].patterns[pattern].chained; ++l) {
+			pattern = po32.succChar(pattern);
+		};
+		( l )
+	};
+
+	po32.consolidateChainGroup = function {
+		args(@preset, @pattern, @group);
+
+		pattern = po32.chainGroupStart(preset, pattern);
+
+		for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+			ptn = pattern;
+			t = a = f = '';
+			for (; {
+				p = @[preset].patterns[ptn];
+				l = [p].length;
+				t #= [p][ch].triggers{:l};
+				a #= [p][ch].accents{:l};
+				f #= [p][ch].fills{:l};
+				(ptn != LAST_PATTERN && [p].chained)
+			}; ptn = po32.succChar(ptn));
+			map(@[group][ch], 'triggers',t , 'accents',a , 'fills',f);
+		};
+	};
+
+	po32.MORPH_WARNING = "morph settings were adjusted for PO";
+	po32.EPSILON = 1.0 / 65536.0;
+	compose(@po32.PARAM_NAMES, 'OscWave', 'OscFreq', 'OscAtk', 'OscDcy', 'ModMode', 'ModRate', 'ModAmt', 'NFilMod', 'NFilFrq'
+		, 'NFilQ', 'NEnvMod', 'NEnvAtk', 'NEnvDcy', 'Mix', 'DistAmt', 'EQFreq', 'EQGain', 'Level', 'OscVel', 'NVel'
+		, 'ModVel');
+
+	po32.checkValidMorph = function {
+		args(@p0, @p25, @p75, @p100);
+
+		for ({ needAdjust = false; i = ::po32.PARAM_NAMES.n - 1 }; !needAdjust && i >= 0; --i) {
+			param = ::po32.PARAM_NAMES[i];
+			l = [p0][param];
+			r = [p100][param];
+			if (l < ::po32.EPSILON || l > 1 - ::po32.EPSILON || r < ::po32.EPSILON || r > 1 - ::po32.EPSILON) {
+				lv = l + (r - l) * 0.25;
+				rv = l + (r - l) * 0.75;
+				needAdjust = (abs([p25][param] - lv) > ::po32.EPSILON || abs([p75][param] - rv) > ::po32.EPSILON);
+			};
+		};
+		( needAdjust )
+	};
+
+	po32.adjustForCurrentMorph = function {
+		args(@mp, @lp, @rp, @x);
+
+		iterate(@::po32.PARAM_NAMES, >{
+			param = $2;
+			l = [lp][param];
+			r = [rp][param];
+			if (l < ::po32.EPSILON || l > 1 - ::po32.EPSILON || r < ::po32.EPSILON || r > 1 - ::po32.EPSILON) {
+				v = l + (r - l) * x;
+				m = [mp][param];
+				if (abs(m - v) > ::po32.EPSILON) {
+					test = (m - r * x) / (1 - x);
+					if (test >= 0.0 && test <= 1.0) {
+						l = test;
+						[lp][param] = l;
+					} else {
+						r = (m - l * (1 - x)) / x;
+						assert(> r >= 0.0 && r <= 1.0);
+						[rp][param] = r;
+					};
+					assert(> abs([lp][param] + ([rp][param] - [lp][param]) * x - m) < ::po32.EPSILON);
+				}
+			}
+		});
+	};
+
+	po32.loadForMorphAdjust = function {
+		args(@elementType, @currentMorph, @morphed, @leftMorph, @leftMorph25, @rightMorph75, @rightMorph);
+
+	    [currentMorph] = getParam('Morph');
+	    getElement(elementType, morphed);
+	    setParam('Morph', 0.0);
+	    getElement(elementType, leftMorph);
+	    setParam('Morph', 0.25);
+	    getElement(elementType, leftMorph25);
+	    setParam('Morph', 0.75);
+	    getElement(elementType, rightMorph75);
+	    setParam('Morph', 1.0);
+	    getElement(elementType, rightMorph);
+	    setParam('Morph', [currentMorph]);
+	};
+
+	po32.adjustAllMorphs = function {
+	    args(@currentMorph, @morphedPreset, @leftPreset, @leftPreset25, @rightPreset75, @rightPreset);
+
+	    shouldPreserveCurrentMorph = (currentMorph > ::po32.EPSILON && currentMorph < 1 - ::po32.EPSILON);
+	    adjustedMorphs = false;
+	    for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+	        if (::po32.checkValidMorph(@[leftPreset].drumPatches[ch], @[leftPreset25].drumPatches[ch]
+	                , @[rightPreset75].drumPatches[ch], @[rightPreset].drumPatches[ch])) {
+	            if (shouldPreserveCurrentMorph) {
+	                ::po32.adjustForCurrentMorph(@[morphedPreset].drumPatches[ch]
+	                        , @[leftPreset].drumPatches[ch], @[rightPreset].drumPatches[ch], currentMorph);
+	            };
+	            adjustedMorphs = true;
+	            [leftPreset].modified = true;
+	            [rightPreset].modified = true;
+	        }
+	    };
+
+	    ( adjustedMorphs )
+	};
+
+	po32.serializePattern = function {
+		args(@ptn, @offset, @evenFillRate, @oddFillRate, @morph8, @bankNumber);
+
+		fillRates[0] = evenFillRate;
+		fillRates[1] = oddFillRate;
+		len = length([ptn][1].triggers);
+		data = '';
+		poTriggers.n = 4;
+		for (ch = 0; ch < 4; ++ch) {
+			fill(@poTriggers[ch], 0, 16, 0);
+		};
+		accentBits = 0;
+		for (ch = CHANNEL_COUNT; ch >= 1; --ch) {
+			triggers = [ptn][ch].triggers;
+			accents = [ptn][ch].accents;
+			fills = [ptn][ch].fills;
+			for (step = 0; step < 16; ++step) {
+				ptnStep = (step + offset) % len;
+				if (triggers{ptnStep} === '#') {
+					bits = 0;
+					if (accents{ptnStep} === '#') {
+						accentBits |= (1 << step);
+						bits |= 0x80;
+					};
+					bits |= ((if (ch >= 5) 0x10 else 0x00) + bankNumber * 0x20);
+					bits |= (if (fills{ptnStep} === '#') fillRates[step & 1] else 1);
+					poTriggers[(ch - 1) & 3][step] = bits;
+				}
+			}
+		};
+		for (ch = 0; ch < 4; ++ch) {
+			for (step = 0; step < 16; ++step) {
+				data #= char(poTriggers[ch][step])
+			};
+			for (step = 0; step < 16; ++step) {
+				if ((poTriggers[ch][step] & 0x0F) != 0) {
+					data #= char(0x80) # char(morph8);
+				} else {
+					data #= char(0x00) # char(0x00);
+				};
+			};
+		};
+		for (step = 0; step < 16; ++step) {
+			data #= char(0);
+		};
+		data #= po32.char16(accentBits);
+	};
+
+	po32.serializePatch = function {
+		args(@dp);
+
+		data = '';
+		iterate(@::po32.PARAM_NAMES, >{ data #= po32.char16(min(round([dp][$2] * 65536), 65535)) });
+		( data )
+	};
+
+
+	modem.active = false;
+	modem.mark = function { append(@::modem.markers, $1, $0); };
+	modem.currentMarker = function {
+		for (sent = modem.sent(); (::modem.active = queueSize(@::modem.markers) > 2) && sent >= ::modem.markers[::modem.markers.m+2]; ::modem.markers.m += 2);
+
+		if (::modem.active) {
+			( ::modem.markers[::modem.markers.m+1] )
+		} else {
+			( void )
+		};
+	};
+	modem.clearMarkers = function { resetQueue(@::modem.markers); };
+	modem.clearMarkers();
+
+	compose(@po32.SUPPORTED_FILL_RATES, 0, 1, 2, 3, 4, 4, 6, 6, 8, 8, 8, 8, 8, 8, 8, 8, 8);
+
+	po32.transferSound.selectedInstrument = 1;
+
+	for (i = 1; i <= 16; ++i) {
+		po32.transferSound.Instrument[i].ivg = "
+			fill {$po32.transferSound.Instrument." # i # ".flash == 1 ? [#c30e0e] : [none]}
+			ELLIPSE 15.822,14.17778,14.178; fill #bbbbbb; PATH svg:[m25,17.9c.06.05.12.1.17.14.04.03.07.06.11.08.04.02.07.04.1.05.03.01.05.02.07.03.01.01.02.01.02.01v3.86c0,.87-.71,1.57-1.58,1.57h-4.49c-.35,0-.63.28-.63.63v.16h-6.3v-.16c0-.35-.28-.63-.63-.63h-4.49c-.87,0-1.57-.71-1.57-1.57v-3.86c0,0,0-.01.01-.01.01-.01.03-.02.05-.03.03-.01.06-.03.1-.05.04-.02.08-.05.12-.08.06-.05.13-.1.2-.16.05-.09.08-.2.08-.31v-6.77c0-.11-.03-.21-.08-.31-.04-.04-.08-.08-.13-.11-.04-.03-.09-.06-.13-.08-.04-.02-.08-.04-.11-.06-.03-.02-.06-.03-.07-.04-.02-.01-.02-.02-.03-.03v-3.86c0-.87.71-1.57,1.57-1.57h1.88c.4,0,.76-.25.89-.63h11c.13.38.49.63.89.63h1.87c.87,0,1.58.7,1.58,1.57v3.86c0,.01-.01.01-.02.02-.01.01-.04.02-.07.04-.03.02-.07.04-.12.06-.04.02-.07.03-.14.09-.04.03-.08.07-.12.11-.05.09-.08.2-.08.31v6.77c0,.11.03.21.08.31zm-9.37-8.81c-2.83,0-5.12,2.29-5.12,5.12,0,2.83,2.29,5.12,5.12,5.12,2.83,0,5.12-2.29,5.12-5.12,0-2.83-2.29-5.12-5.12-5.12z]
+		";
+	};
+
+
+	po32.transferSound.transmit = function {
+		::po32.clearWarning();
+		::po32.transferSound.selectedInstrument = $0;
+
+		::po32.loadForMorphAdjust('drumPatch', @currentMorph, @morphedPatch, @leftPatch, @leftPatch25, @rightPatch75, @rightPatch);
+
+		if (::po32.checkValidMorph(@leftPatch, @leftPatch25, @rightPatch75, @rightPatch)) {
+			if (currentMorph > ::po32.EPSILON && currentMorph < 1 - ::po32.EPSILON) {
+				::po32.adjustForCurrentMorph(@morphedPatch, @leftPatch, @rightPatch, currentMorph);
+			};
+			saveUndo("Adjust Morph For PO", false);
+			leftPatch.modified = true;
+			rightPatch.modified = true;
+			setParam('Morph', 0.0);
+			setElement('drumPatch', @leftPatch);
+			setParam('Morph', 1.0);
+			setElement('drumPatch', @rightPatch);
+			setParam('Morph', currentMorph);
+
+			::po32.warning = ::po32.MORPH_WARNING;
+		};
+
+		leftPatchData = ::po32.serializePatch(@leftPatch);
+		rightPatchData = ::po32.serializePatch(@rightPatch);
+
+		::modem.reset();
+		::modem.clearMarkers();
+		::modem.mark(@::po32.transferSound.Instrument[::po32.transferSound.selectedInstrument], 0);
+		::modem.append("patch", char(0x10 | (::po32.transferSound.selectedInstrument - 1)) # leftPatchData);
+		::modem.append("patch", char(0x20 | (::po32.transferSound.selectedInstrument - 1)) # rightPatchData);
+		::modem.append("knob", char(0x00 | (::po32.transferSound.selectedInstrument - 1)) # char(128));
+		::modem.append("knob", char(0x10 | (::po32.transferSound.selectedInstrument - 1)) # char(round(1 + currentMorph * 254)));
+		::modem.mark("end", ::modem.transmit());
+		::modem.active = true;
+	};
+	po32.transferSound.reset = function {
+		::po32.clearWarning();
+		::po32.transferSound.selectedInstrument = $0;
+
+		::modem.reset();
+		::modem.clearMarkers();
+		::modem.mark(@::po32.transferSound.Instrument[::po32.transferSound.selectedInstrument], 0);
+		::modem.append("reset", char(0x30 | (::po32.transferSound.selectedInstrument - 1)));
+		::modem.mark("end", ::modem.transmit());
+		::modem.active = true;
+	};
+	po32.transferSound.again.caption.get => { "click to transfer sound to button " # ::po32.transferSound.selectedInstrument; };
+	po32.transferSound.again = function {
+		::po32.transferSound.transmit(::po32.transferSound.selectedInstrument);
+	};
+	po32.transferSound.animating = void;
+
+	po32.transferPattern.bank.0 = "1 - 8";
+	po32.transferPattern.bank.1 = "9 - 16";
+	po32.transferPattern.bank.selected = 0;
+	po32.transferPattern.bank.get = function { ::po32.transferPattern.bank[::po32.transferPattern.bank.selected]; };
+	po32.transferPattern.bank.set = function { ::po32.transferPattern.bank.selected = $0; };
+	po32.transferPattern.bank.set.checked = function { ::po32.transferPattern.bank.selected == $0; };
+
+	for (i = 1; i <= 8; ++i) {
+		po32.transferPattern.mutes[i].index = i;
+		po32.transferPattern.mutes[i].get = function { getParam('Mute.' # [this()].index) >= 0.5; };
+	};
+	for (i = 1; i <= 16; ++i) {
+		po32.transferPattern.Instrument[i].flash = void;
+		po32.transferPattern.Pattern[i].flash = void;
+	};
+	po32.transferPattern.pattern.chainlength = function {
+		po32.chainGroupLength(getElement('preset', @preset), selected('pattern'));
+	};
+	po32.transferPattern.pattern.chainlength.get => ::po32.transferPattern.pattern.chainlength();
+
+	po32.transferPattern.pattern.selected = 0;
+	po32.transferPattern.pattern.selected.clamped = function {
+		l = ::po32.transferPattern.pattern.chainlength();
+		if (::po32.transferPattern.pattern.selected+l > 15) { 15-l } else { ::po32.transferPattern.pattern.selected };
+	};
+	po32.transferPattern.pattern.selected.get => po32.transferPattern.pattern.selected.clamped();
+
+	po32.transferPattern.pattern.get = function {
+		l = ::po32.transferPattern.pattern.chainlength();
+		s = ::po32.transferPattern.pattern.selected.clamped();
+		(s+1 # if (l > 0) { " - " # (s+1+l) });
+	};
+	po32.transferPattern.pattern.set = function { ::po32.transferPattern.pattern.selected = $0; };
+	po32.transferPattern.pattern.set.checked = function { ::po32.transferPattern.pattern.selected.clamped() == $0; };
+	po32.transferPattern.pattern.popup.get = function {
+		l = ::po32.transferPattern.pattern.chainlength();
+		items = "";
+		for (i = 0; i+l < 16; ++i) {
+			items #= "{ \"" # (i+1);
+			if (l > 0) {
+				items #= " - " # (i+1+l);
+			};
+			items #= "\", \"po32.transferPattern.pattern.set\", " # i # " }";
+		};
+		(items);
+	};
+
+	po32.transferPattern.transmit = function {
+		if (::modem.active) {
+			::modem.abort();
+			::modem.active = false;
+		} else {
+			::po32.clearWarning();
+
+			::po32.loadForMorphAdjust('preset', @currentMorph, @morphedPreset, @leftPreset, @leftPreset25, @rightPreset75, @rightPreset);
+
+			po32.consolidateChainGroup(@leftPreset, selected('pattern'), @group);
+			groupLength = length(group[1].triggers);
+			patternCount = (groupLength + 15) \ 16;
+
+			if (::po32.adjustAllMorphs(currentMorph, @morphedPreset, @leftPreset, @leftPreset25, @rightPreset75, @rightPreset)) {
+				saveUndo("Adjust Morph For PO", false);
+				setParam('Morph', 0.0);
+				setElement('preset', @leftPreset);
+				setParam('Morph', 1.0);
+				setElement('preset', @rightPreset);
+				setParam('Morph', currentMorph);
+
+				::po32.warning = ::po32.MORPH_WARNING;
+			};
+
+			::modem.reset();
+			::modem.clearMarkers();
+
+			baseInstrument = if (::po32.transferPattern.bank.selected == 0) 0 else 8;
+			::modem.mark(@::po32.transferPattern.Instrument[baseInstrument+1], 0);
+			for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+				if (leftPreset.Mute[ch] >= 0.5) {
+					group[ch].triggers = repeat('-', groupLength);
+				} else {
+					leftPatchData = ::po32.serializePatch(@leftPreset.drumPatches[ch]);
+					rightPatchData = ::po32.serializePatch(@rightPreset.drumPatches[ch]);
+					instrument = baseInstrument + ch;
+
+					::modem.mark(@::po32.transferPattern.Instrument[instrument],
+						::modem.append("patch", char(0x10 | (instrument - 1)) # leftPatchData)
+					);
+					::modem.append("patch", char(0x20 | (instrument - 1)) # rightPatchData);
+				};
+			};
+
+			morph8 = floor(currentMorph * 254) + 1;
+			userState = '';
+			for (i = 0; i < 16; ++i) {
+				userState #= char(0x80) # char(morph8);
+			};
+			userState #= char(min(max(round(coalesce(leftPreset.tempo, 120)), 60), 240)) # char(round(leftPreset.Swing * 12)) # char(patternCount);
+			patternNumber = ::po32.transferPattern.pattern.selected.clamped();
+
+			fillRate = pow(2, getParam('FillRate') * 2 + 1);
+			evenFillRate = ::po32.SUPPORTED_FILL_RATES[round(fillRate / (1 + leftPreset.Swing * 0.5))];
+			oddFillRate = ::po32.SUPPORTED_FILL_RATES[round(fillRate / (1 - leftPreset.Swing * 0.5))];
+
+			for (offset = 0; offset < groupLength; offset += 16) {
+				patternData = ::po32.serializePattern(@group, offset, evenFillRate, oddFillRate, morph8, ::po32.transferPattern.bank.selected);
+				::modem.mark(@::po32.transferPattern.Pattern[patternNumber+1],
+					::modem.append("pattern", char(patternNumber) # patternData)
+				);
+				userState #= char(patternNumber);
+				patternNumber++;
+			};
+			::modem.append("state", userState);
+			::modem.mark("end", ::modem.transmit());
+			::modem.active = true;
+		};
+	};
+	po32.transferPattern.transmit.caption.get => if (::modem.active) { "stop" } else { "transfer" };
+
+	po32.paramToAttackTime = function { $0 * pow(10, (12 * $0 - 7) / 5) };
+	po32.paramToDecayTime = function { pow(10, 3 * $0 - 2) };
+	po32.optimize = function {
+		::po32.clearWarning();
+
+		compose(@highSwaps, 5,6,5,6,5,7,6,5,6,5,6,7,5,6,5,6,5,7,6,5,6,5,6,7);
+	    compose(@order, 1,2,3,4,5,6,7,8);
+
+	    noiseEnvMaxOverTime = function {
+	        args(@nEnvMod, @nEnvAtk, @nEnvDcy, @from, @to);
+
+	        noiseAttackTime = ::po32.paramToAttackTime(nEnvAtk);
+	        noiseDecayTime = ::po32.paramToDecayTime(nEnvDcy);
+
+	        if (nEnvMod >= 0.66666666) {
+	            if (from < noiseAttackTime) {
+	                noiseEnv = 1.0;
+	            } else {
+	                noiseEnv = pow(0.001, (from - noiseAttackTime) / noiseDecayTime);
+	            };
+	        } else if (nEnvMod >= 0.33333333) {
+	            noiseAttackTime *= 2.0 / 3.0;
+	            noiseDecayTime *= 2.0 / 3.0;
+	            if (to < noiseAttackTime) {
+	                noiseEnv = to / noiseAttackTime;
+	            } else if (from < noiseAttackTime) {
+	                noiseEnv = 1.0;
+	            } else if (from < noiseAttackTime + noiseDecayTime) {
+	                noiseEnv = 1.0 - ((from - noiseAttackTime) / noiseDecayTime);
+	            } else {
+	                noiseEnv = 0.0;
+	            }
+	        } else {
+	            if (to < noiseAttackTime) {
+	                noiseEnv = 0.001 * pow(1000, to / noiseAttackTime);
+	            } else if (from < noiseAttackTime) {
+	                noiseEnv = 1.0;
+	            } else {
+	                noiseEnv = pow(0.001, (from - noiseAttackTime) / noiseDecayTime);
+	            }
+	        };
+
+	        noiseEnv
+	    };
+
+	    oscEnvMaxOverTime = function {
+	        args(@oscAtk, @oscDcy, @from, @to);
+
+	        oscAttackTime = ::po32.paramToAttackTime(oscAtk);
+	        oscDecayTime = ::po32.paramToDecayTime(oscDcy);
+
+	        if (to < oscAttackTime) {
+	            oscEnv = 0.001 * pow(1000, to / oscAttackTime);
+	        } else if (from < oscAttackTime) {
+	            oscEnv = 1.0;
+	        } else {
+	            oscEnv = pow(0.001, (from - oscAttackTime) / oscDecayTime);
+	        };
+
+	        oscEnv
+	    };
+
+	    mixToGain = function {
+	        args(@normalizedMix);
+	        (1 - normalizedMix) * pow(10, (-25 * normalizedMix / 20));
+	    };
+
+	    velocityToGain = function {
+	        args(@velocity, @sensitivity);
+	        invVelocity = (127 - velocity) / 63;
+	        x = max(1 - invVelocity * sensitivity, 0);
+	        x * pow(10, ((37 * x - 37) / 20));
+	    };
+
+	    levelGain = function {
+	        args(@level);
+	        if (level >= 0.0001) {
+	            levelDB = 60 * level - 49 - 1 / level;
+	            if (levelDB < -500) 0 else pow(10, levelDB / 20)
+	        } else {
+	            0
+	        }
+	    };
+
+	    distortedGain = function {
+	        args(@inputGain, @distAmount);
+
+	        n = (200.0 * (distAmount * distAmount * distAmount));
+	        if (n <= 0.0) {
+	            v = 1.0;
+	            shape => $0
+	        } else if (n < 1.0) {
+	            v = 1.0 - 0.03333333333 * n;
+	            p = (1.0 + sqrt((n + 3.0) / n)) / 3.0;
+	            dc = ((-2.0 / 27.0) * n + (-9.0 / 27.0));
+	            shape => {
+	                $x = $0 + (-1.0 / 3.0);
+	                $xc = min(max($x, -p), p);
+	                ($xc * (n * (abs($xc) - $xc * $xc) + 1.0) - dc)
+	            }
+	        } else {
+	            v = (0.2 / (n - 0.95894909 + 0.47619048) + 0.58);
+	            shape => {
+	                $x = $0 * n + (-1.0 / 3.0);
+	                $xc = 0.5 * (abs($x + 1) - abs($x - 1));
+	                ($xc * (abs($xc) - $xc * $xc + 1.0) - (-11.0 / 27.0))
+	            }
+	        };
+	        (shape(inputGain) - shape(-inputGain)) / 2 * v
+	    };
+
+	    ::po32.loadForMorphAdjust('preset', @currentMorph, @preset, @leftPreset, @leftPreset25, @rightPreset75, @rightPreset);
+	    needToSetPresets = morphsAdjusted = ::po32.adjustAllMorphs(currentMorph, @preset, @leftPreset, @leftPreset25, @rightPreset75, @rightPreset);
+
+    	fill(@chokeChannels, 1, CHANNEL_COUNT, false);
+    	chokeCount = 0;
+	    (>{
+	    	for ($ch = 1; $ch <= CHANNEL_COUNT; ++$ch) {
+	    		if (chokeChannels[$ch] = (preset.Mute[$ch] < 0.5 && preset.drumPatches[$ch].Choke >= 0.5)) ++chokeCount;
+	    	};
+		    if (chokeCount >= 2) {
+	            for (ptn = 'a'; ptn <= LAST_PATTERN; ptn = po32.succChar(ptn)) {
+					$p = @leftPreset.patterns[ptn];
+					$l = [$p].length;
+	            	for ($step = 0; $step < $l; ++$step) {
+	            		$chokeChannel = void;
+	            		for ($ch = 1; $ch <= CHANNEL_COUNT; ++$ch) {
+	            			$pc = @[$p][$ch];
+			      			if (chokeChannels[$ch] && [$pc].triggers{$step} === '#'
+			      					&& ($chokeChannel === void
+			      					|| ([$pc].fills{$step} === '#' && [$p][$chokeChannel].fills{$step} !== '#')))
+			      				$chokeChannel = $ch;
+			      		};
+	            		for ($ch = 1; $ch <= CHANNEL_COUNT; ++$ch) {
+	            			$pc = @[$p][$ch];
+			      			if ($ch !== $chokeChannel && chokeChannels[$ch] && [$pc].triggers{$step} === '#') {
+		            			[$pc].triggers = [$pc].triggers{:$step} # '-' # [$pc].triggers{$step+1:};
+					            needToSetPresets = true;
+		            		}
+		            	}
+		            }
+	            };
+	      	};
+      	})();
+
+	    po32.consolidateChainGroup(@leftPreset, selected('pattern'), @group);
+	    groupLength = length(group[1].triggers);
+
+	    fill(@trigSteps, 1, CHANNEL_COUNT, void);
+	    fill(@trigAccented, 1, CHANNEL_COUNT, false);
+		fill(@chokerOnStep, 0, groupLength, void);
+	    levelMatrix.n = CHANNEL_COUNT + 1;
+
+	    (>{ for ($ch = 1; $ch <= CHANNEL_COUNT; ++$ch) {
+	        levelMatrix[$ch].n = groupLength;
+            fill(@levelMatrix[$ch], 0, groupLength, 0.0);
+	        if (preset.Mute[$ch] < 0.5) {
+	            for ($step = groupLength - 1; $step >= 0; --$step) {
+					if (group[$ch].triggers{$step} === '#') {
+	            		if (trigSteps[$ch] === void) {
+		                    trigSteps[$ch] = $step - groupLength;
+		                    trigAccented[$ch] = (group[$ch].accents{$step} === '#');
+		              	};
+		              	if (chokeChannels[$ch]) {
+		              		// assert(> chokerOnStep[$step] === void);
+		              		chokerOnStep[$step] = $ch
+		              	};
+	                }
+	            }
+	        } else {
+	            group[$ch].triggers = repeat('-', groupLength);
+	        }
+	    } })();
+
+	    sps = (60 / 4 / coalesce(preset.tempo, 120));
+	    (>{ for ($ch = 1; $ch <= CHANNEL_COUNT; ++$ch) {
+	        if (preset.Mute[$ch] < 0.5) {
+	            for ($step = 0; $step < groupLength; ++$step) {
+                    if (group[$ch].triggers{$step} === '#') {
+                        trigSteps[$ch] = $step;
+                        trigAccented[$ch] = (group[$ch].accents{$step} === '#');
+                    };
+                    if (trigSteps[$ch] == void) {
+                        levelMatrix[$ch][$step] = 0.0;
+                    } else {
+                        $acc = trigAccented[$ch];
+                        $trigOffset = $step - trigSteps[$ch];
+                        $r = @$precalcedSteps[$ch][$acc][$trigOffset];
+                        if (!exists($r)) {
+                            $dp = @preset.drumPatches[$ch];
+                            $currentMix = [$dp].Mix * 2 - 1;
+                            $oscMixGain = (if ($currentMix >= 0) mixToGain($currentMix) else 1);
+                            $noiseMixGain = (if ($currentMix < 0) mixToGain(-$currentMix) else 1);
+                            $t = $trigOffset * sps;
+                            $oscEnv = oscEnvMaxOverTime([$dp].OscAtk, [$dp].OscDcy, $t, $t + sps);
+                            $noiseEnv = noiseEnvMaxOverTime([$dp].NEnvMod, [$dp].NEnvAtk, [$dp].NEnvDcy, $t, $t + sps);
+                            $v = (if ($acc) 127 else 64);
+                            $totalOscLevel = $oscEnv * $oscMixGain * velocityToGain($v, [$dp].OscVel);
+                            $totalNoiseLevel = $noiseEnv * $noiseMixGain * velocityToGain($v, [$dp].NVel);
+                            [$r] = levelGain([$dp].Level) * distortedGain(max($totalOscLevel, $totalNoiseLevel), [$dp].DistAmt);
+                        };
+                        levelMatrix[$ch][$step] = [$r];
+                    }
+	            }
+	        };
+	    } })();
+
+	    prune(@trigSteps);
+	    prune(@trigAccented);
+
+        (>for ($ch = CHANNEL_COUNT; $ch >= 1; --$ch) {
+        	$pk = 0.0;
+        	for ($step = groupLength - 1; $step >= 0; --$step) {
+            	if (($l = levelMatrix[$ch][$step]) > $pk) $pk = $l else levelMatrix[$ch][$step] = $pk;
+            	if (group[$ch].triggers{$step} === '#') $pk = 0.0;
+            };
+            if ($pk != 0.0) {
+        		for ($step = groupLength - 1; $step >= 0 && {
+        			if (($l = levelMatrix[$ch][$step]) > $pk) $pk = $l else levelMatrix[$ch][$step] = $pk;
+        			group[$ch].triggers{$step} !== '#'
+        		}; --$step);
+	       	}
+        })();
+
+        clone(@levelMatrix, @chokeMatrix);
+
+        (>{
+	        unchokedAtStep.n = groupLength;
+	        $lastChoker = void;
+	        for ($step = groupLength - 1; $step >= 0 && ($lastChoker = chokerOnStep[$step]) === void; --$step) ;
+	   		for ($step = 0; $step < groupLength; ++$step) {
+	   			unchokedAtStep[$step] = $lastChoker;
+	   			if (chokerOnStep[$step] !== void) $lastChoker = chokerOnStep[$step];
+	   		};
+	        for ($ch = CHANNEL_COUNT; $ch >= 1; --$ch) {
+	        	if (chokeChannels[$ch]) {
+			   		for ($step = 0; $step < groupLength; ++$step) {
+			   			if ((($c = chokerOnStep[$step]) === void && unchokedAtStep[$step] != $ch)
+			   					|| ($c !== void && $c != $ch)) levelMatrix[$ch][$step] = 0.0;
+			   		}
+			   	}
+			}
+		})();
+
+	    (>for ($chA = 1; $chA < CHANNEL_COUNT; ++$chA) {
+	        for ($chB = $chA + 1; $chB <= CHANNEL_COUNT; ++$chB) {
+	            $damageAOverB = 0;
+	            $damageBOverA = 0;
+	            $tA = group[$chA].triggers;
+	            $tB = group[$chB].triggers;
+	            $mA = @levelMatrix[$chA];
+	            $mB = @levelMatrix[$chB];
+	            for ($j = groupLength - 1; --$j >= 0;) {
+	                $trigA = ($tA{$j} === '#');
+	                $trigB = ($tB{$j} === '#');
+	                if ($trigA) $damageAOverB += [$mB][$j]
+	                else if ($trigB) $damageAOverB += [$mA][$j];
+	                if ($trigB) $damageBOverA += [$mA][$j]
+	                else if ($trigA) $damageBOverA += [$mB][$j];
+	            };
+	            damages[$chA][$chB] = $damageAOverB;
+	            damages[$chB][$chA] = $damageBOverA;
+	        }
+	    })();
+
+	    (>{
+			for ($step = 0; $step < groupLength; ++$step) {
+				if (($c = chokerOnStep[$step]) !== void && ($u = unchokedAtStep[$step]) != $c) {
+					$d = chokeMatrix[$u][$step];
+					for ($ch = 1; $ch <= CHANNEL_COUNT; ++$ch) {
+						if ($ch !== $u) {
+			                if (group[$ch].triggers{$step} !== '#') damages[$ch][$u] += $d;
+				            damages[$u][$ch] += $d;
+		       			}
+		       		}
+				}
+			}
+		})();
+
+	    prune(@levelMatrix);
+	    prune(@group);
+
+	    leastDamage = void;
+	    noChangeDamage = void;
+	    test => {
+	        args(@$position, @$counter);
+	        for (; $counter <= 8; ++$counter) {
+	            swap(@order[$position], @order[$counter - 1]);
+	            if ($position < 3) {
+	                test($position + 1, $counter + 1);
+	            } else {
+	                iterate(@highSwaps, >{
+	                    $damage = 0;
+	                    for ($i = 0; $i < 4; ++$i) {
+	                        $chA = order[$i];
+	                        $chB = order[$i + 4];
+	                        $damage += damages[$chA][$chB];
+	                    };
+	                    if (leastDamage == void || $damage < leastDamage) {
+	                        if (leastDamage == void) {
+	                            noChangeDamage = $damage;
+	                        };
+	                        leastDamage = $damage;
+	                        clone(@order, @bestOrder);
+	                    };
+	                    swap(@order[4], @order[$2]);
+	                });
+	            };
+	            swap(@order[$position], @order[$counter - 1]);
+	        };
+	    };
+	    test(0, 1);
+
+
+	    clone(@leftPreset, @newLeftPreset);
+	    clone(@rightPreset, @newRightPreset);
+
+	    saveUndo("Optimize Preset For PO-32", false);
+
+	    sortOrderString = '';
+	    iterate(@bestOrder, >sortOrderString #= $2);
+
+	    if (sortOrderString !== '12345678' && abs(leastDamage - noChangeDamage) > 0.0001) {
+	    	selectedChannel = selected('channel');
+	        for (ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+	            originalChannel = bestOrder[ch - 1];
+	            if (originalChannel == selectedChannel) select('channel', ch);
+
+	            newRightPreset.Mute[ch] = rightPreset.Mute[originalChannel];
+	            clone(@rightPreset.drumPatches[originalChannel], @newRightPreset.drumPatches[ch]);
+	            newLeftPreset.Mute[ch] = leftPreset.Mute[originalChannel];
+	            clone(@leftPreset.drumPatches[originalChannel], @newLeftPreset.drumPatches[ch]);
+
+	            for (ptn = 'a'; ptn <= LAST_PATTERN; ptn = po32.succChar(ptn)) {
+	                clone(@leftPreset.patterns[ptn][originalChannel], @newLeftPreset.patterns[ptn][ch]);
+	            };
+	        };
+	        needToSetPresets = true;
+	    };
+
+	    if (needToSetPresets) {
+	        newLeftPreset.modified = true;
+
+	        setParam('Morph', 1.0);
+	        setElement('preset', @newRightPreset);
+	        setParam('Morph', 0.0);
+	        setElement('preset', @newLeftPreset);
+	        setParam('Morph', currentMorph);
+
+       	    if (morphsAdjusted) {
+				::po32.warning = ::po32.MORPH_WARNING;
+			};
+	    };
+    };
+
+	po32.clearWarning = function { ::po32.warning = "";	};
+	po32.window.close => ::modal.close("po32");
+
+	po32.windowPosition = "";
+	po32.windowZOrder = "";
+
+	po32.page = 0;
+	po32.page.switch = function {
+		::po32.clearWarning();
+		::po32.page = $0;
+		setCushyVariable("po32Mode", ::po32.page == 1);
+	};
+	po32.page.switch.checked => (::po32.page == $0);
+	
+	po32.isRegistered.changed => if (!getCushyVariable("isRegistered")) ::po32.window.close();
+	po32.preview.changed = function {
+		if (getCushyVariable("po32Mode")) ::po32.page = 1
+		else ::po32.page = 0;
+	};
+
+	po32.preview.flash = 0;
+	po32.preview.flash.counter = 0;
+
+	po32.animate.flash = void;
+	po32.animate.flashOn = 0;
+	po32.animate = function {
+		if (::modem.active) {
+			mark = ::modem.currentMarker();
+			if (::po32.animate.flash != mark) {
+				if (::po32.animate.flash != void) {
+					[::po32.animate.flash].flash = void;
+				};
+				::po32.animate.flash = mark;
+			};
+			[mark].flash = (::po32.animate.flashOn = if (::po32.animate.flashOn > 0) 0 else 1);
+		} else if (::po32.animate.flash != void) {
+			[::po32.animate.flash].flash = void;
+		};
+		if (::po32.page == 1 && ::po32.preview.flash.counter++ > 4) {
+			::po32.preview.flash.counter = 0;
+			::po32.preview.flash = 1;
+		} else {
+			::po32.preview.flash = 0;
+		};
+	};
+};
+
+if (getCushyVariable("po32Mode")) {
+	::po32.page.switch(1);
+} else {
+	::po32.page.switch(::po32.page);
+};
+::modal.onClose => setCushyVariable("po32Mode", false);
+if (!getCushyVariable("isRegistered")) ::po32.window.close();

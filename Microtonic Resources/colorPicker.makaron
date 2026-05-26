@@ -1,0 +1,93 @@
+// invoke this in your autoexec
+@begin initColorPicker(label, h, s, v)
+	{
+		action: "batch"
+		params: {
+            { "set", { colorPicker_@(label)_H, "@h" } }
+            { "set", { colorPicker_@(label)_S, "@s" } }
+            { "set", { colorPicker_@(label)_V, "@v" } }
+        }
+		onReload: false
+	}
+@end
+
+// invoke this in your view hierarchy
+@begin colorPicker(label)
+	@define COLOR_PICKER_WIDTH=130
+	@define COLOR_PICKER_HEIGHT=195
+	{
+		type: "group"
+		bounds: { 10, 10, @COLOR_PICKER_WIDTH, @COLOR_PICKER_HEIGHT }
+		views: {
+			{
+				type: "rectangle"
+				fill: "black"
+				opacity: 75
+			}
+			{
+				type: "dragArea"
+				positionVariable: colorPicker_@(label)_Position
+			}
+			@begin COLOR_PICKER_SLIDER(y, hint, var, stops)
+				{
+					type: "group"
+					bounds: { 10, @y, w - 20, 35 }
+					varExpansion: true
+					views: {
+						{
+							type: "gradient"
+							bounds: { 5, 0, w - 10, 15 }
+							start: { 5, 5 }
+							end: { @COLOR_PICKER_WIDTH - 25, 5 }
+							stops: { @stops }
+						}
+						{
+							type: "slider"
+							bounds: { 0, 20, w, 20 }
+							variable: @var
+							cap: {
+								color: "white"
+								rounded: 100
+							}
+							slit: {
+								color: "white"
+								start: { 5, 5 }
+								end: { @COLOR_PICKER_WIDTH - 25, 5 }
+								thickness: 1
+							}
+						}
+					}
+				}
+			@end
+			@begin S(v) { @v, "hsv(@v,1,1)" } @end
+			@COLOR_PICKER_SLIDER(10, Hue, colorPicker_@(label)_H, @<@S(0.0), @S(0.1), @S(0.2), @S(0.3), @S(0.4), @S(0.5), @S(0.6), @S(0.7), @S(0.8), @S(0.9), @S(1.0)@>)
+			@COLOR_PICKER_SLIDER(55, Saturation, colorPicker_@(label)_S, @<{ 0.0, "hsv([var]colorPicker_@(label)_H[/var],0.0,[var]colorPicker_@(label)_V[/var])" }, { 1.0, "hsv([var]colorPicker_@(label)_H[/var],1.0,[var]colorPicker_@(label)_V[/var])" }@>)
+			@COLOR_PICKER_SLIDER(100, Value, colorPicker_@(label)_V, @<{ 0.0, "hsv([var]colorPicker_@(label)_H[/var],[var]colorPicker_@(label)_S[/var],0.0)" }, { 1.0, "hsv([var]colorPicker_@(label)_H[/var],[var]colorPicker_@(label)_S[/var],1.0)" }@>)
+			{
+				type: "group"
+				bounds: { 10, 145, w - 20, 40 }
+				varExpansion: true
+				views: {
+					{
+						type: "button"
+						caption: "hsv([var]colorPicker_@(label)_H[/var],[var]colorPicker_@(label)_S[/var],[var]colorPicker_@(label)_V[/var])"
+						standard: {
+							fill: "hsv([var]colorPicker_@(label)_H[/var],[var]colorPicker_@(label)_S[/var],[var]colorPicker_@(label)_V[/var])"
+							frame: "white"
+							font: { ivgfont: "monospace", size: 8, color: "white" }
+						}
+						action: "edit"
+						params: {
+							text: "copy this"
+							variable: "colorPickerDummy"
+							default: "hsv([var]colorPicker_@(label)_H[/var],[var]colorPicker_@(label)_S[/var],[var]colorPicker_@(label)_V[/var])"
+						}
+					}
+				}
+			}
+		}
+	}
+@end
+
+// invoke this inside a dynamic group view where you want the color to be injected (use dynamicGroup(<contents>) for a temporary wrapper)
+@begin pickedColor(label) hsv([var]colorPicker_@(label)_H[/var],[var]colorPicker_@(label)_S[/var],[var]colorPicker_@(label)_V[/var]) @end

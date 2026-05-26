@@ -1,0 +1,11 @@
+format IVG-2 requires:IMPD-1
+
+// using masks to multiply four gradient fades in each direction
+
+// mask inverted:yes [ rect $shadowBlur,$shadowBlur,{$width-$shadowBlur*2},{$height-$shadowBlur*2} ]
+g=call [ mask [ wipe gradient:[linear $0 from:0.0 to:1.0] ] ]
+$g 0,0,$shadowBlur,0
+$g 0,0,0,$shadowBlur
+$g $width,0,{$width-$shadowBlur},0
+$g 0,$height,0,{$height-$shadowBlur}
+wipe rgb(0,0,0,$shadowIntensity)

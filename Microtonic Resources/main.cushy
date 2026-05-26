@@ -1,0 +1,426 @@
+/*
+	GUI Variables
+	#############
+
+	Constants
+	=========
+
+	Readable
+	========
+
+	Read and Writable
+	=================
+
+	Actions
+	#######
+
+	Product Specific Actions
+	========================
+
+	Product Specific Parameters
+	===========================
+
+	Product Specific Feedbacks
+	==========================
+
+*/
+
+@include colorScheme.makaron
+@define HINT_TEXT_COLOR = #303030
+@define HINT_BACKGROUND_COLOR = #FCFCFC
+
+autoexecs: {
+	{
+		onChanged: po32Mode
+		action: "po32Mode.changed"
+	}
+	{
+		action: "set"
+		params: { zoomLayout, "" }
+		onReload: false
+	}
+	{
+		action: "set"
+		params: { dragHover, "false" }
+		onReload: true
+	}
+	{
+		onChanged: midiConfigId
+		action: "flushCachedMidiConfig"
+	}
+}
+
+bounds: { 0, 0, 740, 550 }
+
+hints: {
+	font: { ivgfont: "sans-serif", size: 14, color: "@HINT_TEXT_COLOR" }
+	offset: { 0, 0 }
+	margins: { 4, 4, 4, 4 }
+	box: {
+		fill: "@HINT_BACKGROUND_COLOR"
+		opacity: 95
+		padding: { 8, 3, 8, 4 }
+		inset: { 5, 4, 5, 5 }
+		vector: {
+			file: "rectDropShadow"
+			defines: {
+				"shadowBlur": "8"
+				"shadowIntensity": "0.075"
+			}
+		}
+	}
+}
+
+views: {
+	{
+		type: "mainContent"
+	}
+	
+	//
+	// ***** Development views *****
+	//
+	{
+		type: "group"
+		visibility: false
+		bounds: { w-35, 28, 34, 16 }
+		views: {
+			@define devFont=ivgfont: "sans-serif", size:13
+			@begin devButton(t, l, caption, content)
+			{
+				type: "button"
+				bounds: { @t, @l, 16,16 }
+				caption: @caption
+				standard: 	{ frame: "green", font: { @devFont, color:"green" } }
+				down: 		{ frame: "green", fill: "green", font: { @devFont, color:"black" } }
+				disabled: 	{ frame: "gray", font: { @devFont, color:"gray" } }
+				@content
+			}
+			@end
+			@devButton(18,0,"r", @<
+				hint: "reload"
+				action: "reload"
+			@>)
+			@devButton(0,0,"\xBD", @<
+				action: "set"
+				params: { zoomLayout, "zoom" }
+			@>)
+		}
+	}
+
+
+
+/**
+
+		ooooooooooooo   .oooooo.   ooooooooo.
+		8'   888   `8  d8P'  `Y8b  `888   `Y88.
+		     888      888      888  888   .d88'
+		     888      888      888  888ooo88P'
+		     888      888      888  888
+		     888      `88b    d88'  888
+		    o888o      `Y8bood8P'  o888o
+
+
+**/
+
+	// Background
+	// { type: "rectangle", bounds:{ 0, 0, w, 27 }, fill:0xFF363636 }
+
+	{
+		type: "group"
+		bounds: { 107, 5, 50, 20 }
+		views: {
+			{
+				type: "paged"
+				index: programsLocked
+				pages: {
+					"false": {
+						{
+							type: "rectangle"
+							bounds: { 0, 0, $-12, $ }
+							rounded: { 3, 3 }
+							fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR"
+							frame:{ color:"black", stroke:0.5 }
+						}
+					}
+					"true": {
+						{
+							type: "rectangle"
+							bounds: { 0, 0, $-12, $ }
+							rounded: { 3, 3 }
+							fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR"
+							frame:{ color: "@PROGRAM_MENU_LOCKED_FRAME_COLOR", stroke:0.5 }
+
+						}
+						{
+							type: "raster"
+							bounds: { w-10, 1, $, $ }
+							image: { name: "programnumbers", slices:13, index:12 }
+						}
+						{
+							type: "hover",
+							bounds: { w-8, 4, 6, 11 }
+							hint: "Write protection is on"
+						}
+					}
+				}
+			}
+			{
+				type: "cluster"
+				bounds: { 4, 2, $, $ }
+				array: ProgramNumber
+				images: {
+					{ name: "programnumbers", slices:13, index:0 }
+					{ name: "programnumbers", slices:13, index:1 }
+					{ name: "programnumbers", slices:13, index:2 }
+					{ name: "programnumbers", slices:13, index:3 }
+					{ name: "programnumbers", slices:13, index:4 }
+					{ name: "programnumbers", slices:13, index:5 }
+					{ name: "programnumbers", slices:13, index:6 }
+					{ name: "programnumbers", slices:13, index:7 }
+					{ name: "programnumbers", slices:13, index:8 }
+					{ name: "programnumbers", slices:13, index:9 }
+					{ name: "programnumbers", slices:13, index:10 }
+					{ name: "programnumbers", slices:13, index:11 }
+				}
+				rects: {
+					{ 0, { $,$, $,$ }, {  0,$, $,$ } }
+					{ 1, { $,$, $,$ }, {  8,$, $,$ } }
+					{ 2, { $,$, $,$ }, { 20,$, $,$ } }
+				}
+			}
+			{
+				type: "button"
+				bounds: { 0, 0, $-12, $ }
+				rounded: { 3, 3 }
+				down: { fill: "@PROGRAM_MENU_BUTTON_DOWN_COLOR" }
+				mask: "press"
+				action: "programPopup", params: { position:{ 114,27 } }
+				hint: "Current program slot number"
+			}
+		}
+	}
+	{ type: "midiLabel", bounds: { 126, 2, 34, 18 }, subType: "note", param: ProgramChange }
+
+	// Morph slider
+	{
+		type: "group"
+		bounds: { 235, 2, 260, 25 }
+		views: {
+			{
+				type: "vector"
+				bounds: { 20, 2, 220, 20 }
+				code: "offset 0.5,0.5; pen #000000 width:9 caps:round; PATH svg:[M10,10l200,0]"
+			}
+			{
+				type: "vector"
+				bounds: { 20, 2, 220, 20 }
+				guiVariables: true
+				code: "offset 0.5,0.5; LOCAL X = {10+200*$Morph}; pen @MORPH_LINE_COLOR width:2.5 caps:round; PATH svg:[M110,10L{$X},10]; pen @MORPH_CIRCLE_OUTLINE_COLOR width:2; fill @MORPH_CIRCLE_FILL_COLOR; ELLIPSE {$X},10,7"
+			}
+			{
+				type: "slider"
+				bounds: { 20, 2, 220, 20 }
+				cap: { size: { 13, 13 }, rounded:100 }
+				slit: { start:{10,10}, end:{210,10} } // , thickness:8, color:"black" }
+				snap: { value:0.5 }
+				variable: Morph, hint:"Morph Position = [var]Morph.human[/var]"
+				default: 0.5
+			}
+			{	type: "click", bounds: { 20, 2, 220, 20 }, mask: "context", action: "morphContextMenu" }
+		}
+	}
+	{ type: "midiLabel", bounds: { 454, 2, 34, 18 }, subType: "globalCC", param: Morph }
+
+	// Scripts button
+	{
+		type: "button"
+		bounds: { w-26, 2, 24, 24 }
+		rounded: { 4,4 }
+		standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:0 } }
+		disabled: { fill:0x00000000, frame:{ color:0x70000000, stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:0, opacity:20 } }
+		checked: { fill: "@TOOLBAR_BUTTON_CHECKED_COLOR" }
+		down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+		checkedDown: { fill: "@TOOLBAR_BUTTON_CHECKED_DOWN_COLOR" }
+		actions: {
+			{       "down", "scriptPopup", { position:{ 720,27 } } },
+			{ "down+shift", "scriptPopup", { position:{ 720,27 }, modifier:"shift" } }
+		}
+		hint: "Scripts (SHIFT: repeat last script)"
+    }
+
+	// Undo button
+	{
+		type: "button",
+		bounds: { 523, 2, 24, 24 }
+		rounded: { 4,4 }
+		standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:5 } }
+		disabled: { fill:0x00000000, frame:{ color:0x70000000, stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:5, opacity:20 } }
+		checked: { fill: "@TOOLBAR_BUTTON_CHECKED_COLOR" }
+		down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+		checkedDown: { fill: "@TOOLBAR_BUTTON_CHECKED_DOWN_COLOR" }
+		action: "switch"
+		params: {
+			variable: "can:undo"
+			cases: {
+				"false": { "undo" }	// don't display hint if we can't undo (or the user will always be able to undo)
+				"true": { "batch", { { "hint", { text: "Undid: [var]undo.description[/var]" } }, { "undo" } } }
+			}
+		}
+		hint: "[trim]Undo [var]undo.description[/var][/trim]"
+	}
+
+	// Redo button
+	{
+		type: "button",
+		bounds: { 550, 2, 24, 24 }
+		rounded: { 4,4 }
+		standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:6 } }
+		disabled: { fill:0x00000000, frame:{ color:0x70000000, stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:6, opacity:20 } }
+		checked: { fill: "@TOOLBAR_BUTTON_CHECKED_COLOR" }
+		down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+		checkedDown: { fill: "@TOOLBAR_BUTTON_CHECKED_DOWN_COLOR" }
+		action: "switch"
+		params: {
+			variable: "can:redo"
+			cases: {
+				"false": { "redo" }	// don't display hint if we can't redo (or the user will always be able to redo)
+				"true": { "batch", { { "hint", { text: "Redid: [var]redo.description[/var]" } }, { "redo" } } }
+			}
+		}
+		hint: "[trim]Redo [var]redo.description[/var][/trim]"
+	}
+
+	// MIDI Select button
+	{
+		type: "button",
+		bounds: { 606, 2, 24, 24 }
+		rounded: { 4,4 }
+		standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:1 } }
+		disabled: { fill:0x00000000, frame:{ color:0x70000000, stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:1, opacity:20 } }
+		checked: { fill: "@TOOLBAR_BUTTON_CHECKED_COLOR" }
+		down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+		checkedDown: { fill: "@TOOLBAR_BUTTON_CHECKED_DOWN_COLOR" }
+		action: "SelectWithMidi.toggle"
+		hint: "Select channel with MIDI (use \"MIDI Config\" menu for more options)"
+	}
+
+	// Pitched Mode button
+	{
+		type: "button",
+		bounds: { 633, 2, 24, 24 }
+		rounded: { 4,4 }
+		standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:2 } }
+		disabled: { fill:0x00000000, frame:{ color:0x70000000, stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:2, opacity:20 } }
+		checked: { fill: "@TOOLBAR_BUTTON_CHECKED_COLOR" }
+		down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+		checkedDown: { fill: "@TOOLBAR_BUTTON_CHECKED_DOWN_COLOR" }
+		action: "PitchedMode.toggle"
+		hint: "Pitched MIDI mode (use \"MIDI Config\" menu for more options)"
+	}
+
+	// MIDI Note Off button
+	{
+		type: "button",
+		bounds: { 660, 2, 24, 24 }
+		rounded: { 4,4 }
+		standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:3 } }
+		disabled: { fill:0x00000000, frame:{ color:0x70000000, stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:3, opacity:20 } }
+		checked: { fill: "@TOOLBAR_BUTTON_CHECKED_COLOR" }
+		down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+		checkedDown: { fill: "@TOOLBAR_BUTTON_CHECKED_DOWN_COLOR" }
+		action: "MidiNoteOff.toggle"
+		hint: "Stop voices with MIDI Note Off (use \"MIDI Config\" menu for more options)"
+	}
+
+	// PO-32 button
+	{
+		type: "paged"
+		bounds: { 687, 2, 24, 24 }
+		index: isRegistered
+		pages: {
+			true:{
+				{
+					type: "button"
+					rounded: { 4,4 }
+					standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:4 } }
+					disabled: { fill:0x00000000, frame:{ color:0x70000000, stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:4, opacity:20 } }
+					checked: { fill: "@TOOLBAR_BUTTON_CHECKED_COLOR" }
+					down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+					checkedDown: { fill: "@TOOLBAR_BUTTON_CHECKED_DOWN_COLOR" }
+					hint: "Open and close Pocket Operator tonic transfer interface"
+					action: "modal.toggle", params: po32
+				}
+			}
+			false:{
+				{
+					type: "button"
+					rounded: { 4,4 }
+					standard: { fill: "@TOOLBAR_BUTTON_BACKGROUND_COLOR", frame:{ color:"black", stroke:0.5 }, icon:{ name:"buttonicons", slices:7, index:4 } }
+					down: { fill: "@TOOLBAR_BUTTON_DOWN_COLOR" }
+					hint: "Open and close Pocket Operator tonic transfer interface"
+					action: "alert",
+					params: {
+						type:"error",
+						buttons:"yes no",
+						default:"no",
+						text:"This feature is not available until you register your copy of Microtonic. Do you wish to register now?"
+						reactions: { "yes": { "register" } }
+					}
+				}
+			}
+		}
+	}
+
+	// drag hover
+	{
+		type: "hover"
+		bounds:{ 3, 3, 19, 23 }
+		enterAction: "set", enterParams: { dragHover, "true" }
+		leaveAction: "set", leaveParams: { dragHover, "false" }
+	}
+	{
+    	type: "paged"
+    	index: dragHover
+    	pages: {
+    		"true": {
+    			{
+					type: "raster"
+					bounds: { 10, 0, 34, 17 }
+					image:{ name:"mididraghover" }
+				}
+    		}
+    	}
+    }
+
+	// Clickable logo
+	{ type: "click", bounds: { 95, 44, 245, 16 }, cursor: "hand", action: "toggleAbout" }
+
+	// Keyboard focus to classic views on click
+	{ type: "click", thru: true, action: "focusToMain" }
+
+	{
+		type: "group"
+		views: {
+			// dynamic cushy view used by development tools
+			{
+				type: "cushy"
+				layoutVariable: devLayout
+				transitions: true
+			}
+
+			// dynamic cushy view used by modal dialogs and script windows
+			{
+				type: "cushy"
+				layoutVariable: modal.current
+				transitions: true
+			}
+		}
+	}
+
+	// Zoom controller
+	{
+		type: "cushy"
+		layoutVariable: zoomLayout
+		uiScaling: false
+	}
+}

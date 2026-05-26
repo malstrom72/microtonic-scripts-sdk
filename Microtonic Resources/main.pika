@@ -1,0 +1,58 @@
+include('stdlib.pika');
+
+needsInitialization = function {
+	if (coalesce(@::initialized[$0], 0) != $1) { ::initialized[$0] = $1; ( true ) }
+	else ( false );
+};
+
+if (needsInitialization("main", 1)) {
+	unescapeEscaped = function { if (span($0{0}, "\"'") == 1) evaluate($0) else $0 };
+
+	modal.current = void;
+	modal.callOnClose = function {
+		if (exists(@::modal.onClose)) {
+			::modal.onClose();
+			delete(@::modal.onClose);
+		}
+	};
+	modal.toggle = function {
+		m = unescapeEscaped($0);
+		if (::modal.current == void) ::modal.current = m
+		else if (::modal.current != m) {
+			::modal.current = m;
+			::modal.callOnClose();
+		} else {
+			::modal.current = void;
+			::modal.callOnClose();
+		};
+	};
+	modal.toggle.checked => (::modal.current == unescapeEscaped($0));
+	modal.open = function {
+		m = unescapeEscaped($0);
+		if (::modal.current != m) {
+			::modal.current = m;
+			::modal.callOnClose();
+		}
+	};
+	modal.close = function {
+		if (::modal.current != void && (!exists(@$0) || $0 == void || unescapeEscaped($0) == ::modal.current)) {
+			::modal.current = void;
+			::modal.callOnClose();
+		}
+	};
+
+	po32Mode.changed => {
+		if (!getCushyVariable("isRegistered")) setCushyVariable("po32Mode", false)
+		else if (getCushyVariable("po32Mode")) ::modal.open("po32");
+	};
+
+	jsPikaBackend.eval => {
+		jsPikaBackend.result = (if (($c = classify($r = evaluate(unescape($0)))) === 'boolean' || $c === 'number') $r else escape($r));
+	};
+	jsPikaBackend.call => {
+		parseArray($0, @$a);
+		for ($i = 0; $i < $a.n; ++$i) $a[$i] = evaluate($a[$i]);
+		jsPikaBackend.result = (if (($c = classify($r = invoke($a[0], , @$a, 1))) === 'boolean' || $c === 'number') $r else escape($r));
+	};
+	jsPikaBackend.result = '""';
+};

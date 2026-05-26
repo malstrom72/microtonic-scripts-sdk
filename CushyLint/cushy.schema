@@ -639,7 +639,7 @@
     [ bounds: <rect> ]
     [ edit: <editSpec> ]
     [ clamp: "none" | "mouse" | "dragArea" | "full" ]
-    [ bringToFront: "false" | "true" | "auto" ]
+    [ bringToFront: <bool> | "auto" ]
     [ hint: <metaText> ]
     [ cursor: <cursor> ]
     [ positionVariable: <var> ]

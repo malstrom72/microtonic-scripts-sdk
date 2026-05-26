@@ -1,0 +1,15 @@
+/* --- errors --- */
+
+"Unexpected error": "Unknown / unexpected error"
+
+/* --- zoom strings --- */
+
+"zoom:1/2": "50%"
+"zoom:3/4": "75%"
+"zoom:1/1": "100%"
+"zoom:5/4": "125%"
+"zoom:3/2": "150%"
+"zoom:7/4": "175%"
+"zoom:2/1": "200%"
+
+"You need to close and reopen the window to resize.": "Your host is not capable of resizing this plugin window.\n\nClose and reopen the window to use the new zoom setting."

@@ -1,0 +1,13 @@
+offset 2.5,2.5
+scale 1
+chainstart = $po32.transferPattern.pattern.selected;
+chainlength = $po32.transferPattern.pattern.chainlength;
+for i from:0 to:15 [
+  col = { $i % 4 }
+  row = { floor($i / 4) }
+  flash = {$po32.transferPattern.Pattern.($i+1).flash}
+  fill { $flash == 0 ? [none] : $flash == 1 ? [#c30e0e] :
+    $i >= $chainstart && $i <= $chainstart + $chainlength ? [#b3c2dc] : [#445566]
+  }
+  ELLIPSE {$col * 5},{$row * 6},1.8
+]

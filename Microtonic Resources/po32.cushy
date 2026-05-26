@@ -1,0 +1,387 @@
+transitions: {
+	open: {
+		time: 0.1
+		offset: { 0,400 }
+		opacity: 0
+	}
+	close: {
+		time: 0.1
+		offset: { 0,400 }
+		opacity: 0
+	}
+}
+
+autoexecs: {
+	{
+		action: "po32.animate"
+		delay: 0
+		repeat: (1/6)
+	}
+	{
+		action: "po32.preview.changed"
+		onChanged: { po32Mode }
+	}
+	{
+		action: "po32.isRegistered.changed"
+		onChanged: { isRegistered }
+	}
+}
+
+@define defaultFont=ivgfont: "Inter"
+@define primaryHue=0.58
+@define secondaryHue=0.60
+@define primaryTextColor=hsv(@primaryHue,0.16,0.87)
+@define secondaryTextColor=hsv(@primaryHue,0.40,0.66)
+
+bounds: { w-235, 90, 234, 456 }
+views: {
+
+		{
+			type: "vector"
+			file: "po32background"
+		}
+		{
+			type: "dragArea"
+			bounds: { 0, 0, w, h }
+			hitMask: { ivgFile: "po32background" }
+			bringToFront: "auto"
+			hint: ""
+			positionVariable: po32.windowPosition
+			zOrderVariable: po32.windowZOrder
+		}
+		{
+			type: "button"
+			bounds: { 212, 65, 19, 19 }
+			action: "po32.window.close"
+			rounded: 100,
+			standard: { fill: "#d0000000", frame: { color: "#eec4c4c4", stroke: 1.5 } }
+			down: { fill: "#ff000000", frame: { color: "#eeaaaaaa", stroke: 1 } }
+			vector: { code:"bounds 0,0,20,20;pen #eec4c4c4 width:2;PATH svg:[M6.5,6.5l6,6m-6,0l6,-6]" }
+		}
+
+		/*** Tabs ***/
+		{
+			type: "group"
+			bounds: { 23, 86, 184, 24 }
+			views: {
+				{
+					type: "button"
+					bounds: { 0, 0, w/2, h }
+					action: "po32.page.switch"
+					params: 0
+					caption: "transfer sound"
+					standard: { fill: "transparent", frame:{ color:"hsv(@secondaryHue,0.22,0.68)", stroke:0.5 }, font:{ @defaultFont, size:10, color:"hsv(@secondaryHue,0.22,0.77)", gamma: 1.8 } }
+					checked: { fill: "hsv(@secondaryHue,0.22,0.68)", font:{ @defaultFont, color: "black" } }
+					down: { fill: "hsv(@secondaryHue,0.39,0.39)", font:{ @defaultFont, color:"hsv(@secondaryHue,0.2,0.9)" } }
+					hint: "Transfer sound for selected channel"
+				}
+				{
+					type: "button"
+					bounds: { w/2, 0, w/2, h }
+					action: "po32.page.switch"
+					params: 1
+					caption: "sounds+pattern"
+					standard: { fill: "transparent", frame:{ color:"hsv(@secondaryHue,0.22,0.68)", stroke:0.5 }, font:{ @defaultFont, size:10, color:"hsv(@secondaryHue,0.22,0.77)", gamma: 1.8 } }
+					checked: { fill: "hsv(@secondaryHue,0.22,0.68)", font:{ @defaultFont, color: "black" } }
+					down: { fill: "hsv(@secondaryHue,0.39,0.39)", font:{ @defaultFont, color:"hsv(@secondaryHue,0.2,0.9)" } }
+					hint: "Transfer selected pattern chain"
+				}
+			}
+		}
+
+
+		/*** Pages ***/
+		{
+			type: "paged"
+			bounds: { 8, 75, 214, 374 }
+			index: po32.page
+			pages: {
+				"0": { 	/*** patch transfer ***/
+					{	// instructions
+						type: "group"
+						bounds: { 0, 40, $, 100 }
+						views: {
+							{
+								type: "caption"
+								bounds: { 0, 5, $, 15 }
+								font: { @defaultFont, size:11, color:"@primaryTextColor", gamma: 1.3 }
+								text: "put your PO in receive mode", align:"center"
+							}						
+							{
+								type: "vector"
+								bounds: { 67, 27, 81, 31 }
+								code: "scale 0.8; fill @secondaryTextColor; PATH svg:[M19.4,0L14.2,5.2L16.3,5.2L21.3.2C20.7,0,20,0,19.4,0zM81.3.1C71,.1,62.7,8.4,62.7,18.8C62.7,29.1,71,37.4,81.3,37.4C91.7,37.4,100,29.1,100,18.8C100,8.4,91.7.1,81.3.1zM17.2.2C16.3.2,15.6.3,14.8.5L9.1,6.2L10.1,6.2C10.5,6.2,11,5.8,11.2,5.4L11.9,5.4L17.2.2zM23.1.5L18.4,5.2L20.4,5.2L24.7,1C24.2.8,23.6.6,23.1.5zM11.6,1.4C9.4,2.4,7.4,3.8,5.7,5.5C3.8,7.2,2.5,9.3,1.6,11.5L5.7,7.4C5.8,6.9,6.3,6.5,6.7,6.3L11.6,1.4zM26.3,1.6L22.7,5.2L24.6,5.2L27.5,2.3C27.2,2.1,26.7,1.8,26.3,1.6zM29.1,3.1L26.3,6C26.4,6,26.6,6.2,26.8,6.1L28,6.1L30.2,3.9C29.9,3.6,29.5,3.5,29.1,3.1zM31.5,5L30.2,6.3C30.6,6.4,31,6.8,31.2,7.3L32.4,6C32.3,5.8,32.1,5.6,32,5.5C31.8,5.4,31.6,5.2,31.5,5zM74.2,5.6L88.7,5.6C88.8,6,89.3,6.4,89.8,6.4L92.3,6.4C93.3,6.4,94.3,7.3,94.3,8.4L94.3,13.4L94.2,13.4C94.2,13.5,94,13.6,94,13.6C94,13.6,94,13.7,93.9,13.7L93.7,13.8C93.6,14,93.6,14.2,93.6,14.3L93.6,23.2C93.6,23.4,93.7,23.5,93.7,23.7L93.9,23.8C93.9,24,94,24,94,24L94.2,24L94.3,24L94.3,29C94.3,30.1,93.3,31,92.3,31L86.3,31C85.8,31,85.5,31.3,85.5,31.8L77.2,31.8L77.2,31.7C77.2,31.2,76.8,30.9,76.4,30.9L70.4,30.9C69.3,30.9,68.4,29.9,68.4,28.8L68.4,23.8L68.5,23.8C68.5,23.7,68.7,23.7,68.7,23.7C68.9,23.7,68.9,23.6,69,23.6C69.1,23.4,69.2,23.2,69.2,23.1L69.2,14.2C69.2,14,69,13.8,69,13.7L68.9,13.5C68.9,13.4,68.7,13.4,68.7,13.4L68.6,13.4L68.4,13.4L68.4,8.4C68.4,7.3,69.4,6.4,70.5,6.4L73.1,6.4C73.6,6.4,74.1,6,74.2,5.6zM33.4,7.3L31.3,9.3L31.2,9.3L31.2,11.3L34.2,8.3C34,8.1,33.7,7.6,33.4,7.3zM35.2,9.8L30.7,14.3L30.6,14.3L30.6,16.3L35.8,11.1C35.7,10.7,35.5,10.2,35.2,9.8zM5.5,9.8L.5,14.8C.3,15.6.2,16.4.2,17.2L5.5,11.8L5.5,9.8zM18.4,11.8C14.7,11.8,11.6,14.8,11.6,18.6C11.6,22.4,14.6,25.4,18.4,25.4C22.2,25.4,25.2,22.4,25.2,18.6C25.2,14.8,22.2,11.8,18.4,11.8zM48.6,11.9L48.6,17.4L43.2,17.4L43.2,19.8L48.6,19.8L48.6,25.2L51,25.2L51,19.8L56.4,19.8L56.4,17.4L51,17.4L51,11.9L48.6,11.9zM81.3,12C77.6,12,74.6,15,74.6,18.8C74.6,22.5,77.6,25.5,81.3,25.5C85.1,25.5,88.1,22.5,88.1,18.8C88.1,15,85.1,12,81.3,12zM36.5,12.8L30.7,18.6L30.7,20.6L37,14.3C36.8,13.7,36.6,13.2,36.5,12.8zM5.8,13.5L0,19.3C0,20,0,20.6.2,21.3L6.1,15.3L6.1,14.1C6.1,14,6,13.8,6,13.7L5.8,13.5zM37.3,16.3L30.7,22.8L30.7,23.2C30.7,23.4,30.9,23.5,30.9,23.7L31,23.8C31,24,31.2,24,31.2,24L31.3,24L31.4,24L31.4,24.1L37.4,18.2C37.4,17.5,37.4,16.9,37.3,16.3zM5.9,17.7L.4,23.2C.6,23.8.8,24.3.9,24.8L6.1,19.6L5.9,19.6L5.9,17.7zM6.1,19.6L6.1,19.6L6.1,19.5L6.1,19.6zM37.5,20.3L31.4,26.3L31.4,28.3L37.1,22.7C37.3,21.9,37.5,21.1,37.5,20.3zM6.3,21.9L1.8,26.4C1.9,26.7,2,27.2,2.4,27.7L5.5,24.6L5.5,23.9L5.6,23.9L5.7,23.9C5.7,23.8,5.8,23.8,5.8,23.8C6,23.8,6,23.6,6.2,23.6C6.3,23.5,6.3,23.3,6.3,23.1L6.3,21.9zM36,26L25.9,36.1C28.2,35.1,30.2,33.7,32,32C33.7,30.2,35.1,28.2,36,26zM5.4,27L3.3,29.2C3.5,29.4,3.8,29.9,4.1,30.3L5.5,28.8L5.4,28.8L5.4,27zM6,30.5L5,31.5L5.5,32L6,32.4L7.4,31C6.9,31,6.4,30.7,6,30.5zM9.8,31L7.3,33.5C7.5,33.9,8,34,8.3,34.3L11.7,31L9.8,31zM23.3,31C22.9,31,22.5,31.3,22.5,31.8L22.5,32L21.4,32L16.2,37.2C16.8,37.3,17.5,37.3,18.1,37.3L24.4,31L23.3,31zM26.6,31L20.3,37.3C21.1,37.3,21.9,37.1,22.7,37L28.6,31L26.6,31zM13.8,31.2L9.9,35.2C10.2,35.3,10.7,35.6,11.2,35.8L14.8,32.2L14.3,32.2L14.3,32C14.3,31.7,14.1,31.4,13.8,31.2zM14.8,32.2L14.9,32.2L14.9,32L14.8,32.2zM14.9,32L14.9,32L14.9,32L14.9,32zM17.2,32L12.8,36.4C13.2,36.5,13.8,36.7,14.3,36.8L19.2,32L17.2,32z]"
+							}
+							{
+								type: "caption"
+								bounds: { 69, 64, 26, 11 }
+								font:{ @defaultFont, size:11, color:"@secondaryTextColor", gamma:1.8 }
+								text: "acc", align:"center"
+							}
+							{
+								type: "caption"
+								bounds: { 111, 64, 44, 11 }
+								font:{ @defaultFont, size:11, color:"@secondaryTextColor", gamma:1.8 }
+								text: "sound", align:"center"
+							}
+						}
+					}
+							
+					{   // destination button selector
+						type: "group"
+						bounds: { 0, 132, $, h-115 }
+						views: {
+							{
+								type: "caption"
+								bounds: { 0, 0, $, 15 }
+								font:{ @defaultFont, size:11.5, color:"@primaryTextColor", gamma:1.8 }
+								text: "click destination button below", align:"center"
+							}
+
+							{
+								type: "caption"
+								bounds: { 1, 17, $, 15 }
+								font:{ @defaultFont, size:9.5, color:"@secondaryTextColor", gamma:1.8 }
+								text: "([var]shortModifierKey[/var]click to reset to factory sound)", align:"center"
+							}
+			
+							{
+								type: "group"
+								bounds: { 38, 42, 140, 180 }
+								views: {
+									@begin destButton(i, x, y)
+										{
+											type: "group"
+											bounds: { @x, @y, 31, 41 }
+											views: {
+												{ type: "caption", text: "@i", bounds: { 0, 28, 32, 15 }, font:{ @defaultFont, size:12.2, color:"hsv(@primaryHue,0,0.66)", gamma:1.5 }, align: "center" }
+												{ type: "button", bounds:{1,0,29,29}, rounded:100, standard: { fill:"hsv(@primaryHue,0.19,0.09)" }, down: { fill:"hsv(@primaryHue,0.52,0.46)" }, actions:{
+													{ "click", "po32.transferSound.transmit", @i }
+													{ "click+windows+control", "po32.transferSound.reset", @i }
+													{ "click+mac+command", "po32.transferSound.reset", @i }
+												} }
+												{ type: "vector", guiVariables: true, variable: po32.transferSound.Instrument.@i.ivg }
+											}
+										}
+									@end
+									@destButton(1, 0, 0)
+									@destButton(2, 35, 0)
+									@destButton(3, 70, 0)
+									@destButton(4, 105, 0)
+
+									@destButton(5, 0, 45)
+									@destButton(6, 35, 45)
+									@destButton(7, 70, 45)
+									@destButton(8, 105, 45)
+
+									@destButton(9, 0, 90)
+									@destButton(10, 35, 90)
+									@destButton(11, 70, 90)
+									@destButton(12, 105, 90)
+
+									@destButton(13, 0, 135)
+									@destButton(14, 35, 135)
+									@destButton(15, 70, 135)
+									@destButton(16, 105, 135)
+								}
+							}
+						}
+					}			
+				}
+				"1": {	/*** preset transfer ***/
+					{
+						type: "paged"
+						bounds: { 0, 50, w, 15 }
+						index: po32.preview.flash
+						pages: {
+							"0": {
+								{
+									type: "caption"
+									font:{ @defaultFont, size:10, color:"hsv(0.11,1,0.88)", gamma:1.6 }
+									text: "microtonic is in PO-32 preview mode", align:"center"
+								}
+							}
+							"1": {
+								{
+									type: "caption"
+									font:{ @defaultFont, size:10, color:"hsv(0.11,1,0.94)", gamma:2.6 }
+									text: "microtonic is in PO-32 preview mode", align:"center"
+								}
+							}
+						}
+					}
+
+					{	// optimize button
+						type:"group"
+						bounds:{ 45, 75, 125, 24 }
+						views:{
+							{
+								type: "button"
+								rounded: { 4, 4 }
+								action: "po32.optimize",
+								hint: "Shuffle channels to better fit PO-32"
+								caption: "optimize for PO-32"
+								standard: { fill: "hsv(@primaryHue,0.24,0.33)", frame: { color: "hsv(@primaryHue,0.24,0.44)", stroke: 1 }, font: { @defaultFont, size:11.5, color:"@primaryTextColor", gamma: 1.8 } }
+								down: { fill: "hsv(@primaryHue,0.24,0.44)" }
+							}
+						}
+					}
+
+					{	// sound bank destination
+						type: "group"
+						bounds: { 0, 125, $, 40 }
+						views: {
+							{
+								type: "caption"
+								bounds: { 15, 10, 110, 15 }
+								font:{ @defaultFont, size:10.4, color:"@secondaryTextColor", gamma:1.8 }
+								text: "transfer sounds to"
+							}
+
+							{	/*** Source Channel Drop Down ***/
+								type:"group"
+								bounds:{ 113, 8, 55, 20 }
+								views:{
+									{
+										type: "button"
+										rounded: { 4, 4 }
+										standard: { fill: "hsv(@primaryHue,0.24,0.33)", frame: { color: "hsv(@primaryHue,0.24,0.44)", stroke: 1 } }
+										down: { fill: "hsv(@primaryHue,0.24,0.44)" }
+										action: "popup", params:{
+											items:{
+												{ "[var]po32.transferPattern.bank.0[/var]", "po32.transferPattern.bank.set", 0 }
+												{ "[var]po32.transferPattern.bank.1[/var]", "po32.transferPattern.bank.set", 1 }
+											}
+										}
+									}
+									{
+										type: "caption"
+										bounds:{ 4, 0, w-20, h }
+										font: { @defaultFont, size:11.5, color:"@primaryTextColor", gamma: 1.8 }
+										text: "[var]po32.transferPattern.bank[/var]"
+										align: "center"
+									}
+									{	// arrow down
+										type: "vector"
+										bounds:{ w-12, (h/2)-2, 7, 7 }
+										code: "fill @primaryTextColor; PATH svg:[M 7,0 H 0 L 3.5,5 7,0 z]"
+									}
+								}
+							}
+
+							{	// sound button visualization
+								type: "vector"
+								bounds:{ 177, 6, 24, 24 }
+								guiVariables: true
+								file: "po32instrument"
+							}
+						}
+					}
+
+					{	// pattern destination
+						type: "group"
+						bounds: { 0, 165, $, 40 }
+						views: {
+							{
+								type: "caption"
+								bounds: { 15, 10, 110, 15 }
+								font:{ @defaultFont, size:10, color:"@secondaryTextColor", gamma:1.8 }
+								text: "pattern (chain) to"
+							}
+
+							{	/*** Source Channel Drop Down ***/
+								type: "group"
+								bounds:{ 105, 8, 63, 20 }
+								views: {
+									{
+										type: "group",
+										varExpansion: true,
+										views: {
+											{
+												type: "button"
+												rounded: { 4, 4 }
+												standard: { fill: "hsv(@primaryHue,0.24,0.33)", frame: { color: "hsv(@primaryHue,0.24,0.44)", stroke: 1 } }
+												down: { fill: "hsv(@primaryHue,0.24,0.44)" }
+												action: "popup", params:{ items:{ [var]po32.transferPattern.pattern.popup[/var] }	}
+											}
+										}
+									},
+									{
+										type: "caption"
+										bounds:{ 4, 0, w-20, h }
+										font: { @defaultFont, size:11.5, color:"@primaryTextColor", gamma: 1.8 }
+										text: "[var]po32.transferPattern.pattern[/var]"
+										align: "center"
+									}
+									{	// arrow down
+										type: "vector"
+										bounds:{ w-12, (h/2)-2, 7, 7 }
+										code: "fill @primaryTextColor; PATH svg:[M 7,0 H 0 L 3.5,5 7,0 z]"
+									}
+								}
+							}
+
+							{	// sound button visualization
+								type: "vector"
+								bounds:{ 177, 6, 24, 24 }
+								guiVariables: true
+								file: "po32pattern"
+							}
+						}
+					}
+
+
+					{	// instructions
+						type: "group"
+						bounds: { 0, 225, $, 100 }
+						views: {
+							{
+								type: "caption"
+								bounds: { 0, 0, $, 15 }
+								font:{ @defaultFont, size:11.5, color:"@primaryTextColor", gamma:1.6 }
+								text: "put your PO-32 in receive mode", align:"center"
+							}
+							{
+								type: "vector"
+								bounds: { 63, 27, 90, 34 }
+								code: "scale 0.9; fill @secondaryTextColor; PATH svg:[M19.4,0L14.2,5.2L16.3,5.2L21.3.2C20.7,0,20,0,19.4,0zM81.3.1C71,.1,62.7,8.4,62.7,18.8C62.7,29.1,71,37.4,81.3,37.4C91.7,37.4,100,29.1,100,18.8C100,8.4,91.7.1,81.3.1zM17.2.2C16.3.2,15.6.3,14.8.5L9.1,6.2L10.1,6.2C10.5,6.2,11,5.8,11.2,5.4L11.9,5.4L17.2.2zM23.1.5L18.4,5.2L20.4,5.2L24.7,1C24.2.8,23.6.6,23.1.5zM11.6,1.4C9.4,2.4,7.4,3.8,5.7,5.5C3.8,7.2,2.5,9.3,1.6,11.5L5.7,7.4C5.8,6.9,6.3,6.5,6.7,6.3L11.6,1.4zM26.3,1.6L22.7,5.2L24.6,5.2L27.5,2.3C27.2,2.1,26.7,1.8,26.3,1.6zM29.1,3.1L26.3,6C26.4,6,26.6,6.2,26.8,6.1L28,6.1L30.2,3.9C29.9,3.6,29.5,3.5,29.1,3.1zM31.5,5L30.2,6.3C30.6,6.4,31,6.8,31.2,7.3L32.4,6C32.3,5.8,32.1,5.6,32,5.5C31.8,5.4,31.6,5.2,31.5,5zM74.2,5.6L88.7,5.6C88.8,6,89.3,6.4,89.8,6.4L92.3,6.4C93.3,6.4,94.3,7.3,94.3,8.4L94.3,13.4L94.2,13.4C94.2,13.5,94,13.6,94,13.6C94,13.6,94,13.7,93.9,13.7L93.7,13.8C93.6,14,93.6,14.2,93.6,14.3L93.6,23.2C93.6,23.4,93.7,23.5,93.7,23.7L93.9,23.8C93.9,24,94,24,94,24L94.2,24L94.3,24L94.3,29C94.3,30.1,93.3,31,92.3,31L86.3,31C85.8,31,85.5,31.3,85.5,31.8L77.2,31.8L77.2,31.7C77.2,31.2,76.8,30.9,76.4,30.9L70.4,30.9C69.3,30.9,68.4,29.9,68.4,28.8L68.4,23.8L68.5,23.8C68.5,23.7,68.7,23.7,68.7,23.7C68.9,23.7,68.9,23.6,69,23.6C69.1,23.4,69.2,23.2,69.2,23.1L69.2,14.2C69.2,14,69,13.8,69,13.7L68.9,13.5C68.9,13.4,68.7,13.4,68.7,13.4L68.6,13.4L68.4,13.4L68.4,8.4C68.4,7.3,69.4,6.4,70.5,6.4L73.1,6.4C73.6,6.4,74.1,6,74.2,5.6zM33.4,7.3L31.3,9.3L31.2,9.3L31.2,11.3L34.2,8.3C34,8.1,33.7,7.6,33.4,7.3zM35.2,9.8L30.7,14.3L30.6,14.3L30.6,16.3L35.8,11.1C35.7,10.7,35.5,10.2,35.2,9.8zM5.5,9.8L.5,14.8C.3,15.6.2,16.4.2,17.2L5.5,11.8L5.5,9.8zM18.4,11.8C14.7,11.8,11.6,14.8,11.6,18.6C11.6,22.4,14.6,25.4,18.4,25.4C22.2,25.4,25.2,22.4,25.2,18.6C25.2,14.8,22.2,11.8,18.4,11.8zM48.6,11.9L48.6,17.4L43.2,17.4L43.2,19.8L48.6,19.8L48.6,25.2L51,25.2L51,19.8L56.4,19.8L56.4,17.4L51,17.4L51,11.9L48.6,11.9zM81.3,12C77.6,12,74.6,15,74.6,18.8C74.6,22.5,77.6,25.5,81.3,25.5C85.1,25.5,88.1,22.5,88.1,18.8C88.1,15,85.1,12,81.3,12zM36.5,12.8L30.7,18.6L30.7,20.6L37,14.3C36.8,13.7,36.6,13.2,36.5,12.8zM5.8,13.5L0,19.3C0,20,0,20.6.2,21.3L6.1,15.3L6.1,14.1C6.1,14,6,13.8,6,13.7L5.8,13.5zM37.3,16.3L30.7,22.8L30.7,23.2C30.7,23.4,30.9,23.5,30.9,23.7L31,23.8C31,24,31.2,24,31.2,24L31.3,24L31.4,24L31.4,24.1L37.4,18.2C37.4,17.5,37.4,16.9,37.3,16.3zM5.9,17.7L.4,23.2C.6,23.8.8,24.3.9,24.8L6.1,19.6L5.9,19.6L5.9,17.7zM6.1,19.6L6.1,19.6L6.1,19.5L6.1,19.6zM37.5,20.3L31.4,26.3L31.4,28.3L37.1,22.7C37.3,21.9,37.5,21.1,37.5,20.3zM6.3,21.9L1.8,26.4C1.9,26.7,2,27.2,2.4,27.7L5.5,24.6L5.5,23.9L5.6,23.9L5.7,23.9C5.7,23.8,5.8,23.8,5.8,23.8C6,23.8,6,23.6,6.2,23.6C6.3,23.5,6.3,23.3,6.3,23.1L6.3,21.9zM36,26L25.9,36.1C28.2,35.1,30.2,33.7,32,32C33.7,30.2,35.1,28.2,36,26zM5.4,27L3.3,29.2C3.5,29.4,3.8,29.9,4.1,30.3L5.5,28.8L5.4,28.8L5.4,27zM6,30.5L5,31.5L5.5,32L6,32.4L7.4,31C6.9,31,6.4,30.7,6,30.5zM9.8,31L7.3,33.5C7.5,33.9,8,34,8.3,34.3L11.7,31L9.8,31zM23.3,31C22.9,31,22.5,31.3,22.5,31.8L22.5,32L21.4,32L16.2,37.2C16.8,37.3,17.5,37.3,18.1,37.3L24.4,31L23.3,31zM26.6,31L20.3,37.3C21.1,37.3,21.9,37.1,22.7,37L28.6,31L26.6,31zM13.8,31.2L9.9,35.2C10.2,35.3,10.7,35.6,11.2,35.8L14.8,32.2L14.3,32.2L14.3,32C14.3,31.7,14.1,31.4,13.8,31.2zM14.8,32.2L14.9,32.2L14.9,32L14.8,32.2zM14.9,32L14.9,32L14.9,32L14.9,32zM17.2,32L12.8,36.4C13.2,36.5,13.8,36.7,14.3,36.8L19.2,32L17.2,32z]"
+							}
+							{
+								type: "caption"
+								bounds: { 67, 64, 26, 11 }
+									font:{ @defaultFont, size:11, color:"@secondaryTextColor", gamma:1.8 }
+									text: "acc", align:"center"
+							}
+							{
+								type: "caption"
+								bounds: { 115, 64, 44, 11 }
+									font:{ @defaultFont, size:11, color:"@secondaryTextColor", gamma:1.8 }
+									text: "sound", align:"center"
+							}
+						}
+					}
+
+					{
+						type:"group"
+						bounds:{ 64, 318, 85, 24 }
+						views:{
+							{
+								type: "button"
+								rounded: { 4, 4 }
+								standard: { fill: "hsv(@primaryHue,0.24,0.33)", frame: { color: "hsv(@primaryHue,0.24,0.44)", stroke: 1 }, font: { @defaultFont, size:11.5, color:"@primaryTextColor", gamma: 1.8 } }
+								down: { fill: "hsv(@primaryHue,0.24,0.44)" }
+								action: "po32.transferPattern.transmit"
+								caption: "[var]po32.transferPattern.transmit.caption[/var]"
+							}
+						}
+					}
+				}
+			}
+		}
+		{
+			type: "caption"
+			bounds: { 10, h-28, w-20, 15 }
+			font:{ @defaultFont, size:10, color:0xffd03000, gamma:1.8 }
+			text: "[var]po32.warning[/var]", align:"center"
+		}
+}

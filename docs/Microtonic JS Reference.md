@@ -865,14 +865,21 @@ This is how the folder structure might look:
 When the GUI engine opens a Cushy file, it will first look for a `.js` file with the same name as the `.cushy` file and
 run it if it exists. In the above example, this would be `MyScript.mtscript/MyScript_main.js`. This JavaScript file
 sets up all the functions necessary to run the script. Notice that Cushy runs this Javascript every time the user opens
-the script and when a "rebuild" of the GUI is performed, e.g., when choosing a different zoom scale. You should
-therefore avoid resetting global variables if they already exist.
+the script and when a "rebuild" of the GUI is performed. Rebuilds are not only a developer action: an end user changing
+Microtonic's zoom scale also forces the GUI to reload so graphics resources and exact layout coordinates can be
+rescaled. GUI scripts must therefore survive reloads where the JavaScript files are run again. Avoid resetting global
+variables if they already exist.
 
 Since all scripts share the same JavaScript global variable space, putting functions and variables under a single
 JavaScript object with the same name as the script is good practice. Doing so prevents littering the variable space and
 you minimize the risk of colliding with other scripts. If you run your script with the `JSConsole` open, it will alert
 every time a global variable is created. This helps you catch mistakes such as missing the `var` keyword when declaring
 a variable.
+
+Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
+editing a GUI script, click the reload button at the top of the `JSConsole` window to flush cached resources and rebuild
+the open GUI. Closing and reopening the GUI window also forces a reload. Shift-clicking the JSConsole reload button
+performs a full JavaScript engine reset, which clears memory and lets you test from a clean scripting environment.
 
 ### GUI Variables
 
