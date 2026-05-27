@@ -30,3 +30,11 @@ Upstream CI files, IDE projects, fuzzing artifacts, full test corpora,
 IVGFiddle source/build scaffolding, SVG conversion tools, font bundles, and
 unrelated helper projects were omitted to keep this SDK snapshot small and
 focused.
+
+## Local Patches
+
+- `tools/ivgfiddle/output/setupModule.js` waits for the modularized Emscripten
+  runtime instance before initializing the editor and running IVG. This avoids
+  calling `runIVG()` while the global `Module` value still points at the
+  generated factory function, which can otherwise fail with
+  `Module.lengthBytesUTF8 is not a function`.
