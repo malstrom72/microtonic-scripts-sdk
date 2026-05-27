@@ -102,6 +102,86 @@ fallback rendering.
 standard: { fill: "...", font: { ivgfont: "sans-serif", size: 14, color: "..." } }
 ```
 
+## Radio Button / Checked State Pattern
+
+Use `action: "set"` with a **plain string variable** for radio-button groups
+(e.g. scale pickers, channel selectors). Per the Cushy spec, `set` is checked
+when `<var>` is already exactly `<value>` — so the `checked:` button style
+applies automatically with no JS code required.
+
+```
+// JS: plain string property on the state object
+scaleGenerator = { scaleIndex: '0', ... };
+
+// Cushy: each option button
+{
+    type: "button"
+    action: "set"
+    params: { scaleGenerator.scaleIndex, "2" }
+    standard:    { fill: "...", font: ... }
+    checked:     { fill: "..." }        // shown when scaleIndex == "2"
+    checkedDown: { fill: "..." }
+}
+```
+
+This is the pattern MacroTweak's channel-choice buttons use. For custom actions,
+the equivalent is an action object with both `execute` and `checked` functions —
+omitting `checked` means the checked style never applies.
+
+## Drum Patch Property Copy
+
+`JSON.stringify` / `JSON.parse` fail on Microtonic's internal drum-patch
+objects (they are native C++ proxies). The error surfaces as
+`TypeError: Cannot convert undefined or null to object`.
+
+To copy a drum patch, snapshot its properties into a plain JS object using
+`DRUM_PATCH_PARAMS`, then write back to the **existing** internal object
+in-place. Do not assign a new plain object to `preset.drumPatches[ch]`.
+
+```javascript
+// Snapshot before the loop so in-place writes don't corrupt later reads
+var snap = {};
+for (var i = 0; i < DRUM_PATCH_PARAMS.length; i++) {
+    snap[DRUM_PATCH_PARAMS[i].NAME] = src[DRUM_PATCH_PARAMS[i].NAME];
+}
+snap.name = src.name;
+
+for (var ch = 0; ch < CHANNEL_COUNT; ch++) {
+    var dp = preset.drumPatches[ch];         // existing internal object
+    for (var j = 0; j < DRUM_PATCH_PARAMS.length; j++) {
+        dp[DRUM_PATCH_PARAMS[j].NAME] = snap[DRUM_PATCH_PARAMS[j].NAME];
+    }
+    dp.name = snap.name;
+    dp.modified = true;
+    // apply any per-channel adjustments to dp here
+}
+setElement('preset', preset);
+```
+
+## Window Default Position
+
+Microtonic's main canvas is `{ 0, 0, 740, 550 }` (from `main.cushy`). Script
+windows must fit within this — clipping is hard, not graceful.
+
+The `@window(left, top, width, height, ...)` macro's `height` **includes** the
+24px title bar (defined as `@titleBarHeight` in `common.makaron`). To stay
+within bounds: `left + width ≤ 740` and `top + height ≤ 550`.
+
+To center a window:
+
+```
+left = (740 - width) / 2
+top  = (550 - height) / 2
+```
+
+`windowPosition` is restored between window close/re-open because the script
+stores it on its state object inside the `if (!this.script)` initialization
+guard — so the value survives the window being closed and the JS file re-running.
+The `dragArea` reads the variable on open and writes it on drag, but persistence
+is entirely the script's responsibility. Without the guard (or without
+`windowPosition` on the persisted object), position resets to the default on
+every open.
+
 ## IVG Colors
 
 - `none` can be used for transparency.
