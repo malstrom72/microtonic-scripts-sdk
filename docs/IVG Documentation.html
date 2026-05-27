@@ -7,9 +7,6 @@
   <title>IVG Documentation</title>
   <style>
     html {
-      line-height: 1.5;
-      font-family: Georgia, serif;
-      font-size: 20px;
       color: #1a1a1a;
       background-color: #fdfdfd;
     }
@@ -28,13 +25,16 @@
     @media (max-width: 600px) {
       body {
         font-size: 0.9em;
-        padding: 1em;
+        padding: 12px;
       }
       h1 {
         font-size: 1.8em;
       }
     }
     @media print {
+      html {
+        background-color: white;
+      }
       body {
         background-color: transparent;
         color: black;
@@ -58,6 +58,10 @@
       color: #1a1a1a;
     }
     img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
       max-width: 100%;
     }
     h1, h2, h3, h4, h5, h6 {
@@ -84,9 +88,10 @@
       color: #606060;
     }
     code {
-      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
+      hyphens: manual;
     }
     pre {
       margin: 1em 0;
@@ -102,8 +107,8 @@
      overflow: visible;
     }
     hr {
-      background-color: #1a1a1a;
       border: none;
+      border-top: 1px solid #1a1a1a;
       height: 1px;
       margin: 1em 0;
     }
@@ -151,8 +156,11 @@
     div.columns{display: flex; gap: min(4vw, 1.5em);}
     div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
     ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
       width: 0.8em;
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
@@ -171,9 +179,6 @@
       color: #3030A0;
     }
   </style>
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
 </head>
 <body>
 <header id="title-block-header">
@@ -183,6 +188,7 @@
 <h2 id="table-of-contents">Table of Contents</h2>
 <ul>
 <li><a href="#intro">Intro</a></li>
+<li><a href="#ivg-1-vs-ivg-2">IVG-1 vs IVG-2</a></li>
 <li><a href="#instructions">Instructions</a>
 <ul>
 <li><a href="#ellipse">ELLIPSE</a></li>
@@ -278,6 +284,13 @@ should be as follows:</p>
 <p>Notice that <em>ImpD</em> is case-insensitive, but in this document,
 we follow a convention where we have written “directives” (defining
 settings, etc.) in lowercase and drawing instructions in uppercase.</p>
+<h2 id="ivg-1-vs-ivg-2">IVG-1 vs IVG-2</h2>
+<p><code>IVG-1</code> covers core vector drawing, styling, text, and
+fonts. <code>IVG-2</code> extends the format with raster image support
+through <code>define image</code> and <code>IMAGE</code>.</p>
+<p>The interpreter processes both versions identically, but readers that
+only understand <code>IVG-1</code> will reject documents marked
+<code>IVG-2</code>.</p>
 <h2 id="instructions">Instructions</h2>
 <h3 id="ellipse">ELLIPSE</h3>
 <p>The <code>ELLIPSE</code> instruction draws an ellipse or circle shape
@@ -320,6 +333,7 @@ external resource specified by its name or file path.</p>
       [ clip:&lt;x&gt;,&lt;y&gt;,&lt;w&gt;,&lt;h&gt; ]
       [ width:&lt;width&gt; ]
       [ height:&lt;height&gt; ]
+      [ stretch:(yes|no)=yes ]
       [ transform:&lt;transform&gt; ]
       [ opacity:&lt;opacity&gt; ]</code></pre>
 <ul>
@@ -336,9 +350,12 @@ the canvas. The default value is <code>top left</code>.</p></li>
 rectangle in source image coordinates to limit the area of the image
 that will be drawn.</p></li>
 <li><p>The <code>width</code> and <code>height</code> options fit the
-source image into a specific width and height. If you only provide one
-of these options, the aspect ratio of the image will be
-preserved.</p></li>
+source image into a specific width and height.</p></li>
+<li><p>If <code>stretch</code> is <code>no</code> and <code>width</code>
+and/or <code>height</code> is supplied, the source image preserves its
+aspect ratio and fits within those dimensions. Otherwise, it stretches
+the image to fill the specified <code>width</code> and/or
+<code>height</code> exactly.</p></li>
 <li><p>The <code>transform</code> option is used to apply a
 transformation to the image when it is drawn. See <a
 href="#transform-specification">Transform Specification</a></p></li>
@@ -390,7 +407,7 @@ STAR 230,10,4,5
 TEXT at:280,130 anchor:center C
 
 // D: showcasing clipping and scale to exact width
-IMAGE 10,160 silly align:[top left] clip:[25,25,50,50] width:100
+IMAGE 10,160 silly align:[top left] clip:[25,25,50,50] width:100 stretch:no
 STAR 10,160,4,5
 TEXT at:60,280 anchor:center D
 
@@ -687,8 +704,9 @@ displaying the image.</p>
 <h4 id="define-font">define font</h4>
 <p>You can use the <code>define font</code> directive to create and
 embed a font face within the <em>IVG</em> document. The font is defined
-using <em>ivgfont</em>, a format describing glyphs using SVG paths. Like
-<em>IVG</em>, <em>ivgfont</em> is also based on <em>ImpD</em>.</p>
+using <a href="ivgfont%20Documentation.md"><em>ivgfont</em></a>, a
+format describing glyphs using SVG paths. Like <em>IVG</em>,
+<em>ivgfont</em> is also based on <em>ImpD</em>.</p>
 <p>Syntax:</p>
 <pre><code>define font &lt;name&gt; &lt;definition&gt;</code></pre>
 <ul>
@@ -705,7 +723,7 @@ they can be referred to by name and set with the <a
 href="#font"><code>font</code></a> directive, just like embedded
 fonts.</p>
 <p>Example:</p>
-<pre><code>format IVG-1 requires:ImpD-1
+<pre><code>format IVG-2 requires:ImpD-1
 
 // Embed a font called &quot;myEmbeddedFont&quot; with only 3 defined glyphs.
 define font myEmbeddedFont [
@@ -743,7 +761,7 @@ and https://en.wikipedia.org/wiki/Even-odd_rule. The default value is
 <code>non-zero</code>.</p></li>
 </ul>
 <p>Fill rule demonstration:</p>
-<pre><code>format IVG-1 requires:ImpD-1
+<pre><code>format IVG-2 requires:ImpD-1
 bounds 0,0,350,230
 
 // Setup style.
@@ -843,7 +861,7 @@ transparency.</p>
 <p>Initially, the pen (and font outline) is set to <code>none</code>,
 and the fill (and font color) to <code>#FF</code> (fully opaque).</p>
 <p>Demonstration:</p>
-<pre><code>format IVG-1 requires:ImpD-1
+<pre><code>format IVG-2 requires:ImpD-1
 bounds 0,0,310,320
 
 // Make a rotated striped background.
@@ -1303,7 +1321,7 @@ transparency and 1 is full opacity. Alternatively, you can use
 hexadecimal values <code>#00</code> to <code>#FF</code>.</p></li>
 </ul>
 <p>Demonstration:</p>
-<pre><code>format IVG-1 requires:ImpD-1
+<pre><code>format IVG-2 requires:ImpD-1
 bounds 0,0,400,300
 
 // Light gray background.
@@ -1383,7 +1401,7 @@ the transformation. By default, the anchor point is the origin
 (0,0).</p></li>
 </ul>
 <p>Demonstration:</p>
-<pre><code>format IVG-1 requires:ImpD-1
+<pre><code>format IVG-2 requires:ImpD-1
 bounds 0,0,310,240
 
 wipe #403020

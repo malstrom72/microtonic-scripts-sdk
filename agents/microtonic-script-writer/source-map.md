@@ -36,6 +36,8 @@ Use these repository files as the grounding map for Microtonic scripting work.
   graphics language.
 - [`docs/ImpD Documentation.md`](../../docs/ImpD%20Documentation.md): ImpD
   language reference.
+- [`docs/ivgfont Documentation.md`](../../docs/ivgfont%20Documentation.md):
+  IVG font format reference.
 - [`cushy-notes.md`](cushy-notes.md): practical Cushy gotchas, UI behavior
   notes, and implementation patterns discovered while building scripts.
 

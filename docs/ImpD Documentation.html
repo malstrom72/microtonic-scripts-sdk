@@ -7,9 +7,6 @@
   <title>ImpD Documentation</title>
   <style>
     html {
-      line-height: 1.5;
-      font-family: Georgia, serif;
-      font-size: 20px;
       color: #1a1a1a;
       background-color: #fdfdfd;
     }
@@ -28,13 +25,16 @@
     @media (max-width: 600px) {
       body {
         font-size: 0.9em;
-        padding: 1em;
+        padding: 12px;
       }
       h1 {
         font-size: 1.8em;
       }
     }
     @media print {
+      html {
+        background-color: white;
+      }
       body {
         background-color: transparent;
         color: black;
@@ -58,6 +58,10 @@
       color: #1a1a1a;
     }
     img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
       max-width: 100%;
     }
     h1, h2, h3, h4, h5, h6 {
@@ -84,9 +88,10 @@
       color: #606060;
     }
     code {
-      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
+      hyphens: manual;
     }
     pre {
       margin: 1em 0;
@@ -102,8 +107,8 @@
      overflow: visible;
     }
     hr {
-      background-color: #1a1a1a;
       border: none;
+      border-top: 1px solid #1a1a1a;
       height: 1px;
       margin: 1em 0;
     }
@@ -151,8 +156,11 @@
     div.columns{display: flex; gap: min(4vw, 1.5em);}
     div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
     ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
       width: 0.8em;
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
@@ -171,9 +179,6 @@
       color: #3030A0;
     }
   </style>
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
 </head>
 <body>
 <header id="title-block-header">
@@ -342,137 +347,137 @@ operations are supported (in order of descending precedence):</p>
 <col style="width: 70%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th style="text-align: left;">Example</th>
 <th style="text-align: left;">Result</th>
 <th style="text-align: left;">Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{"a" "b"}</code></td>
 <td style="text-align: left;"><code>ab</code></td>
 <td style="text-align: left;">string concatenation</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{$myVar}</code></td>
 <td style="text-align: left;"><code>???</code></td>
 <td style="text-align: left;">variable lookup</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{$number$i}</code></td>
 <td style="text-align: left;"><code>???</code></td>
 <td style="text-align: left;">spliced variable name lookup (same as
 <code>{$(number$i)}</code>)</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{2 ** 3}</code></td>
 <td style="text-align: left;"><code>8</code></td>
 <td style="text-align: left;">exponentiation</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{10%}</code></td>
 <td style="text-align: left;"><code>0</code>.1</td>
 <td style="text-align: left;">percentage</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{"b"{1}}</code></td>
 <td style="text-align: left;"><code>b</code></td>
 <td style="text-align: left;">indexing (first character is
 <code>{0}</code>)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{"abcde"{1:2}}</code></td>
 <td style="text-align: left;"><code>bc</code></td>
 <td style="text-align: left;">substring
 (<code>{offset:length}</code>)</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{!(5 &lt; 3)}</code></td>
 <td style="text-align: left;"><code>yes</code></td>
 <td style="text-align: left;">logical not</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{-(3 + 2)}</code></td>
 <td style="text-align: left;"><code>-5</code></td>
 <td style="text-align: left;">numerical negation</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{+"056.0"}</code></td>
 <td style="text-align: left;"><code>56</code></td>
 <td style="text-align: left;">convert to number</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{3 * 9}</code></td>
 <td style="text-align: left;"><code>27</code></td>
 <td style="text-align: left;">multiplication</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{9 / 3}</code></td>
 <td style="text-align: left;"><code>3</code></td>
 <td style="text-align: left;">division (division by 0 is an error)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{-11 % 3}</code></td>
 <td style="text-align: left;"><code>-2</code></td>
 <td style="text-align: left;">modulo (modulo with 0 is an error)</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{123 + 123}</code></td>
 <td style="text-align: left;"><code>246</code></td>
 <td style="text-align: left;">addition</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{246 - 123}</code></td>
 <td style="text-align: left;"><code>123</code></td>
 <td style="text-align: left;">subtraction</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{100 &lt; 200}</code></td>
 <td style="text-align: left;"><code>yes</code></td>
 <td style="text-align: left;">less than (prefers numerical
 comparison)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{100 &lt;= 100}</code></td>
 <td style="text-align: left;"><code>yes</code></td>
 <td style="text-align: left;">less than or equal (prefers numerical
 comparison)</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{100 == 100.0}</code></td>
 <td style="text-align: left;"><code>yes</code></td>
 <td style="text-align: left;">equals (prefers numerical comparison)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{100 != 100.0}</code></td>
 <td style="text-align: left;"><code>no</code></td>
 <td style="text-align: left;">not equals (prefers numerical
 comparison)</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{b &gt; a}</code></td>
 <td style="text-align: left;"><code>yes</code></td>
 <td style="text-align: left;">greater than (prefers numerical
 comparison)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{B &gt;= c}</code></td>
 <td style="text-align: left;"><code>no</code></td>
 <td style="text-align: left;">greater than or equal (prefers numerical
 comparison)</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{yes &amp;&amp; no}</code></td>
 <td style="text-align: left;"><code>no</code></td>
 <td style="text-align: left;">logical and</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>{no || yes}</code></td>
 <td style="text-align: left;"><code>yes</code></td>
 <td style="text-align: left;">logical or</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>{yes ? 3 : 1}</code></td>
 <td style="text-align: left;"><code>3</code></td>
 <td style="text-align: left;">conditional
@@ -508,101 +513,101 @@ trace {$myVar bottles of beer}</code></pre>
 <col style="width: 85%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th style="text-align: left;">Function</th>
 <th style="text-align: left;">Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>abs(x)</code></td>
 <td style="text-align: left;">returns the absolute value of a
 number</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>acos(x)</code></td>
 <td style="text-align: left;">returns the inverse cosine of a number in
 radians</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>asin(x)</code></td>
 <td style="text-align: left;">returns the inverse sine of a number in
 radians</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>atan(x)</code></td>
 <td style="text-align: left;">returns the inverse tangent of a number in
 radians</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>ceil(x)</code></td>
 <td style="text-align: left;">returns the smallest integer greater than
 or equal to a number</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>cos(x)</code></td>
 <td style="text-align: left;">returns the cosine of a number in
 radians</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>cosh(x)</code></td>
 <td style="text-align: left;">returns the hyperbolic cosine of a
 number</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>exp(x)</code></td>
 <td style="text-align: left;">returns the value of <code>e</code> raised
 to a power</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>floor(x)</code></td>
 <td style="text-align: left;">returns the largest integer less than or
 equal to a number</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>log(x)</code></td>
 <td style="text-align: left;">returns the natural logarithm of a
 number</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>log10(x)</code></td>
 <td style="text-align: left;">returns the base-10 logarithm of a
 number</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>round(x)</code></td>
 <td style="text-align: left;">returns the nearest integer to a number
 (.5 rounds upwards)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>sin(x)</code></td>
 <td style="text-align: left;">returns the sine of a number in
 radians</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>sinh(x)</code></td>
 <td style="text-align: left;">returns the hyperbolic sine of a
 number</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>sqrt(x)</code></td>
 <td style="text-align: left;">returns the square root of a number</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>tan(x)</code></td>
 <td style="text-align: left;">returns the tangent of a number in
 radians</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>tanh(x)</code></td>
 <td style="text-align: left;">returns the hyperbolic tangent of a
 number</td>
 </tr>
-<tr class="even">
+<tr>
 <td style="text-align: left;"><code>len(s)</code></td>
 <td style="text-align: left;">returns the length of a string</td>
 </tr>
-<tr class="odd">
+<tr>
 <td style="text-align: left;"><code>def(var)</code></td>
 <td style="text-align: left;">checks if a variable is defined (do not
 begin variable with <code>$</code>)</td>

@@ -3,6 +3,7 @@
 ## Table of Contents
 
 -   [Intro](#intro)
+-   [IVG-1 vs IVG-2](#ivg-1-vs-ivg-2)
 -   [Instructions](#instructions)
     -   [ELLIPSE](#ellipse)
     -   [IMAGE](#image)
@@ -86,6 +87,14 @@ The _ImpD format_ used in this documentation is `IVG-2`. Therefore, the `format`
 Notice that _ImpD_ is case-insensitive, but in this document, we follow a convention where we have written "directives"
 (defining settings, etc.) in lowercase and drawing instructions in uppercase.
 
+## IVG-1 vs IVG-2
+
+`IVG-1` covers core vector drawing, styling, text, and fonts.
+`IVG-2` extends the format with raster image support through `define image` and `IMAGE`.
+
+The interpreter processes both versions identically, but readers that only understand `IVG-1`
+will reject documents marked `IVG-2`.
+
 ## Instructions
 
 ### ELLIPSE
@@ -132,6 +141,7 @@ Syntax:
           [ clip:<x>,<y>,<w>,<h> ]
           [ width:<width> ]
           [ height:<height> ]
+          [ stretch:(yes|no)=yes ]
           [ transform:<transform> ]
           [ opacity:<opacity> ]
 
@@ -146,8 +156,9 @@ Syntax:
 -   The `clip` option is used to define a clipping rectangle in source image coordinates to limit the area of the image
     that will be drawn.
 
--   The `width` and `height` options fit the source image into a specific width and height. If you only provide one of
-    these options, the aspect ratio of the image will be preserved.
+-   The `width` and `height` options fit the source image into a specific width and height.
+
+-   If `stretch` is `no` and `width` and/or `height` is supplied, the source image preserves its aspect ratio and fits within those dimensions. Otherwise, it stretches the image to fill the specified `width` and/or `height` exactly.
 
 -   The `transform` option is used to apply a transformation to the image when it is drawn. See [Transform
     Specification](#transform-specification)
@@ -199,7 +210,7 @@ Demonstration:
     TEXT at:280,130 anchor:center C
     
     // D: showcasing clipping and scale to exact width
-    IMAGE 10,160 silly align:[top left] clip:[25,25,50,50] width:100
+    IMAGE 10,160 silly align:[top left] clip:[25,25,50,50] width:100 stretch:no
     STAR 10,160,4,5
     TEXT at:60,280 anchor:center D
     
@@ -514,7 +525,8 @@ See [IMAGE](#image) for an example of how to use `define image`.
 #### define font
 
 You can use the `define font` directive to create and embed a font face within the _IVG_ document. The font is defined
-using _ivgfont_, a format describing glyphs using SVG paths. Like _IVG_, _ivgfont_ is also based on _ImpD_.
+using [_ivgfont_](ivgfont%20Documentation.md), a format describing glyphs using SVG paths. Like _IVG_, _ivgfont_ is also
+based on _ImpD_.
 
 Syntax:
 
@@ -530,7 +542,7 @@ application, as they can be referred to by name and set with the [`font`](#font)
 
 Example:
 
-    format IVG-1 requires:ImpD-1
+    format IVG-2 requires:ImpD-1
     
     // Embed a font called "myEmbeddedFont" with only 3 defined glyphs.
     define font myEmbeddedFont [
@@ -568,7 +580,7 @@ The fill directive sets the fill style for subsequent drawing operations in the 
 
 Fill rule demonstration:
 
-    format IVG-1 requires:ImpD-1
+    format IVG-2 requires:ImpD-1
     bounds 0,0,350,230
     
     // Setup style.
@@ -663,7 +675,7 @@ Initially, the pen (and font outline) is set to `none`, and the fill (and font c
 
 Demonstration:
 
-    format IVG-1 requires:ImpD-1
+    format IVG-2 requires:ImpD-1
     bounds 0,0,310,320
     
     // Make a rotated striped background.
@@ -1103,7 +1115,7 @@ look like. You can select a solid color, a gradient of colors, or a pattern.
 
 Demonstration:
 
-    format IVG-1 requires:ImpD-1
+    format IVG-2 requires:ImpD-1
     bounds 0,0,400,300
     
     // Light gray background.
@@ -1173,7 +1185,7 @@ The syntax for specifying a transformation is as follows:
 
 Demonstration:
 
-    format IVG-1 requires:ImpD-1
+    format IVG-2 requires:ImpD-1
     bounds 0,0,310,240
     
     wipe #403020

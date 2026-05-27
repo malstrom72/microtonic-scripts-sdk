@@ -20,7 +20,8 @@ Here is a brief list of the technologies used in Microtonic GUIs:
 
 - _Cushy_: the layout engine and file format for describing layouts, based on _Numbstrict_ with _Makaron_ support.
 - _ImpD_: a simple imperative computer language disguised as a data format, or the other way around.
-- _IVG_ (Imperative Vector Graphics): a language and file-format for 2D vector graphics, based on _ImpD_.
+- _IVG_ (Imperative Vector Graphics): a compact 2D vector format and renderer written in standard C++, based on _ImpD_
+  and the _NuXPixels_ rasterizer.
 - _Makaron_: a macro expansion syntax, used to make `.cushy` files easier to write.
 - _Numbstrict_: an object notation format similar to (but not compatible with) JSON.
 - _NuXJScript_: our JavaScript engine, fully ECMAScript 3 compliant with features from ECMAScript 5.
@@ -41,6 +42,7 @@ Here is a brief list of the technologies used in Microtonic GUIs:
 - `docs`:
     - [ImpD Documentation](docs/ImpD%20Documentation.md)
     - [IVG Documentation](docs/IVG%20Documentation.md)
+    - [ivgfont Documentation](docs/ivgfont%20Documentation.md)
     - [Makaron Documentation](docs/Makaron%20Documentation.md)
     - [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md)
     - [Microtonic User Guide](docs/Microtonic%20User%20Guide.md)
@@ -138,6 +140,8 @@ it like this:
     Example: node IVGFontConverter.node.js font.otf ss01 >font.ivgfont
              node IVGFontConverter.node.js font.ttf latn.ROM.locl,latn.ss01 >font.ivgfont
              node IVGFontConverter.node.js font.ttf - 0020-007f,a0-cf >font.ivgfont
+
+See [ivgfont Documentation](docs/ivgfont%20Documentation.md) for details on the generated font format.
 
 ### JSConsole
 

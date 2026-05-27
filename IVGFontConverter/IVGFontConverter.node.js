@@ -8,7 +8,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const typr = require("@fredli74/typr");
 const IVGFontConverter = require("./IVGFontConverter");
-const VERSION = "0.3.9";
+const VERSION = "0.3.10";
 if (process.argv.length < 3) {
     process.stderr.write("IVGFontConverter version " + VERSION + "\n\n" +
         "Usage: node IVGFontConverter.node.js <opentype filename> [ ? | - | <feature>[,<feature>...] ] [ <charset>[,<charset>] ]\n" +
@@ -122,7 +122,7 @@ if (process.argv.length > 4) {
         const to = range.length > 1 ? parseInt(range[1], 16) : from;
         const r = [];
         for (let i = from; i <= to; ++i) {
-            r.push(String.fromCharCode(i));
+            r.push(String.fromCodePoint(i));
         }
         return r.join("");
     });
@@ -147,7 +147,7 @@ process.stdout.write("/*\n\n" +
     "format ivgfont-1 requires:IMPD-1\n" +
     outdata);
 process.exit(0);
-//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1654422719104
+//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1700663767947
 });
 ___scope___.file("IVGFontConverter.js", function(exports, require, module, __filename, __dirname){
 
@@ -155,7 +155,7 @@ ___scope___.file("IVGFontConverter.js", function(exports, require, module, __fil
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromTypr = exports.Charset = void 0;
 const assert = require("assert");
-const ivgfont_1 = require("./ivgfont");
+const IVGFont_1 = require("./IVGFont");
 class Charset {
 }
 exports.Charset = Charset;
@@ -390,16 +390,13 @@ function GSUBlookup(table, index, gIndex) {
 function fromTypr(otfont, options) {
     const quality = options && options.quality || 1.0;
     const kerning = !(options && options.kerning === false);
-    const ivgfont = new ivgfont_1.IVGfont(Math.round(otfont.head.unitsPerEm * quality), Math.round(otfont.hhea.ascender * quality), Math.round(otfont.hhea.descender * quality), Math.round(otfont.hhea.lineGap * quality));
-    const charset = (options && options.charset || Charset.ISO).split("");
-    charset.unshift("\0");
+    const ivgfont = new IVGFont_1.IVGfont(Math.round(otfont.head.unitsPerEm * quality), Math.round(otfont.hhea.ascender * quality), Math.round(otfont.hhea.descender * quality), Math.round(otfont.hhea.lineGap * quality));
+    const charset = `\x00${(options && options.charset || Charset.ISO)}`;
     let unicodeGlyphIndex = {};
-    for (let i = 0; i < charset.length; ++i) {
-        assert(charset[i].charCodeAt(0) !== undefined);
-        let unicode = charset[i].charCodeAt(0);
+    for (const char of charset) {
+        assert(char.codePointAt(0) !== undefined);
+        let unicode = char.codePointAt(0);
         assert(unicode >= 0); // sanity check
-        assert(unicode < 0xd800 || unicode > 0xdbff); // unicode surrogate range
-        assert(unicode <= 0xffff); // don't allow more than 16bit
         let gIndex = otfont.codeToGlyph(unicode);
         if (gIndex === 0) { // .notdef
             unicode = 0;
@@ -413,7 +410,7 @@ function fromTypr(otfont, options) {
         if (!ivgfont.hasGlyph(unicode)) {
             const path = otfont.glyphToPath(gIndex);
             const pathData = TyprPathToSVGPath(path, quality);
-            ivgfont.setGlyph(new ivgfont_1.IVGglyph(unicode, otfont.hmtx.aWidth[gIndex], pathData));
+            ivgfont.setGlyph(new IVGFont_1.IVGglyph(unicode, otfont.hmtx.aWidth[gIndex], pathData));
             unicodeGlyphIndex[unicode] = gIndex;
         }
     }
@@ -430,9 +427,9 @@ function fromTypr(otfont, options) {
     return ivgfont;
 }
 exports.fromTypr = fromTypr;
-//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1654422719104
+//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1700663767947
 });
-___scope___.file("ivgfont.js", function(exports, require, module, __filename, __dirname){
+___scope___.file("IVGFont.js", function(exports, require, module, __filename, __dirname){
 
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -444,27 +441,37 @@ function IMPDescape(val) {
     let escapes = val.match(/[ $:;=[\]{}]/g);
     // two or more avoidable escapes makes "" worth it
     let stringEscape = (val === "" || (escapes && escapes.length > 1));
-    let expression = stringEscape ?
-        /[^\x20-\x7E]|["\\]/g :
-        /[^\x20-\x7E]|[ $:;=[\]{}"\\]/g;
-    let output = val.replace(expression, function (v) {
-        assert(v.charCodeAt(0) !== undefined);
-        assert(v.charCodeAt(0) >= 0); // sanity check
-        assert(v.charCodeAt(0) < 0xd800 || v.charCodeAt(0) > 0xdbff); // unicode surrogate range
-        assert(v.charCodeAt(0) <= 0xffff); // don't allow more than 16bit
-        if (v >= "\x20" && v <= "\x7E") {
-            return "\\" + v;
+    const forbidden = `\\"` + (stringEscape ? '' : ' $:;=[]{}');
+    // escape the string
+    const output = [...val].map(v => {
+        const c = v.codePointAt(0);
+        assert(c !== undefined);
+        assert(c >= 0); // sanity check
+        if (c >= 0x20 && c <= 0x7E) {
+            if (forbidden.indexOf(v) >= 0) {
+                return "\\" + v;
+            }
+            else {
+                return v;
+            }
+        }
+        const hex = c.toString(16);
+        const hexLength = hex.length;
+        if (hexLength <= 2) {
+            return "\\x" + ('00' + hex).slice(-2);
+        }
+        else if (hexLength <= 4) {
+            return "\\u" + ('0000' + hex).slice(-4);
         }
         else {
-            let hex = v.charCodeAt(0).toString(16);
-            return (hex.length <= 2 ? "\\x" + ('00' + hex).slice(-2) : "\\u" + ('0000' + hex).slice(-4));
+            return "\\U" + ('00000000' + hex).slice(-8);
         }
     });
     if (stringEscape) {
-        return "\"" + output + "\"";
+        return "\"" + output.join("") + "\"";
     }
     else {
-        return output;
+        return output.join("");
     }
 }
 class KernCluster {
@@ -490,7 +497,7 @@ class KernCluster {
     static listToString(list) {
         let s = "";
         for (let i = 0; i < list.length; ++i) {
-            s += String.fromCharCode(list[i]);
+            s += String.fromCodePoint(list[i]);
         }
         return IMPDescape(s);
     }
@@ -615,9 +622,9 @@ class IVGfont {
             assert(v.xAdvance !== undefined);
             assert(v.path !== undefined);
             if (v.xAdvance < 0) {
-                throw `glyph ${IMPDescape(String.fromCharCode(Number(k)))} has an invalid x-advance (${v.xAdvance})`;
+                throw `glyph ${IMPDescape(String.fromCodePoint(Number(k)))} has an invalid x-advance (${v.xAdvance})`;
             }
-            s.push(`$g ${IMPDescape(String.fromCharCode(Number(k)))} ${v.xAdvance} ${IMPDescape(v.path)}`);
+            s.push(`$g ${IMPDescape(String.fromCodePoint(Number(k)))} ${v.xAdvance} ${IMPDescape(v.path)}`);
         }
         // Cluster kernpairs            
         {
@@ -668,7 +675,7 @@ class IVGfont {
     }
 }
 exports.IVGfont = IVGfont;
-//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1654422719104
+//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1700663767947
 });
 return ___scope___.entry = "nodeCLI.js";
 });
@@ -683,7 +690,6 @@ ___scope___.file("dist/index.js", function(exports, require, module, __filename,
  *
  * **/
 exports.__esModule = true;
-exports.Font = void 0;
 var Typr_js_1 = require("./Typr.js");
 var friendlyTags = { "aalt": "Access All Alternates", "abvf": "Above-base Forms", "abvm": "Above - base Mark Positioning", "abvs": "Above - base Substitutions", "afrc": "Alternative Fractions", "akhn": "Akhands", "blwf": "Below - base Forms", "blwm": "Below - base Mark Positioning", "blws": "Below - base Substitutions", "calt": "Contextual Alternates", "case": "Case - Sensitive Forms", "ccmp": "Glyph Composition / Decomposition", "cfar": "Conjunct Form After Ro", "cjct": "Conjunct Forms", "clig": "Contextual Ligatures", "cpct": "Centered CJK Punctuation", "cpsp": "Capital Spacing", "cswh": "Contextual Swash", "curs": "Cursive Positioning", "c2pc": "Petite Capitals From Capitals", "c2sc": "Small Capitals From Capitals", "dist": "Distances", "dlig": "Discretionary Ligatures", "dnom": "Denominators", "dtls": "Dotless Forms", "expt": "Expert Forms", "falt": "Final Glyph on Line Alternates", "fin2": "Terminal Forms #2", "fin3": "Terminal Forms #3", "fina": "Terminal Forms", "flac": "Flattened accent forms", "frac": "Fractions", "fwid": "Full Widths", "half": "Half Forms", "haln": "Halant Forms", "halt": "Alternate Half Widths", "hist": "Historical Forms", "hkna": "Horizontal Kana Alternates", "hlig": "Historical Ligatures", "hngl": "Hangul", "hojo": "Hojo Kanji Forms(JIS X 0212 - 1990 Kanji Forms)", "hwid": "Half Widths", "init": "Initial Forms", "isol": "Isolated Forms", "ital": "Italics", "jalt": "Justification Alternates", "jp78": "JIS78 Forms", "jp83": "JIS83 Forms", "jp90": "JIS90 Forms", "jp04": "JIS2004 Forms", "kern": "Kerning", "lfbd": "Left Bounds", "liga": "Standard Ligatures", "ljmo": "Leading Jamo Forms", "lnum": "Lining Figures", "locl": "Localized Forms", "ltra": "Left - to - right alternates", "ltrm": "Left - to - right mirrored forms", "mark": "Mark Positioning", "med2": "Medial Forms #2", "medi": "Medial Forms", "mgrk": "Mathematical Greek", "mkmk": "Mark to Mark Positioning", "mset": "Mark Positioning via Substitution", "nalt": "Alternate Annotation Forms", "nlck": "NLC Kanji Forms", "nukt": "Nukta Forms", "numr": "Numerators", "onum": "Oldstyle Figures", "opbd": "Optical Bounds", "ordn": "Ordinals", "ornm": "Ornaments", "palt": "Proportional Alternate Widths", "pcap": "Petite Capitals", "pkna": "Proportional Kana", "pnum": "Proportional Figures", "pref": "Pre - Base Forms", "pres": "Pre - base Substitutions", "pstf": "Post - base Forms", "psts": "Post - base Substitutions", "pwid": "Proportional Widths", "qwid": "Quarter Widths", "rand": "Randomize", "rclt": "Required Contextual Alternates", "rkrf": "Rakar Forms", "rlig": "Required Ligatures", "rphf": "Reph Forms", "rtbd": "Right Bounds", "rtla": "Right - to - left alternates", "rtlm": "Right - to - left mirrored forms", "ruby": "Ruby Notation Forms", "rvrn": "Required Variation Alternates", "salt": "Stylistic Alternates", "sinf": "Scientific Inferiors", "size": "Optical size", "smcp": "Small Capitals", "smpl": "Simplified Forms", "ssty": "Math script style alternates", "stch": "Stretching Glyph Decomposition", "subs": "Subscript", "sups": "Superscript", "swsh": "Swash", "titl": "Titling", "tjmo": "Trailing Jamo Forms", "tnam": "Traditional Name Forms", "tnum": "Tabular Figures", "trad": "Traditional Forms", "twid": "Third Widths", "unic": "Unicase", "valt": "Alternate Vertical Metrics", "vatu": "Vattu Variants", "vert": "Vertical Writing", "vhal": "Alternate Vertical Half Metrics", "vjmo": "Vowel Jamo Forms", "vkna": "Vertical Kana Alternates", "vkrn": "Vertical Kerning", "vpal": "Proportional Alternate Vertical Metrics", "vrt2": "Vertical Alternates and Rotation", "vrtr": "Vertical Alternates for Rotation", "zero": "Slashed Zero" };
 var Font = /** @class */ (function () {
@@ -1156,7 +1162,9 @@ Typr._lctf.readScriptTable = function (data, offset) {
     var obj = {};
     var defLangSysOff = bin.readUshort(data, offset);
     offset += 2;
-    obj["default"] = Typr._lctf.readLangSysTable(data, offset0 + defLangSysOff);
+    if (defLangSysOff > 0) {
+        obj["default"] = Typr._lctf.readLangSysTable(data, offset0 + defLangSysOff);
+    }
     var langSysCount = bin.readUshort(data, offset);
     offset += 2;
     for (var i = 0; i < langSysCount; i++) {
@@ -4909,4 +4917,4 @@ FuseBox.import("default/nodeCLI.js");
 FuseBox.main("default/nodeCLI.js");
 })
 (function(e){function r(e){var r=e.charCodeAt(0),n=e.charCodeAt(1);if((m||58!==n)&&(r>=97&&r<=122||64===r)){if(64===r){var t=e.split("/"),i=t.splice(2,t.length).join("/");return[t[0]+"/"+t[1],i||void 0]}var o=e.indexOf("/");if(o===-1)return[e];var a=e.substring(0,o),f=e.substring(o+1);return[a,f]}}function n(e){return e.substring(0,e.lastIndexOf("/"))||"./"}function t(){for(var e=[],r=0;r<arguments.length;r++)e[r]=arguments[r];for(var n=[],t=0,i=arguments.length;t<i;t++)n=n.concat(arguments[t].split("/"));for(var o=[],t=0,i=n.length;t<i;t++){var a=n[t];a&&"."!==a&&(".."===a?o.pop():o.push(a))}return""===n[0]&&o.unshift(""),o.join("/")||(o.length?"/":".")}function i(e){var r=e.match(/\.(\w{1,})$/);return r&&r[1]?e:e+".js"}function o(e){if(m){var r,n=document,t=n.getElementsByTagName("head")[0];/\.css$/.test(e)?(r=n.createElement("link"),r.rel="stylesheet",r.type="text/css",r.href=e):(r=n.createElement("script"),r.type="text/javascript",r.src=e,r.async=!0),t.insertBefore(r,t.firstChild)}}function a(e,r){for(var n in e)e.hasOwnProperty(n)&&r(n,e[n])}function f(e){return{server:require(e)}}function u(e,n){var o=n.path||"./",a=n.pkg||"default",u=r(e);if(u&&(o="./",a=u[0],n.v&&n.v[a]&&(a=a+"@"+n.v[a]),e=u[1]),e)if(126===e.charCodeAt(0))e=e.slice(2,e.length),o="./";else if(!m&&(47===e.charCodeAt(0)||58===e.charCodeAt(1)))return f(e);var s=x[a];if(!s){if(m&&"electron"!==_.target)throw"Package not found "+a;return f(a+(e?"/"+e:""))}e=e?e:"./"+s.s.entry;var l,d=t(o,e),c=i(d),p=s.f[c];return!p&&c.indexOf("*")>-1&&(l=c),p||l||(c=t(d,"/","index.js"),p=s.f[c],p||"."!==d||(c=s.s&&s.s.entry||"index.js",p=s.f[c]),p||(c=d+".js",p=s.f[c]),p||(p=s.f[d+".jsx"]),p||(c=d+"/index.jsx",p=s.f[c])),{file:p,wildcard:l,pkgName:a,versions:s.v,filePath:d,validPath:c}}function s(e,r,n){if(void 0===n&&(n={}),!m)return r(/\.(js|json)$/.test(e)?h.require(e):"");if(n&&n.ajaxed===e)return console.error(e,"does not provide a module");var i=new XMLHttpRequest;i.onreadystatechange=function(){if(4==i.readyState)if(200==i.status){var n=i.getResponseHeader("Content-Type"),o=i.responseText;/json/.test(n)?o="module.exports = "+o:/javascript/.test(n)||(o="module.exports = "+JSON.stringify(o));var a=t("./",e);_.dynamic(a,o),r(_.import(e,{ajaxed:e}))}else console.error(e,"not found on request"),r(void 0)},i.open("GET",e,!0),i.send()}function l(e,r){var n=y[e];if(n)for(var t in n){var i=n[t].apply(null,r);if(i===!1)return!1}}function d(e){if(null!==e&&["function","object","array"].indexOf(typeof e)!==-1&&!e.hasOwnProperty("default"))return Object.isFrozen(e)?void(e.default=e):void Object.defineProperty(e,"default",{value:e,writable:!0,enumerable:!1})}function c(e,r){if(void 0===r&&(r={}),58===e.charCodeAt(4)||58===e.charCodeAt(5))return o(e);var t=u(e,r);if(t.server)return t.server;var i=t.file;if(t.wildcard){var a=new RegExp(t.wildcard.replace(/\*/g,"@").replace(/[.?*+^$[\]\\(){}|-]/g,"\\$&").replace(/@@/g,".*").replace(/@/g,"[a-z0-9$_-]+"),"i"),f=x[t.pkgName];if(f){var p={};for(var v in f.f)a.test(v)&&(p[v]=c(t.pkgName+"/"+v));return p}}if(!i){var g="function"==typeof r,y=l("async",[e,r]);if(y===!1)return;return s(e,function(e){return g?r(e):null},r)}var w=t.pkgName;if(i.locals&&i.locals.module)return i.locals.module.exports;var b=i.locals={},j=n(t.validPath);b.exports={},b.module={exports:b.exports},b.require=function(e,r){var n=c(e,{pkg:w,path:j,v:t.versions});return _.sdep&&d(n),n},m||!h.require.main?b.require.main={filename:"./",paths:[]}:b.require.main=h.require.main;var k=[b.module.exports,b.require,b.module,t.validPath,j,w];return l("before-import",k),i.fn.apply(k[0],k),l("after-import",k),b.module.exports}if(e.FuseBox)return e.FuseBox;var p="undefined"!=typeof ServiceWorkerGlobalScope,v="undefined"!=typeof WorkerGlobalScope,m="undefined"!=typeof window&&"undefined"!=typeof window.navigator||v||p,h=m?v||p?{}:window:global;m&&(h.global=v||p?{}:window),e=m&&"undefined"==typeof __fbx__dnm__?e:module.exports;var g=m?v||p?{}:window.__fsbx__=window.__fsbx__||{}:h.$fsbx=h.$fsbx||{};m||(h.require=require);var x=g.p=g.p||{},y=g.e=g.e||{},_=function(){function r(){}return r.global=function(e,r){return void 0===r?h[e]:void(h[e]=r)},r.import=function(e,r){return c(e,r)},r.on=function(e,r){y[e]=y[e]||[],y[e].push(r)},r.exists=function(e){try{var r=u(e,{});return void 0!==r.file}catch(e){return!1}},r.remove=function(e){var r=u(e,{}),n=x[r.pkgName];n&&n.f[r.validPath]&&delete n.f[r.validPath]},r.main=function(e){return this.mainFile=e,r.import(e,{})},r.expose=function(r){var n=function(n){var t=r[n].alias,i=c(r[n].pkg);"*"===t?a(i,function(r,n){return e[r]=n}):"object"==typeof t?a(t,function(r,n){return e[n]=i[r]}):e[t]=i};for(var t in r)n(t)},r.dynamic=function(r,n,t){this.pkg(t&&t.pkg||"default",{},function(t){t.file(r,function(r,t,i,o,a){var f=new Function("__fbx__dnm__","exports","require","module","__filename","__dirname","__root__",n);f(!0,r,t,i,o,a,e)})})},r.flush=function(e){var r=x.default;for(var n in r.f)e&&!e(n)||delete r.f[n].locals},r.pkg=function(e,r,n){if(x[e])return n(x[e].s);var t=x[e]={};return t.f={},t.v=r,t.s={file:function(e,r){return t.f[e]={fn:r}}},n(t.s)},r.addPlugin=function(e){this.plugins.push(e)},r.packages=x,r.isBrowser=m,r.isServer=!m,r.plugins=[],r}();return m||(h.FuseBox=_),e.FuseBox=_}(this))
-//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1654422719104
+//# sourceMappingURL=IVGFontConverter.node.js.map?tm=1700663767947
