@@ -30,6 +30,9 @@ Use these repository files as the grounding map for Microtonic scripting work.
   Microtonic-specific schema additions.
 - [`Microtonic Resources/`](../../Microtonic%20Resources/): Microtonic GUI
   resources, Makaron files, built-in resources, and schema support.
+- [`IVG/`](../../IVG/): vendored IVG source, tools, tests, fonts, and
+  documentation matching the shipping Microtonic IVG implementation. Prefer
+  this copy over live upstream when exact shipped IVG behavior matters.
 - [`docs/Makaron Documentation.md`](../../docs/Makaron%20Documentation.md):
   Makaron macro syntax.
 - [`docs/IVG Documentation.md`](../../docs/IVG%20Documentation.md): IVG vector

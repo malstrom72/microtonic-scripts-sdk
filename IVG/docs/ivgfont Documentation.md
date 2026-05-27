@@ -65,7 +65,7 @@ Use the `IVGFontConverter` tool to convert an OpenType or TrueType font to
 _ivgfont_.
 
 ```
-node IVG/tools/IVGFontConverter/IVGFontConverter.node.js <font-file> [ ? | - | <feature>[,<feature>...] ] [ <charset>[,<charset>] ] > output.ivgfont
+node tools/IVGFontConverter/IVGFontConverter.node.js <font-file> [ ? | - | <feature>[,<feature>...] ] [ <charset>[,<charset>] ] > output.ivgfont
 ```
 
 - `?` lists available GSUB features.

@@ -39,7 +39,18 @@ CushyLint/CushyLint "$(pwd)/examples/" "$(pwd)/Microtonic Resources"
 - Do not treat a CushyLint pass as proof that the script works inside
   Microtonic. It validates Cushy syntax and schema compatibility, not runtime
   behavior inside the plugin.
-- CushyLint does not validate or rasterize IVG drawing code. Inline `ivgCode`
-  and `.ivg` files must be checked separately against
-  `docs/IVG Documentation.md` or copied from known-working SDK resources and
-  examples.
+- CushyLint does not validate or rasterize IVG drawing code. Check IVG syntax
+  and behavior against `docs/IVG Documentation.md` and the vendored `IVG/`
+  source when exact shipped behavior matters.
+- For static `.ivg` files, build and run the vendored `IVG2PNG` renderer:
+
+  ```sh
+  tools/validate-static-ivg.sh
+  ```
+
+  This renders SDK `.ivg` resources to PNG files under
+  `/tmp/microtonic-static-ivg-validation` by default and fails if any static
+  IVG cannot be parsed or rasterized. IVG files that depend on Cushy or GUI
+  variables are reported as dynamic and skipped by this static renderer pass.
+- Inline Cushy vector snippets still need separate review or extraction before
+  `IVG2PNG` can render them.

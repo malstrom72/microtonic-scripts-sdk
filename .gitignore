@@ -3,3 +3,4 @@
 CushyLint/build/*.sha256
 CushyLint/build/*.tmp
 CushyLint/build/*.tmp.exe
+IVG/output/

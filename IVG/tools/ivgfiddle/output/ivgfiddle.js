@@ -64,7 +64,19 @@ const rasterizeIVG = function(source, scaling) {
 	Module._free(stringPointer);
 	return result;
 };
-const deallocatePixels = Module._deallocatePixels;
+function deallocatePixels(pixelsPointer) {
+	Module._deallocatePixels(pixelsPointer);
+}
+
+function heapU32(Module) {
+	if (Module.HEAPU32) return Module.HEAPU32;
+	const mem =
+		Module.wasmMemory ||
+		(Module.asm && Module.asm.memory) ||
+		Module.memory;
+	if (!mem) throw new Error("No wasm memory found on Module");
+	return new Uint32Array(mem.buffer);
+}
 
 function runIVG() {
 	clearTrace();
@@ -79,14 +91,15 @@ function runIVG() {
 		const pixelRatio = window.devicePixelRatio;
 		const rasterPointer = rasterizeIVG(sourceCode, pixelRatio);
 		const end = Date.now();
-		if (rasterPointer !== 0) {
-			let dimensions = new Int32Array(Module.HEAPU32.buffer, rasterPointer, 4);
+			if (rasterPointer !== 0) {
+				const heap = heapU32(Module).buffer;
+				let dimensions = new Int32Array(heap, rasterPointer, 4);
 			const left = dimensions[0];
 			const top = dimensions[1];
 			const width = dimensions[2];
 			const height = dimensions[3];
 			dimensions = null;
-			let pixelData = new Uint8Array(Module.HEAPU32.buffer, rasterPointer + 4 * 4, width * height * 4);
+					let pixelData = new Uint8Array(heap, rasterPointer + 4 * 4, width * height * 4);
 			deallocatePixels(rasterPointer);
 			ivgCanvas.width = width;
 			ivgCanvas.height = height;

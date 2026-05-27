@@ -47,9 +47,8 @@ Here is a brief list of the technologies used in Microtonic GUIs:
     - [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md)
     - [Microtonic User Guide](docs/Microtonic%20User%20Guide.md)
 
-- `ivgfiddle`: a browser "playground" for experimenting with _IVG_ (compiled with _emscripten_).
-
-- `IVGFontConverter`: a converter from `.ttf` and `.otf` to `.ivgfont` (requires _node.js_).
+- `IVG`: curated vendored snapshot of the IVG source, renderer tools, IVGFiddle output, IVGFontConverter, dependencies,
+  and documentation used for the shipping Microtonic IVG implementation.
 
 - `JSConsole.mtscript`: an interactive Javascript console for Microtonic.
 
@@ -117,11 +116,29 @@ information on how to write Cushy.
 ### IVGFiddle
 
 Included in this distribution is a standalone .html application called _IVGFiddle_. You can run it simply by opening the
-[`ivgfiddle.html`](https://htmlpreview.github.io/?https://github.com/malstrom72/microtonic-scripts-sdk/blob/main/ivgfiddle/ivgfiddle.html)
+[`IVG/tools/ivgfiddle/output/ivgfiddle.html`](https://htmlpreview.github.io/?https://github.com/malstrom72/microtonic-scripts-sdk/blob/main/IVG/tools/ivgfiddle/output/ivgfiddle.html)
 file in your favorite browser (Google Chrome). It will let you experiment with IVG code and see the graphical output in
 real-time.
 
 See [IVG Documentation](docs/IVG%20Documentation.md) for more information on IVG.
+
+### IVG2PNG
+
+The vendored `IVG` snapshot includes the `IVG2PNG` renderer. To build the local copy for static IVG validation:
+
+```sh
+tools/build-ivg2png.sh
+```
+
+To render all static `.ivg` resources in this SDK:
+
+```sh
+tools/validate-static-ivg.sh
+```
+
+The rendered PNGs are written to `/tmp/microtonic-static-ivg-validation` by default.
+IVG files that depend on Cushy or GUI variables are reported as dynamic and
+skipped by this static renderer pass.
 
 ### IVGFontConverter
 
@@ -129,17 +146,17 @@ Cushy (and IVG) uses a proprietary file format for fonts: `.ivgfont`. You can us
 a _TrueType_ or _OpenType_ font to this format. To run, you must install [node.js](https://nodejs.org/en/). Then use
 it like this:
 
-    node IVGFontConverter.node.js <input> [ ?|-|<feature>[,<feature>,...] ] [ <charset>[,<charset>,...] ] > <output>
+    node IVG/tools/IVGFontConverter/IVGFontConverter.node.js <input> [ ?|-|<feature>[,<feature>,...] ] [ <charset>[,<charset>,...] ] > <output>
     
       ?          List all GSUB features
       -          No extra GSUB feature
       <feature>  Enable GSUB feature by [<script>.[<language>.]]<feature>
       <charset>  Convert Unicode characters [<hex>[-<hex>]] (default is ISO-8859-1)
     
-    Example: node IVGFontConverter.node.js font.otf >font.ivgfont
-    Example: node IVGFontConverter.node.js font.otf ss01 >font.ivgfont
-             node IVGFontConverter.node.js font.ttf latn.ROM.locl,latn.ss01 >font.ivgfont
-             node IVGFontConverter.node.js font.ttf - 0020-007f,a0-cf >font.ivgfont
+    Example: node IVG/tools/IVGFontConverter/IVGFontConverter.node.js font.otf >font.ivgfont
+    Example: node IVG/tools/IVGFontConverter/IVGFontConverter.node.js font.otf ss01 >font.ivgfont
+             node IVG/tools/IVGFontConverter/IVGFontConverter.node.js font.ttf latn.ROM.locl,latn.ss01 >font.ivgfont
+             node IVG/tools/IVGFontConverter/IVGFontConverter.node.js font.ttf - 0020-007f,a0-cf >font.ivgfont
 
 See [ivgfont Documentation](docs/ivgfont%20Documentation.md) for details on the generated font format.
 
