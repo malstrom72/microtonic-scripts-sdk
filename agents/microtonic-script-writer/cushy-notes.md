@@ -8,6 +8,17 @@ These notes do not replace the schema, JS reference, or example packages. When
 exact syntax or supported fields matter, verify against the references listed in
 [`source-map.md`](source-map.md).
 
+## CushyLint
+
+See [`validation.md`](validation.md) for the full command. Easy mistake: passing a
+directory path **without** a trailing slash silently skips the companion
+`.schema` file and produces false "rule missing" errors. Always add the slash:
+
+```sh
+CushyLint/CushyLint "$(pwd)/MyScript.mtscript/" "$(pwd)/Microtonic Resources"
+#                                             ^
+```
+
 ## Cluster Views
 
 A `cluster` is not only a display primitive. By default it is an editable paint
@@ -60,6 +71,36 @@ when the displayed values are derived from script state.
 - For development, recreate interaction objects on each reload and copy over
   only persistent user state.
 - Shift-reload resets the whole JavaScript engine and clears stale instances.
+
+## Slider Slit Inset
+
+The slit `start` and `end` coordinates define where the **center** of the cap
+travels, not where its edges travel. Cushy clips hard at view bounding boxes
+with no exceptions, so both the cap fill and its frame stroke must stay inside
+the slider's bounds at the extremes.
+
+Inset each end by `cap_half_width + frame_stroke`:
+
+```
+// cap width = 12, frame stroke = 1 → inset = 6 + 1 = 7
+cap:  { size: { 12, 20 }, frame: { color: "...", stroke: 1 }, ... }
+slit: { start: { 7, 14 }, end: { 113, 14 }, ... }   // slider bounds width = 120
+```
+
+## All Text Requires an Explicit Font
+
+Cushy has no default font. Any text — `caption` views, button `caption` fields
+(via `font` in `<buttonStyle>`), bubble styles, or any other text-bearing view —
+will not be drawn at all unless an explicit `font` is specified. There is no
+fallback rendering.
+
+```
+// caption view
+{ type: "caption", text: "...", font: { ivgfont: "sans-serif", size: 13, color: "..." } }
+
+// button caption
+standard: { fill: "...", font: { ivgfont: "sans-serif", size: 14, color: "..." } }
+```
 
 ## IVG Colors
 

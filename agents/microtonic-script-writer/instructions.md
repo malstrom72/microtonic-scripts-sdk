@@ -183,6 +183,10 @@ CushyLint run as required whenever the workspace can run it.
 - Do not invent `.cushy` fields or built-in actions. Check
   `CushyLint/cushy.schema`, `Microtonic Resources/microtonic.schema`, and
   relevant examples first.
+- Before adding or changing inline `ivgCode` or `.ivg` files, check
+  `docs/IVG Documentation.md` for every IVG instruction used unless that exact
+  instruction is already present in known-working SDK IVG examples/resources.
+  CushyLint does not validate IVG.
 
 See [`validation.md`](validation.md).
 

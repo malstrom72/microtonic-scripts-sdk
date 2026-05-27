@@ -39,3 +39,7 @@ CushyLint/CushyLint "$(pwd)/examples/" "$(pwd)/Microtonic Resources"
 - Do not treat a CushyLint pass as proof that the script works inside
   Microtonic. It validates Cushy syntax and schema compatibility, not runtime
   behavior inside the plugin.
+- CushyLint does not validate or rasterize IVG drawing code. Inline `ivgCode`
+  and `.ivg` files must be checked separately against
+  `docs/IVG Documentation.md` or copied from known-working SDK resources and
+  examples.
