@@ -16,11 +16,23 @@ const moduleConfig = {
 	printErr: function(text) { trace(text); }
 };
 var Module = moduleConfig;
-window.addEventListener('load', function() {
-if (typeof Module === 'function') {
-Module(moduleConfig).then(function(instance) {
-Module = instance;
-initializeFiddle();
-});
+let moduleStarted = false;
+function startModuleWhenReady() {
+	if (moduleStarted) {
+		return;
+	}
+	if (typeof Module !== 'function' || typeof runIVG !== 'function') {
+		setTimeout(startModuleWhenReady, 0);
+		return;
+	}
+	moduleStarted = true;
+	Module(moduleConfig).then(function(instance) {
+		Module = instance;
+		initializeFiddle();
+	});
 }
-});
+if (document.readyState === 'loading') {
+	window.addEventListener('load', startModuleWhenReady);
+} else {
+	startModuleWhenReady();
+}
