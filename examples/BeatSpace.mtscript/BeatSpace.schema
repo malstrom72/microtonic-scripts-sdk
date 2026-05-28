@@ -1,0 +1,21 @@
+include: ../../Resources/microtonic.schema
+resources: ../
+resources: ../../Resources
+
+<actions> = <microtonicAction>
+        | { action: "beatspace.press", params: "standard"|"solo"|"fine"|"mute" }
+        | { action: "beatspace.release" }
+        | { action: "beatspace.coordPress", params: { index: <int>, type: "standard"|"solo"|"fine"|"mute" } }
+        | { action: "beatspace.coordRelease" }
+        | { action: "beatspace.coordEnter", params: <int> }
+        | { action: "beatspace.coordLeave", params: <int> }
+        | { action: "beatspace.update" }
+        | { action: "beatspace.copy" }
+        | { action: "beatspace.paste" }
+        | { action: "beatspace.randomize" }
+        | { action: "beatspace.enableAll" }
+        | { action: "beatspace.presetIdChanged" }
+        | { action: "beatspace.animate" }
+        | { action: "beatspace.startup", params: <string> }
+
+<view> = <microtonicView>
