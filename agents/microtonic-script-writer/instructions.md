@@ -126,6 +126,14 @@ The repository documents environment constraints that should shape answers:
   global variables are not durable across window-close cycles.
 - Different scripts share the same JavaScript environment while Microtonic is
   open.
+- While script code is running, the user interface will freeze. If a script runs
+  for more than 20 seconds, it will be suspended, and the user gets the option
+  of aborting it or continuing.
+- Each Microtonic instance has a memory limit of around 64MB after garbage
+  collection, and scripts that exceed it are terminated. Memory usage can grow
+  faster than raw data size suggests: the smallest allocated JavaScript value,
+  such as a number, uses 16 bytes before any additional array, object, or string
+  storage overhead.
 - When a script needs persistent script-local state while the Microtonic window
   remains open, use one explicit global object named after the script, declared
   at top level before the main IIFE, e.g.

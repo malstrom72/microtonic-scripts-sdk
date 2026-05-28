@@ -94,10 +94,16 @@ closed (all global variables are lost).
 
 While script code is running, the user interface will freeze. If a script runs for more than 20 seconds, it will be
 suspended, and the user gets the option of aborting it or continuing. There is a limit of around 64MB memory per
-Microtonic instance (after garbage collection). If a script uses more memory than this, it is terminated.
+Microtonic instance (after garbage collection). If a script uses more memory than this, it is terminated. Memory usage
+can grow faster than raw data size suggests: the smallest allocated JavaScript value, such as a number, uses 16 bytes in
+this engine, before any additional array, object, or string storage overhead.
 
 A console (`JSConsole`) is available for developing scripts. It runs inside Microtonic and allows you to enter
 JavaScript code interactively, see traces, reload all resources and see script performance (as frames per second).
+Microtonic scripts do not have a step-through debugger or browser-style developer tools, so the normal debugging
+workflow is to install and open `JSConsole.mtscript` and use `print("message")` from script code to write trace output
+to the console. For blocking checkpoints or user-visible diagnostics, use `display("message")`, which shows a modal
+alert and pauses script flow until the user dismisses it.
 
 ## Constants
 

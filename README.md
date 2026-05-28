@@ -6,6 +6,12 @@ the Microtonic window is open. There is currently no way to create real-time scr
 from these restrictions, a script can do pretty much anything with the data in Microtonic, and the user interface can
 look and behave in any way you can imagine.
 
+While script code is running, Microtonic's user interface will freeze. Scripts that run for more than 20 seconds are
+suspended, and the user gets the option of aborting or continuing. Each Microtonic instance has a memory limit of around
+64MB after garbage collection, and scripts that exceed it are terminated. Memory usage can grow faster than raw data size
+suggests: the smallest allocated JavaScript value, such as a number, uses 16 bytes before any additional array, object,
+or string storage overhead.
+
 Disclaimer: many proprietary technologies, formats, and languages are involved in creating user interfaces for
 Sonic Charge plugins. These technologies have evolved organically over time and will continue to do so in the future.
 There is functional overlap and inconsistencies, and there is no guarantee that a script that works in the current
@@ -164,6 +170,10 @@ See [ivgfont Documentation](docs/ivgfont%20Documentation.md) for details on the 
 
 A console (`JSConsole`) is available for developing scripts. It runs inside Microtonic and allows you to enter
 JavaScript code interactively, see traces, reload all resources and see script performance (as frames per second).
+Microtonic scripts do not have a step-through debugger or browser-style developer tools, so the normal debugging
+workflow is to install and open `JSConsole.mtscript` and use `print("message")` from script code to write trace output
+to the console. For blocking checkpoints or user-visible diagnostics, use `display("message")`, which shows a modal
+alert and pauses script flow until the user dismisses it.
 
 Install it by copying `JSConsole.mtscript` to the `Microtonic Scripts` folder. (You can easily find this folder by
 choosing `Open Scripts Folder` from the "puzzle menu" in Microtonic.)
