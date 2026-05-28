@@ -108,6 +108,86 @@ cap:  { size: { 12, 20 }, frame: { color: "...", stroke: 1 }, ... }
 slit: { start: { 7, 14 }, end: { 113, 14 }, ... }   // slider bounds width = 120
 ```
 
+## View Bounds Clip Drawing And Input
+
+Cushy view hierarchy clips hard at every view's `bounds`. Nothing outside a
+view's bounds is drawn or clickable, even when a child view declares larger or
+negative bounds.
+
+Use `dragArea` only when the parent view itself is the thing being moved, and
+there is larger surrounding space for it to move in. This is the MixConsole
+channel-strip pattern: the strip/group moves within a wider parent, and the
+`dragArea` updates a `positionVariable` for that moving parent.
+
+Do not use `dragArea` for "click anywhere in a fixed pad and move a marker
+there." A `dragArea` moves its parent. Making the parent as large as the whole
+pad gives it no useful room to move, and putting a larger `dragArea` inside a
+smaller handle group is clipped by the handle group's bounds.
+
+For fixed pads, use the BeatSpace pattern instead: layer a full-size `click`
+view with `mousePosition`, `press`, and `release` actions, plus a `hover` view
+that updates the same mouse-position variable. Let JavaScript store a
+`dragging` flag, convert the reported mouse coordinates into the control value,
+and move the visual marker with group `offset` variables or another
+script-controlled visual state.
+
+### Click Mask Dispatch
+
+For `click` and `button` views, an `actions` block is an ordered dispatch table,
+not a list of callbacks. For each mouse event, Cushy scans masks **bottom up**,
+so later entries have higher priority, and chooses one matching action.
+
+Consequences:
+
+- Only one action runs for a given event.
+- Later masks can steal events from earlier masks when their type/modifiers
+  match.
+- Do not add extra masks speculatively. An apparently harmless `{ "down",
+  "nop" }` at the bottom of the table can take priority for hit-tracking entry
+  events.
+- Put more specific modifier masks after less specific masks when both could
+  match, e.g. put `press+shift` below `press` if shift should win.
+- `down` / `up` are hit-tracking enter/leave masks. They are not extra
+  press-drag callbacks.
+
+For a press-drag-release pad, follow BeatSpace and use the masks that define
+that interaction:
+
+```cushy
+{
+    type: "click"
+    actions: {
+        { "press", "@script.press" }
+        { "release", "@script.release" }
+    }
+    mousePosition: { xy: @script.mousePosition, integer: false }
+}
+```
+
+## Cushy Action Binding
+
+Cushy JavaScript actions called as methods on the script singleton bind `this`
+to that script object. For example, inside `morphSquare.padPress`,
+`this === morphSquare` is true.
+
+Referencing the explicit script singleton is still acceptable when it makes
+callbacks or moved helper functions clearer, but do not diagnose action failure
+as a `this` binding problem without checking it directly:
+
+```javascript
+// Valid when called as a Cushy action on morphSquare.
+padPress: function() {
+    this.dragging = true;
+    this.setFromMouse(this.mouseXY);
+}
+
+// Also valid, and sometimes clearer for callbacks/helper reuse.
+padPress: function() {
+    morphSquare.dragging = true;
+    morphSquare.setFromMouse(morphSquare.mouseXY);
+}
+```
+
 ## All Text Requires an Explicit Font
 
 Cushy has no default font. Any text — `caption` views, button `caption` fields
