@@ -194,6 +194,12 @@ CushyLint run as required whenever the workspace can run it.
 - Do not invent `.cushy` fields or built-in actions. Check
   `CushyLint/cushy.schema`, `Microtonic Resources/microtonic.schema`, and
   relevant examples first.
+- For GUI script design, use `examples/screenshots/` to visually align new or
+  revised scripts with Microtonic and the official example scripts. Match the
+  existing scale, spacing, contrast, saturation, window treatment, and control
+  density unless the user explicitly wants a different visual direction. Hues
+  may vary by script; keep accent colors purposeful and balanced rather than
+  treating any one screenshot as the required palette.
 - Before adding or changing inline `ivgCode` or `.ivg` files, check
   `docs/IVG Documentation.md` for every IVG instruction used unless that exact
   instruction is already present in known-working SDK IVG examples/resources.

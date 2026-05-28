@@ -13,6 +13,12 @@ Use examples as implementation references, not as generic templates.
   for channel utilities, mixer-like interfaces, and drag interactions.
 - Start from [`JSConsole.mtscript`](../../JSConsole.mtscript) for console-style
   script package structure and JavaScript runtime interaction.
+- Use [`examples/screenshots/`](../../examples/screenshots) as visual references
+  when designing or reviewing GUI scripts. These screenshots show Microtonic and
+  the official example scripts in context, and are useful for matching spacing,
+  scale, contrast, saturation, window treatment, control density, and overall
+  visual alignment with the bundled scripts. Do not copy hues rigidly; the
+  official examples use different accent colors for different tools.
 
 When adapting an example:
 
@@ -22,4 +28,3 @@ When adapting an example:
 - Run CushyLint when `.cushy` files are touched.
 - Keep generated JavaScript compatible with the SDK's JavaScript engine
   constraints.
-

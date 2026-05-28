@@ -56,6 +56,10 @@ Use these repository files as the grounding map for Microtonic scripting work.
   control workflow.
 - [`examples/MixConsole.mtscript`](../../examples/MixConsole.mtscript): channel
   utility UI and drag interactions.
+- [`examples/screenshots/`](../../examples/screenshots): screenshots of
+  Microtonic and official example script windows for visual alignment,
+  proportions, control density, contrast, saturation, accent treatment, and
+  window treatment.
 
 Inspect package contents instead of assuming `.mtscript` examples are flat
 files.
