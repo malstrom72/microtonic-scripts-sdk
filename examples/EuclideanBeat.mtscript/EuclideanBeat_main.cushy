@@ -1,5 +1,6 @@
 @include scriptSupport.makaron
 
+@define scriptRoot=EuclideanBeat.mtscript
 @define script=euclideanBeat
 @define uiHue=0.6
 @define backgroundColor=hsv(@uiHue,0.1,1.0)
@@ -140,14 +141,14 @@ autoexecs: {
 	{
 		type: "vector"
 		bounds: { 4, 12, 200, 200 }
-		file: "EuclideanBeat.mtscript/EuclideanBeat_beatCircle"
+		file: "@scriptRoot/EuclideanBeat_beatCircle"
 		scale: 160
 		guiVariables: true
 	}
 	{
 		type: "vector"
 		bounds: { 4, 12, 200, 200 }
-		file: "EuclideanBeat.mtscript/EuclideanBeat_playPosition"
+		file: "@scriptRoot/EuclideanBeat_playPosition"
 		scale: 160
 		guiVariables: true
 	}

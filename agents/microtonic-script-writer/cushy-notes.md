@@ -8,6 +8,27 @@ These notes do not replace the schema, JS reference, or example packages. When
 exact syntax or supported fields matter, verify against the references listed in
 [`source-map.md`](source-map.md).
 
+## scriptRoot Convention
+
+Always define `@scriptRoot` at the top of every `.cushy` file and use it
+wherever the package folder name appears (e.g. `file:` references). This means
+renaming the package requires only a one-line change.
+
+```makaron
+@define scriptRoot=MyScript.mtscript
+@define script=myScript
+```
+
+Then reference IVG files as:
+
+```
+file: "@scriptRoot/MyScript_someGraphic"
+```
+
+Note: `@scriptRoot` is a Makaron define and only expands in `.cushy` files.
+The entry-point `.js` file (`toggleCushy(...)`) is plain JavaScript and must
+still use the literal folder name.
+
 ## CushyLint
 
 See [`validation.md`](validation.md) for the full command. Easy mistake: passing a
@@ -181,6 +202,24 @@ The `dragArea` reads the variable on open and writes it on drag, but persistence
 is entirely the script's responsibility. Without the guard (or without
 `windowPosition` on the persisted object), position resets to the default on
 every open.
+
+## IVG: Prefer External Files Over Inline Code
+
+Use `file: "name"` (no extension) in `vector` and `image` views rather than
+`code: "..."` inline strings when the IVG content is static (no GUI-variable
+references). External `.ivg` files can be validated and rasterized by the
+vendored `IVG2PNG` renderer:
+
+```sh
+tools/validate-static-ivg.sh
+```
+
+This script renders every static `.ivg` under `Microtonic Resources/` and
+`examples/` to PNG and fails if any file cannot be parsed or rasterized. Files
+that reference GUI variables are reported as dynamic and skipped — they need
+separate review.
+
+Inline `code:` snippets cannot be fed to `IVG2PNG` without manual extraction.
 
 ## IVG Colors
 

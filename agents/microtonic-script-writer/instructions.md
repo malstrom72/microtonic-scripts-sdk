@@ -180,6 +180,9 @@ CushyLint run as required whenever the workspace can run it.
 - Use the local `CushyLint` folder in this repository.
 - Use `Microtonic Resources` as the Microtonic resource directory for
   `microtonic.schema`, Makaron files, and built-in GUI resources.
+- **Never modify anything inside `Microtonic Resources/`.** It is a verbatim
+  copy of the files shipped with the installed Microtonic version. Changes
+  there would be overwritten on any Microtonic update and affect all scripts.
 - Do not invent `.cushy` fields or built-in actions. Check
   `CushyLint/cushy.schema`, `Microtonic Resources/microtonic.schema`, and
   relevant examples first.
