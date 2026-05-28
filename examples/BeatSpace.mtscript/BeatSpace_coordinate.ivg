@@ -1,0 +1,28 @@
+/**
+ * @param {index}
+ * @param {color}
+ * @param {selectedColor}
+ * @param {mutedColor}
+ * @param {connectorY}
+ * @param {connectorColor}
+ * @param {connectorSelectedColor}
+ * @param {connectorHoveringColor}
+ * @param {selected}
+ * @param {hovering}
+ * @param {text}
+ * @param {muted}
+ * @param {enabled}
+ */
+
+format IVG-2 requires:IMPD-1
+options aa-gamma:1.8
+sel = {$selected == $index}
+c = {$muted ? $mutedColor : ($sel ? $selectedColor : $color)}
+font "monospace" size:10 color:$c
+TEXT at:30,11 anchor:center [$text]
+if {!$enabled} [
+    pen $c
+    PATH svg:[M5,8h50]
+]
+pen {$sel ? $connectorSelectedColor : ($hovering == $index ? $connectorHoveringColor : $connectorColor)} width:{$sel ? 2 : 0.5}
+path svg:[M6,$connectorY h48]

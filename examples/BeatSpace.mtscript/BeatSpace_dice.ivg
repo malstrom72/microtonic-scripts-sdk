@@ -1,0 +1,45 @@
+format IVG-2 requires:IMPD-1
+
+bounds 0,0,32,32
+offset 16,16
+scale {$down?0.9:1}
+options aa-gamma:1.5
+
+local ds = 10
+local dh = {10.29/2}
+local dw = {17.15/2}
+local gs = {7.5/3}
+
+outline=PATH svg:[m{-$dw},{-$dh} l{$dw},{-$dh} l{$dw},{$dh} v{$ds} l{-$dw},{$dh} l{-$dw},{-$dh} z]
+fill none
+pen hsv(0.5,0.1,0.8)
+pen width:0.9
+
+// Draw dice
+context [
+	$outline
+	context [
+		pen opacity:0.84
+		PATH svg:[m{-$dw+1},{-$dh+0.5} l{$dw-1},{$dh-0.5} l{$dw-1},{-$dh+0.5} M0,0 v{$ds-1}]
+	]
+
+	// Draw sides
+	pen none
+	fill hsv(0.5,0.1,0.7)
+	for s from:-1 to:1 [
+		n={$numbers{($s+1):1}}
+		context [
+			rotate {120*$s}
+			offset 0,{-$dh}
+			scale 1,0.6
+			rotate 45
+			if {$n==4||$n==5||$n==6} [ ellipse {-$gs},{-$gs},1 ]
+			if {$n==2||$n==3||$n==4||$n==5||$n==6} [ ellipse {$gs},{-$gs},1 ]
+			if {$n==6} [ ellipse {-$gs},0,1 ]
+			if {$n==1||$n==3||$n==5} [ ellipse 0,0,1 ]
+			if {$n==6} [ ellipse {$gs},0,1 ]
+			if {$n==2||$n==3||$n==4||$n==5||$n==6} [ ellipse {-$gs},{$gs},1 ]
+			if {$n==4||$n==5||$n==6} [ ellipse {$gs},{$gs},1 ]
+		]
+	]
+]

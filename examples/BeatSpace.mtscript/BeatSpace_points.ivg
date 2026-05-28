@@ -1,0 +1,49 @@
+/**
+ * @param {number} pointSize
+ * @param {color} color
+ * @param {color} selectedColor
+ * @param {[index:number<0-7>,x:number,y:number,enabled:yes|no,muted:yes|no][8]} points
+ * @param {number<0-7>} selected
+ */
+
+format IVG-2 requires:IMPD-1
+
+font "sans-serif" size:12
+options aa-gamma:1.8
+
+// $split $list into:vars
+split = call [ local e; local i=0; for e in:$into [ local into.$i=$e; i={$i+1} ]; i=0; for e in:$0 [ return {$into.$i}=$e; i={$i+1} ] ] 
+
+s = $pointSize
+br = {$s+3}; tl = {-$br}; crosshair = M$tl,0 h6 M0,$tl v6 M$br,0 h-6 M0,$br v-6
+br = {$s-1}; tl = {-$br}; crossX = M$tl,$tl L$br,$br M$br,$tl L$tl,$br
+
+pen caps:square
+
+for p in:$points [
+	$split $p into:i,x,y,enabled,muted
+
+	op = {($muted ? 0.5 : 1) * ($enabled ? 1 : 0.75)}
+	pen opacity:$op
+	context [
+		offset $x,$y
+		c = {$i == $selected ? $selectedColor : $color}
+		if {$enabled} [
+			pen black width:2
+			ellipse 0,0,$s
+			pen $c width:1
+			ellipse 0,0,$s
+		] else: [
+			pen black width:2
+			path svg:[$crossX]
+			pen $c width:1
+			path svg:[$crossX]
+		]
+		if {$i == $selected} [
+			pen black width:2
+			path svg:[$crosshair]
+			pen $c width:1
+			path svg:[$crosshair]
+		]
+	]
+]

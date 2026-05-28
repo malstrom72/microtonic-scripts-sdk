@@ -1,0 +1,306 @@
+@include scriptSupport.makaron
+
+@define script=beatspace
+@define uiHue=0.5
+@define backgroundColor=hsv(@uiHue,0.4,0.15)
+@define frameColor=hsv(@uiHue,0.4,0.2)
+@define captionFontA={ ivgfont: "sans-serif", size: 10, color: "hsv(@uiHue,0.1,0.6)", gamma:1.8 }
+@define captionFontB={ ivgfont: "sans-serif", size: 10, color: "hsv(@uiHue,0.1,0.8)", gamma:1.8 }
+
+@define spaceSize=256
+@define padding=28
+@define pointSize=5
+@define clickRadius=10
+@define flareLifetime=750
+@define flareExpand=45
+@define animateFPS=30
+@define updateFPS=15
+@define maxFlares=64
+@define keyModifiersWorkAround=true
+@define netName=marigoldG
+
+transitions: {
+	open: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+	close: {
+		time: 0.1
+		scale: 90
+		opacity: 0
+	}
+}
+
+autoexecs: {
+	{
+		action: "set"
+		params: { @script.windowZOrder, 0 }
+		onReload: false
+	},
+	{
+		action: "batch"
+		params: {
+			{ "set", { @script.spaceSize, @spaceSize } }
+			{ "set", { @script.pointSize, @pointSize } }
+			{ "set", { @script.clickRadius, @clickRadius } }
+			{ "set", { @script.flareLifetime, @flareLifetime } }
+			{ "set", { @script.maxFlares, @maxFlares } }
+		}
+		onReload: true
+	},
+	{
+		action: "switch"
+		params: {
+			variable: lastContextMenuAction
+			cases: {
+				"lastContextMenuAction": {
+					"batch", {
+						{ "set", { lastContextMenuAction, "" } }
+						{ "set", { lastContextMenuParams, "" } }
+					}
+				}
+			}
+		}
+	},
+	{
+		action: "@script.startup"
+		params: "@netName"
+		onReload: true
+	},
+	{
+		action: "@script.presetIdChanged"
+		onChanged: @script.presetId
+	}
+	{
+		action: "@script.update"
+		repeat: 1/@updateFPS
+	}
+	{
+		action: "@script.animate"
+		repeat: 1/@animateFPS
+	}
+}
+
+@window(50, 110, 272+4, 332+24+2, "BeatSpace", @backgroundColor, @frameColor, white, @script, @<
+	{
+		type: "group"
+		bounds: { 8, @padding, @spaceSize, @spaceSize }
+		views: {
+			{
+				type: "raster"
+				image: "BeatSpace.mtscript/@(netName)_map"
+			}
+			{
+				type: "vector"
+				file: "BeatSpace.mtscript/BeatSpace_constellation"
+				defines: {
+					"color": "#30303030"
+				}
+				bindings: {
+					"constellation": @script.constellation
+				}
+			}
+			{
+				type: "vector"
+				file: "BeatSpace.mtscript/BeatSpace_points"
+				defines: {
+					"pointSize": "@pointSize"
+					"color": "#E0D0D0E0"
+					"selectedColor": "#ffaaff"
+				}
+				bindings: {
+					"points": @script.points
+					"selected": @script.selectedChannel
+				}
+			}
+			{
+				type: "vector"
+				file: "BeatSpace.mtscript/BeatSpace_flares"
+				defines: {
+					"size": "@pointSize"
+					"color": "#A0505060"
+					"expand": "@flareExpand"
+				}
+				bindings: {
+					"flares": @script.flares
+				}
+				opacity:60
+			}
+			{
+				type: "click"
+				actions: {
+					{ "press", "@script.press", "standard" }
+				@if (keyModifiersWorkAround != false)
+					// work-around because Microtonic 3.4 has a bug where no more than one key-modifier is ever flagged
+					// alt has precedence, so we prioritize shift here instead
+					{ "press+alt", "@script.press", "solo" }
+					{ "press+shift", "@script.press", "fine" }
+					{ "press+mac+command", "@script.press", "mute" }
+					{ "press+windows+control", "@script.press", "mute" }
+				@endif
+					{ "release", "@script.release" }
+				}
+				mousePosition: { xy: @script.mousePosition, integer: false }
+				keyModifiers: @script.keyModifiers
+			}
+			{
+				type: "hover"
+				mousePosition: { xy: @script.mousePosition, integer: false }
+			}
+		}
+	}
+	{
+		type: "vector"
+		bounds: { 8, $, $-16, $ }
+		file: "BeatSpace.mtscript/BeatSpace_connector"
+		defines: {
+			"pointSize": "@pointSize"
+			"padding": "@padding"
+			"color": "#88888888"
+			"selectedColor": "#cc66cc"
+		}
+		bindings: {
+			"selected": @script.selectedChannel
+			"hovering": @script.hoveringChannel
+			"x": @script.hoveringPosition[0]
+			"y": @script.hoveringPosition[1]
+		}
+	}
+	@begin coordButton(index, col, y, connectorY)
+	{
+		type: "group"
+		bounds: { 10+(64*@col), @y, 60, 16 }
+		views: {
+			{
+				type: "button"
+				actions: {
+					{ "press", "@script.coordPress", { index: @index, type: "standard" } }
+					{ "press+alt", "@script.coordPress", { index: @index, type: "solo" } }
+					{ "press+mac+command", "@script.coordPress", { index: @index, type: "mute" } }
+					{ "press+windows+control", "@script.coordPress", { index: @index, type: "mute" } }
+					{ "release", "@script.coordRelease" }	// only for solo
+				}
+				vector: {
+					file: "BeatSpace.mtscript/BeatSpace_coordinate"
+					defines: {
+						"index": "@index"
+						"color": "#999999"
+						"mutedColor": "#666666"
+						"connectorY": "@connectorY"
+						"selectedColor": "#ddddcc"
+						"connectorColor": "#555555"
+						"connectorSelectedColor": "#cc66cc"
+						"connectorHoveringColor": "#88888888"
+					}
+					bindings: {
+						"selected": @script.selectedChannel
+						"hovering": @script.hoveringChannel
+						"text": @script.coords[@index].text
+						"muted": @script.coords[@index].muted
+						"enabled": @script.coords[@index].enabled
+					}
+				}
+				hint: "Channel [var]calculated:@index+1[/var]"
+			}
+			{
+				type: "hover"
+				variable: @script.pointHover
+				value: @index
+				enterAction: "@script.coordEnter", enterParams: @index
+				leaveAction: "@script.coordLeave", leaveParams: @index
+			}
+		}
+	}
+	@end
+	@coordButton(0, 0, @padding - 16 - 1, 15)
+	@coordButton(1, 1, @padding - 16 - 1, 15)
+	@coordButton(2, 2, @padding - 16 - 1, 15)
+	@coordButton(3, 3, @padding - 16 - 1, 15)
+	@coordButton(4, 0, @spaceSize + @padding + 1, 1)
+	@coordButton(5, 1, @spaceSize + @padding + 1, 1)
+	@coordButton(6, 2, @spaceSize + @padding + 1, 1)
+	@coordButton(7, 3, @spaceSize + @padding + 1, 1)
+
+	{
+		type: "button"
+		bounds: { w-40, h-32, 32, 32 }
+		action: "@script.randomize"
+		vector: {
+			file: "BeatSpace.mtscript/BeatSpace_dice"
+			bindings: {
+				"numbers": @script.diceNumbers
+			}
+		}
+		hint: "Randomize"
+	}	
+	{
+		type: "group"
+		bounds: { 12, h-24, w-24, 16 }
+		views: {
+			{
+				type: "caption"
+				bounds: { 0, 0, 20, 16 }
+				font: @captionFontA
+				align: "right"
+				text: "ALT:"
+			}
+			{
+				type: "caption"
+				bounds: { 24, 0, 20, 16 }
+				font: @captionFontB
+				text: "solo"
+			}
+			{
+				type: "caption"
+				bounds: { 48, 0, 32, 16 }
+				font: @captionFontA
+				align: "right"
+				text: "SHIFT:"
+			}
+			{
+				type: "caption"
+				bounds: { 84, 0, 20, 16 }
+				font: @captionFontB
+				text: "fine"
+			}
+			{
+				type: "caption"
+				bounds: { 104, 0, 28, 16 }
+				font: @captionFontA
+				align: "right"
+				text: "[mac]CMD[/mac][windows]CTRL[/windows]:"
+			}
+			{
+				type: "caption"
+				bounds: { 136, 0, 60, 16 }
+				font: @captionFontB
+				text: "mute/unmute"
+			}
+		}
+	}
+	{
+		type: "click"
+		actions: {
+			{
+				"context", "popup", {
+					items: {
+						{ "Enable All Points", "@script.enableAll" }
+						{ "Randomize", "@script.randomize" }
+						{ "Copy Constellation", "@script.copy" }
+						{ "Paste Constellation", "@script.paste" }
+						{ "About", "alert", "BeatSpace v1.0.2\nUsing map: [var]@script.decoderName[/var] ([var]@script.decoderDate[/var])" }
+					},
+					storeAction: lastContextMenuAction
+					storeParams: lastContextMenuParams
+				}
+			}
+			{
+				"context+shift", "execute", {
+					actionVariable: lastContextMenuAction
+					paramsVariable: lastContextMenuParams
+				}
+			}
+		}
+	}
+@>)

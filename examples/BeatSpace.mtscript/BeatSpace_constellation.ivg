@@ -1,0 +1,3 @@
+options aa-gamma:1.8
+pen $color width:1
+path svg:$constellation

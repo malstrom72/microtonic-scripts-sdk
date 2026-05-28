@@ -1,0 +1,21 @@
+/**
+ * @param {number} pointSize
+ * @param {number} padding
+ * @param {color} color
+ * @param {color} selectedColor
+ * @param {number<0-7>} selected
+ * @param {number<-1-7>} hovering
+ * @param {number} x
+ * @param {number} y
+ */
+
+format IVG-2 requires:IMPD-1
+
+if {$hovering >= 0} [
+	font "sans-serif" size:12
+	options aa-gamma:1.8
+	lTab = {$width / 4}
+	pen {$hovering == $selected ? $selectedColor : $color} dash:4,3
+	mask [ ellipse $x,{$y+$padding},$pointSize ] inverted:yes
+	path svg:[M$x,{$y+$padding} L{$lTab / 2 + ($hovering % 4) * $lTab},{$padding + ($hovering >= 4 ? $width + 2 : -2)}]
+]
