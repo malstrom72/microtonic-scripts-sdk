@@ -52,6 +52,8 @@ CushyLint/CushyLint "$(pwd)/examples/" "$(pwd)/Microtonic Resources"
   `/tmp/microtonic-static-ivg-validation` by default and fails if any static
   IVG cannot be parsed or rasterized. IVG files that depend on Cushy or GUI
   variables are reported as dynamic and skipped by this static renderer pass.
+  The validator passes `--fonts IVG/fonts` to `IVG2PNG`, so static IVG files can
+  use the bundled external font faces `sans-serif`, `serif`, and `monospace`.
 - Inline Cushy vector snippets still need separate review or extraction before
   `IVG2PNG` can render them.
 
@@ -63,7 +65,7 @@ it in Microtonic, create a companion `_test.ivg` file with all `$variable`
 references replaced by representative hardcoded values, and render it directly:
 
 ```sh
-IVG/output/IVG2PNG "path/to/MyFile_test.ivg" "/tmp/MyFile_test.png"
+IVG/output/IVG2PNG --fonts IVG/fonts "path/to/MyFile_test.ivg" "/tmp/MyFile_test.png"
 ```
 
 The test IVG must open with a `bounds` declaration so the renderer knows the
@@ -80,3 +82,16 @@ Colors in IVG are ARGB pre-multiplied (`#AARRGGBB`). All of R, G, B must be
 
 Keep `_test.ivg` files out of the shipped package (`.gitignore` or delete after
 verification).
+
+IVG text rendering always requires an explicit font face before drawing text.
+For local render tests, pass `--fonts IVG/fonts` when using one of the bundled
+external font faces:
+
+```
+font sans-serif size:18 color:white
+TEXT at:20,40 "Label"
+```
+
+The external font names are the `.ivgfont` filenames without the extension.
+Use printable ASCII unless you have checked that the chosen `.ivgfont` includes
+the needed glyphs.

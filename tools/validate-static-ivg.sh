@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 renderer="${IVG2PNG:-IVG/output/IVG2PNG}"
+font_dir="${IVG_FONTS:-IVG/fonts}"
 output_dir="${1:-/tmp/microtonic-static-ivg-validation}"
 
 if [ ! -x "$renderer" ]; then
@@ -17,7 +18,7 @@ while IFS= read -r -d '' ivg_file; do
 	relative="${ivg_file#./}"
 	output_file="$output_dir/${relative//\//__}.png"
 	log_file="$output_file.log"
-	if "$renderer" --fast "$ivg_file" "$output_file" >"$log_file" 2>&1; then
+	if "$renderer" --fast --fonts "$font_dir" "$ivg_file" "$output_file" >"$log_file" 2>&1; then
 		echo "rendered $relative -> $output_file"
 	elif grep -q "Variable .* does not exist" "$log_file"; then
 		echo "skipped dynamic $relative"
@@ -26,6 +27,6 @@ while IFS= read -r -d '' ivg_file; do
 		echo "failed $relative" >&2
 		status=1
 	fi
-done < <(find "Microtonic Resources" examples -name '*.ivg' -print0)
+done < <(find "Microtonic Resources" examples IVG/tests -name '*.ivg' -print0)
 
 exit "$status"

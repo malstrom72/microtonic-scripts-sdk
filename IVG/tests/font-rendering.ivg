@@ -1,0 +1,31 @@
+format IVG-2 requires:IMPD-1
+bounds 0,0,420,180
+
+wipe #181818
+
+fill gradient:[linear 0,0,1,1 from:#202830 to:#303018] relative:yes
+rect 0,0,420,180
+
+fill rgb(1,1,1,0.06)
+rect 14,14,392,152 rounded:8
+
+font sans-serif size:34 color:#f8f8f8 outline:[black width:2] tracking:0.02
+sansEnd=0
+text at:28,54 caret:sansEnd "Sans Serif"
+fill #66c2a5
+rect 28,63,{$sansEnd-28},3 rounded:1.5
+
+font serif size:34 color:#ffd166 outline:[black width:2]
+serifEnd=0
+text at:28,101 caret:serifEnd "Serif AV"
+fill #ffd166
+rect 28,110,{$serifEnd-28},3 rounded:1.5
+
+font monospace size:29 color:#9bd1ff outline:[black width:2] tracking:0.04
+monoEnd=0
+text at:28,145 caret:monoEnd "Mono 123"
+fill #9bd1ff
+rect 28,154,{$monoEnd-28},3 rounded:1.5
+
+font sans-serif size:12 color:#aaaaaa
+text at:392,156 anchor:right "IVG/fonts"
