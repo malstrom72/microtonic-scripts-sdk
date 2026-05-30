@@ -54,3 +54,29 @@ CushyLint/CushyLint "$(pwd)/examples/" "$(pwd)/Microtonic Resources"
   variables are reported as dynamic and skipped by this static renderer pass.
 - Inline Cushy vector snippets still need separate review or extraction before
   `IVG2PNG` can render them.
+
+## Testing Dynamic IVG Designs
+
+Dynamic IVG files (those that use `$variable` references bound from Cushy) are
+skipped by the static renderer. To verify a dynamic IVG design before running
+it in Microtonic, create a companion `_test.ivg` file with all `$variable`
+references replaced by representative hardcoded values, and render it directly:
+
+```sh
+IVG/output/IVG2PNG "path/to/MyFile_test.ivg" "/tmp/MyFile_test.png"
+```
+
+The test IVG must open with a `bounds` declaration so the renderer knows the
+canvas size:
+
+```
+format IVG-2 requires:IMPD-1
+bounds 0,0,300,300
+```
+
+Colors in IVG are ARGB pre-multiplied (`#AARRGGBB`). All of R, G, B must be
+≤ A — the renderer will error on invalid values. Fully opaque 6-digit colors
+(`#RRGGBB`) are always safe.
+
+Keep `_test.ivg` files out of the shipped package (`.gitignore` or delete after
+verification).
