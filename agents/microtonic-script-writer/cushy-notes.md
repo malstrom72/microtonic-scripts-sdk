@@ -307,3 +307,70 @@ Inline `code:` snippets cannot be fed to `IVG2PNG` without manual extraction.
 - `rgb(r,g,b,a)` uses normalized component values, not `0` to `255` values.
 - Use `rgb(1,1,1,0.35)`, not `rgb(255,255,255,0.35)`.
 - CSS-style `rgba(...)` is not valid IVG color syntax.
+
+## IVG Font Character Coverage
+
+The built-in IVG `sans-serif` font does not cover all Unicode characters.
+Use only printable ASCII (U+0020–U+007E) in GUI variable return values and
+caption fallback strings. Characters outside that range — including the em-dash
+`—` (U+2014) and similar typographic characters — render as one replacement
+box per code unit, which typically appears as `???` in the UI. Use plain ASCII
+alternatives such as `-` or `...` instead.
+
+## File Extensions And `dir()` Scanning
+
+### Microtonic file extensions
+
+| Type | Current extension | Legacy extension (v2) |
+|---|---|---|
+| Preset | `.mtpreset` | `.mtpg` |
+| Drum patch | `.mtdrum` | `.mtdp` |
+| MIDI config | `.scmc` | — |
+| Script package | `.mtscript` (directory) | — |
+
+Both current and legacy formats are accepted by `isMarshaledFormat` /
+`unmarshal` / `load` in Microtonic's open dialogs. When scanning for files to
+load programmatically, matching only the current extension is usually fine
+since factory content uses the current format. Add the legacy extension to the
+pattern when user-created files from older versions may be present.
+
+### `DIRS.PRESETS` layout
+
+`DIRS.PRESETS` points to the platform preset folder (e.g.
+`/Library/Audio/Presets/Sonic Charge/Microtonic Presets/` on macOS). It
+contains two subdirectories:
+
+- `All/` — flat list of all factory presets as `.mtpreset` files
+- `By Package/` — the same presets organised into per-pack subdirectories
+
+Scanning `DIRS.PRESETS + 'All/'` is the simplest way to access the full
+factory preset library from a script.
+
+### `dir()` extensionFilter excludes directories
+
+When an `extensionFilter` argument is passed to `dir()`, the JS Reference
+states that *"only files with the given extension(s) are returned"* — and in
+practice **directories are excluded** from the result. This silently breaks
+recursive scanning: the subdirectories are never seen, so recursion never
+happens and the file list stays empty.
+
+**Rule:** when a scan must recurse into subdirectories, always call `dir(path)`
+with **no filter**, then test the extension manually on non-directory entries:
+
+```javascript
+function scanDir(path) {
+    var entries = dir(path);          // no filter — directories are included
+    for (var i = 0; i < entries.length; ++i) {
+        var e = entries[i];
+        if (e.isDirectory) {
+            scanDir(path + e.name + '/');
+        } else if (/\.mtpreset$/i.test(e.name)) {
+            // handle file
+        }
+    }
+}
+```
+
+Using an extension filter — e.g. `dir(path, 'mtdrum')` — is safe only for
+known-flat directories (such as `DIRS.DRUM_PATCHES + 'All/'`) where no
+subdirectories need to be traversed.
