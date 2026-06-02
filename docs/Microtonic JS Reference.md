@@ -3,6 +3,7 @@
 ## Table of Contents
 
 -   [Engine](#engine)
+-   [Runtime Boundaries](#runtime-boundaries)
 -   [Constants](#constants)
     -   [Build Constants](#build-constants)
     -   [Directory Constants](#directory-constants)
@@ -92,11 +93,14 @@ Every instance of Microtonic runs in its own JavaScript environment, but differe
 The engine only works when the GUI window is open. The entire environment is destroyed and reset when the window is
 closed (all global variables are lost).
 
-While script code is running, the user interface will freeze. If a script runs for more than 20 seconds, it will be
-suspended, and the user gets the option of aborting it or continuing. There is a limit of around 64MB memory per
-Microtonic instance (after garbage collection). If a script uses more memory than this, it is terminated. Memory usage
-can grow faster than raw data size suggests: the smallest allocated JavaScript value, such as a number, uses 16 bytes in
-this engine, before any additional array, object, or string storage overhead.
+While JavaScript code is executing, the user interface will freeze. If a single script execution runs for more than 20
+seconds, it will be suspended, and the user gets the option of aborting it or continuing. This does not limit how long a
+GUI script window may remain open; it only applies to each individual JavaScript call. There is a limit of around 64MB
+memory per Microtonic instance (after garbage collection). If a script uses more memory than this, it is terminated.
+Memory usage can grow faster than raw data size suggests: the smallest allocated JavaScript value, such as a number,
+uses 16 bytes in this engine, before any additional array, object, or string storage overhead. Array elements are
+ordinary JavaScript values too, so large numeric arrays can use much more memory than a raw binary buffer of the same
+numbers would.
 
 A console (`JSConsole`) is available for developing scripts. It runs inside Microtonic and allows you to enter
 JavaScript code interactively, see traces, reload all resources and see script performance (as frames per second).
@@ -104,6 +108,25 @@ Microtonic scripts do not have a step-through debugger or browser-style develope
 workflow is to install and open `JSConsole.mtscript` and use `print("message")` from script code to write trace output
 to the console. For blocking checkpoints or user-visible diagnostics, use `display("message")`, which shows a modal
 alert and pauses script flow until the user dismisses it.
+
+## Runtime Boundaries
+
+Microtonic scripts do not run in the real-time audio or MIDI processing callback. Scripts cannot receive raw incoming
+MIDI events, process audio streams, or render/export Microtonic audio to files. Audio export, such as exporting a pattern
+or pattern chain to a WAV file, is available through Microtonic's user interface menu commands only and is not exposed
+programmatically.
+
+Scripts can still interact with Microtonic's sequencer and sound engine state. They can inspect visual sequencer state
+with `getElement('visuals')`, trigger drum channels with `triggerChannel`, edit pattern and preset data with
+`setElement`, and read or modify MIDI configuration with `getElement('midiConfig')` and `setElement('midiConfig')`.
+Because Microtonic's pattern engine can transmit MIDI notes when `midiConfig.patternsSendMidi` is enabled, a script can
+generate live MIDI output indirectly by updating pattern data while the pattern engine is running. If the host supports
+routing or recording MIDI output from plug-ins, that generated output can also be recorded in the DAW.
+
+Long-running scripts block the user interface while they execute. For work that should happen over time, keep each script
+call short and store progress in script state. A GUI script can then use the Cushy interface to invoke actions repeatedly
+at a fixed interval, letting Microtonic update the interface, handle user input, and continue normal playback between
+calls.
 
 ## Constants
 
@@ -329,10 +352,11 @@ See also: [marshal](#marshal), [unmarshal](#unmarshal)
 
     function load(path: string) : string
 
-Loads a text file (UTF-8 format). If `path` is not an "absolute full path" it is considered relative to the script
-directory. Alternatively, if the file does not exist and a built-in resource exists with the name, the resource is
-loaded instead. Forward slash (`'/'`) in paths work on both Windows and OS X, backward slash (`'\'`) only works on
-Windows.
+Loads a complete text file (UTF-8 format) and returns it as a string. If `path` is not an "absolute full path" it is
+considered relative to the script directory. Alternatively, if the file does not exist and a built-in resource exists
+with the name, the resource is loaded instead. Forward slash (`'/'`) in paths work on both Windows and OS X, backward
+slash (`'\'`) only works on Windows. The script API does not expose binary file I/O, streaming reads, seeking, or partial
+file reads. Binary data must be encoded as text before it can be loaded.
 
 See also: [browse](#browse), [dir](#dir), [fullPath](#fullPath), [run](#run), [save](#save)
 
@@ -441,8 +465,10 @@ See also: [fullPath](#fullpath), [load](#load)
 
     function save(path: string, contents: string)
 
-Saves a file. If `path` is not an "absolute full path" it is considered relative to the script directory. Forward slash
-(`'/'`) in paths work on both Windows and OS X, backward slash (`'\'`) only works on Windows.
+Saves a complete text file (UTF-8 format), replacing any existing file at `path`. If `path` is not an "absolute full
+path" it is considered relative to the script directory. Forward slash (`'/'`) in paths work on both Windows and OS X,
+backward slash (`'\'`) only works on Windows. The script API does not expose binary file I/O, append mode, seeking, or
+partial file writes. Binary data must be encoded as text before it can be saved.
 
 See also: [browse](#browse), [dir](#dir), [fullPath](#fullpath), [load](#load)
 
