@@ -1,5 +1,40 @@
 # Validation
 
+## JavaScript Syntax
+
+Microtonic's JavaScript engine is based on
+[`NuXJS`](https://github.com/malstrom72/NuXJS), an ECMAScript 3 engine with a
+small set of runtime additions such as string indexing, `JSON`, `Object.assign`,
+and `Date.now`. Generated `.js` files should therefore be checked as
+Microtonic scripts, not as modern browser or Node.js code.
+
+The simplest lightweight check is `tools/validate-js.sh`, which runs ESLint with
+the Microtonic config in `tools/eslint.microtonic.config.mjs`. The config uses
+ECMAScript 5 script syntax. Microtonic is ES3-based, but the shipped examples use
+some ES5-era syntax that NuXJS accepts in practice, such as trailing commas in
+object literals and reserved words as property names. ESLint with `ecmaVersion:
+5` is therefore a better practical syntax gate than `ecmaVersion: 3`: it rejects
+modern ES6+ syntax while accepting the syntax style already used by this SDK.
+
+Validate the built-in examples and JSConsole package with:
+
+```sh
+tools/validate-js.sh
+```
+
+Validate a specific script package, directory, or file with:
+
+```sh
+tools/validate-js.sh path/to/MyScript.mtscript
+```
+
+This catches modern syntax such as `let`, `const`, arrow functions, classes,
+template literals, destructuring, modules, and async functions. It is still only
+a syntax check. It does not prove that a script behaves correctly inside
+Microtonic, and it may not catch every NuXJS-specific runtime difference. For an
+exact engine check, run the code in Microtonic with `JSConsole.mtscript` or
+build and test against the NuXJS repository directly.
+
 Use the local `CushyLint` tool in this repository for `.cushy` validation.
 
 ## Single File

@@ -37,7 +37,6 @@ fi
 
 mv "$JSON_PATH" "$DOCLING_JSON_PATH"
 
-GUIDE_DIR_PREFIX="$GUIDE_DIR/" perl -0pi -e 's/\Q$ENV{GUIDE_DIR_PREFIX}\E//g' "$MD_PATH" "$DOCLING_JSON_PATH"
-"$ROOT_DIR/tools/postprocess-user-guide.pl" "$MD_PATH"
+node "$ROOT_DIR/tools/postprocess-user-guide.js" "$GUIDE_DIR" "$MD_PATH" "$DOCLING_JSON_PATH"
 
 echo "Converted $PDF_PATH"

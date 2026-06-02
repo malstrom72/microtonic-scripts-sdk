@@ -1,0 +1,93 @@
+export default [
+  {
+    files: ["**/*.js"],
+    ignores: [
+      "IVG/**",
+      "Microtonic Resources/**",
+      "CushyLint/**",
+      "tmLanguages/**"
+    ],
+    languageOptions: {
+      ecmaVersion: 5,
+      sourceType: "script",
+      globals: {
+        BUILD: "readonly",
+        CHANNEL_COUNT: "readonly",
+        DIRS: "readonly",
+        DRUM_PATCH_PARAMS: "readonly",
+        FREQ_VALUE_C4: "readonly",
+        GLOBAL_PARAM_COUNT: "readonly",
+        JSON: "readonly",
+        OCTAVE_STEP: "readonly",
+        PARAMS: "readonly",
+        PATTERN_COUNT: "readonly",
+        PATTERN_STEP_COUNT: "readonly",
+        PLATFORM: "readonly",
+        PROGRAM_COUNT: "readonly",
+        ask: "readonly",
+        assert: "readonly",
+        bounce: "readonly",
+        browse: "readonly",
+        cbrt: "readonly",
+        clamp: "readonly",
+        closeCushy: "readonly",
+        composeNumbstrict: "readonly",
+        converge: "readonly",
+        createClass: "readonly",
+        createElement: "readonly",
+        cube: "readonly",
+        dir: "readonly",
+        display: "readonly",
+        displayCushy: "readonly",
+        editParam: "readonly",
+        fract: "readonly",
+        fullPath: "readonly",
+        getCushyVariable: "readonly",
+        getElement: "readonly",
+        getElementId: "readonly",
+        getParam: "readonly",
+        isMarshaledFormat: "readonly",
+        isRepeating: "readonly",
+        lerp: "readonly",
+        load: "readonly",
+        marshal: "readonly",
+        paramText: "readonly",
+        paramValue: "readonly",
+        parseArray: "readonly",
+        parseNumbstrict: "readonly",
+        parseStruct: "readonly",
+        performCushyAction: "readonly",
+        print: "readonly",
+        random: "readonly",
+        readClipboard: "readonly",
+        run: "readonly",
+        save: "readonly",
+        saveUndo: "readonly",
+        scale: "readonly",
+        select: "readonly",
+        selected: "readonly",
+        setCushyVariable: "readonly",
+        setElement: "readonly",
+        setParam: "readonly",
+        square: "readonly",
+        StringBuilder: "readonly",
+        toggleCushy: "readonly",
+        translate: "readonly",
+        triggerChannel: "readonly",
+        unescape: "readonly",
+        unmarshal: "readonly",
+        writeClipboard: "readonly"
+      }
+    },
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Property[kind='get'], Property[kind='set']",
+          message: "Getter/setter object literal syntax is not supported by Microtonic scripts."
+        }
+      ],
+      "no-with": "error"
+    }
+  }
+];

@@ -76,9 +76,10 @@
 
 ## Engine
 
-The JavaScript engine in Microtonic is a proprietary JavaScript engine written by Magnus Lidström. It was designed to be
-small, fast, and easy to integrate into existing products. It is fully ECMAScript 3 compliant with partial ECMAScript 5
-support.
+The JavaScript engine in Microtonic is based on
+[NuXJS](https://github.com/malstrom72/NuXJS), a sandboxed JavaScript engine written by Magnus Lidström. It was designed
+to be small, fast, and easy to integrate into existing products. It is fully ECMAScript 3 compliant with partial
+ECMAScript 5 support.
 
 ECMAScript 3 was chosen because it was the first widely adopted standardized version of JavaScript. It is a version many
 programmers are familiar with, and it has everything you need from a scripting language. Naturally, more recent
