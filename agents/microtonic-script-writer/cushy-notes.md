@@ -93,6 +93,72 @@ when the displayed values are derived from script state.
   only persistent user state.
 - Shift-reload resets the whole JavaScript engine and clears stale instances.
 
+## Timed Actions / Animation Loop
+
+A GUI script gets periodic callbacks by registering a repeating action in the
+root `autoexecs` block. Use this for animation, polling, games, sequenced GUI
+updates, or any other time-based behavior. Each JavaScript action should return
+quickly; the UI freezes while script code runs, and a single execution that
+runs longer than 20 seconds is suspended.
+
+```cushy
+autoexecs: {
+    { action: "@script.tick", repeat: 1/@fps }
+}
+```
+
+Use `Date.now()` deltas for work that needs a stable rate, so behavior does not
+depend on the exact callback cadence:
+
+```javascript
+tick: function() {
+    var now = Date.now();
+    if (now - this.lastStep >= this.intervalMs) {
+        this.lastStep = now;
+        this.step();
+    }
+    this.render();
+}
+```
+
+Other useful `autoexecs` triggers in the same schema block include
+`onChanged: <var>`, `onClose`, `onReload`, `onInit`, and one-shot `delay`.
+
+## Easy `.cushy` Mistakes
+
+- `@define` captures everything to the end of the line unless the value is
+  wrapped as a raw value (`@<...@>`). A trailing comment becomes part of the
+  macro value and can break later Numbstrict parsing. Put comments on their own
+  line when possible:
+
+  ```makaron
+  // width of the main area
+  @define viewWidth = 360
+  ```
+
+  Raw values are useful when a same-line comment is genuinely convenient:
+
+  ```makaron
+  @define viewWidth = @<360@> // comment is emitted as output, but not part of @viewWidth
+  ```
+
+  Makaron does not discard the trailing comment; it still appears in the
+  expanded Cushy source as a `//` comment line. That is normally accepted by
+  Numbstrict/Cushy parsing, but it is not the same as removing the comment.
+
+- Cushy and IVG use different transparency spellings. Cushy's `<color>` accepts
+  `transparent`; IVG's `<color>` uses `none` for invisible paint. Use
+  `fill: "transparent"` in `.cushy` view fields, and use `fill none` / `pen
+  none` inside `.ivg` or inline `ivgCode`.
+
+- A `button` caption can be a plain text value, or an object with both `text`
+  and `offset`. If you use object form, the offset is required:
+
+  ```cushy
+  caption: "GO"
+  caption: { text: "GO", offset: { 0, 0 } }
+  ```
+
 ## Slider Slit Inset
 
 The slit `start` and `end` coordinates define where the **center** of the cap
@@ -131,6 +197,95 @@ that updates the same mouse-position variable. Let JavaScript store a
 and move the visual marker with group `offset` variables or another
 script-controlled visual state.
 
+## Driving IVG From Script State
+
+`vector` views can render dynamic data by combining static `defines:` with live
+`bindings:`. Static settings such as sizes or palette colors belong in
+`defines:`. Data that JavaScript updates while the GUI is open belongs in
+`bindings:` and is re-read when it changes.
+
+```cushy
+{
+    type: "vector"
+    file: "@scriptRoot/Points"
+    defines: {
+        "pointSize": "@pointSize"
+        "color": "#E0D0D0E0"
+    }
+    bindings: {
+        "points": @script.points
+        "selected": @script.selectedChannel
+    }
+}
+```
+
+The script can keep a binding as an IVG/IMPD list string. BeatSpace uses this
+pattern for point, constellation, and flare rendering:
+
+```javascript
+script.points = "[[0,120,80,yes,no],[1,160,96,yes,no]]";
+```
+
+Then IVG can iterate the list and split each row:
+
+```ivg
+for p in:$points [
+    $split $p into:i,x,y,enabled,muted
+    context [
+        offset $x,$y
+        ellipse 0,0,$pointSize
+    ]
+]
+```
+
+For more structured state, a `vector` view can set `guiVariables: true`. This
+allows IVG source to read GUI variables directly with `$<variable-name>` and
+refreshes when variables touched during the last repaint change. Prefer explicit
+`defines:` plus `bindings:` when the data can be expressed cleanly; it makes the
+view's input contract visible in the `.cushy` file and avoids giving the drawing
+layer access to the full GUI-variable namespace.
+
+When JavaScript needs to generate the whole IVG source string, use the
+`variable:` source form:
+
+```cushy
+{ type: "vector", variable: @script.ivgSource }
+```
+
+`variable: <var>` is the direct form for this pattern: the named GUI variable
+contains the complete IVG source. Use `code:` when the source is written inline
+in the `.cushy` file; use `variable:` when JavaScript owns and updates the
+source string.
+
+Generated IVG source is flexible but shifts drawing text generation into
+JavaScript. IVG/IMPD is interpreted when it renders, so the cost is not a
+separate compile step; the tradeoff is that JavaScript may need to rebuild and
+store more source text, and static `_test.ivg` validation cannot cover every
+generated path. NuXJS stores string character data as UTF-16, so a large source
+string or compact text payload is usually much cheaper than an equivalent
+JavaScript array of numbers, though normal string object and allocation overhead
+still applies.
+
+## Input Model
+
+There is no documented Cushy model for binding arbitrary real-time keyboard
+keys such as arrows or WASD to script actions. Design live interaction around
+mouse hover, click, drag, context click, and modifier masks. Text input is
+available through:
+
+- `ask(question, [default])` in JavaScript: a modal text dialog returning a
+  string or `null` on cancel.
+- The Cushy `edit` built-in action: a modal editor bound to a variable, with
+  optional `default` and `reaction`.
+- The Cushy `console` view: TTY-style input/output with live `inputVariable`,
+  `inputAction` on Enter, and `outputVariable` or `outputArray`. See
+  `JSConsole.mtscript`.
+
+BeatSpace carries a Microtonic 3.4 workaround comment for modifier detection:
+no more than one key modifier is flagged there, so modifier combinations should
+be treated cautiously. If modifiers matter, give each modifier its own click
+mask and choose an explicit priority order.
+
 ### Click Mask Dispatch
 
 For `click` and `button` views, an `actions` block is an ordered dispatch table,
@@ -147,6 +302,8 @@ Consequences:
   events.
 - Put more specific modifier masks after less specific masks when both could
   match, e.g. put `press+shift` below `press` if shift should win.
+- `context` handles right-click / control-click and can bind directly to a
+  script action, not only to the built-in `popup` action.
 - `down` / `up` are hit-tracking enter/leave masks. They are not extra
   press-drag callbacks.
 

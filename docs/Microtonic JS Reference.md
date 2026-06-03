@@ -101,7 +101,9 @@ memory per Microtonic instance (after garbage collection). If a script uses more
 Memory usage can grow faster than raw data size suggests: the smallest allocated JavaScript value, such as a number,
 uses 16 bytes in this engine, before any additional array, object, or string storage overhead. Array elements are
 ordinary JavaScript values too, so large numeric arrays can use much more memory than a raw binary buffer of the same
-numbers would.
+numbers would. Strings are stored as UTF-16 character data in NuXJS, so dense text encodings and generated source
+strings can be significantly more compact than equivalent arrays of JavaScript numbers, although the string object,
+vector storage, and allocation overhead still apply.
 
 A console (`JSConsole`) is available for developing scripts. It runs inside Microtonic and allows you to enter
 JavaScript code interactively, see traces, reload all resources and see script performance (as frames per second).

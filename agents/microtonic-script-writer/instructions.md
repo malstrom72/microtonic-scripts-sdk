@@ -129,6 +129,9 @@ The repository documents environment constraints that should shape answers:
 - While script code is running, the user interface will freeze. If a script runs
   for more than 20 seconds, it will be suspended, and the user gets the option
   of aborting it or continuing.
+- For GUI scripts that need polling, animation, or other time-based behavior,
+  use short repeating Cushy `autoexecs` actions instead of long-running
+  JavaScript loops; see [`cushy-notes.md`](cushy-notes.md).
 - Each Microtonic instance has a memory limit of around 64MB after garbage
   collection, and scripts that exceed it are terminated. Memory usage can grow
   faster than raw data size suggests: the smallest allocated JavaScript value,

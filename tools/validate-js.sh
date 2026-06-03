@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+sdk_root="$(cd "$(dirname "$0")/.." && pwd)"
 
-config="tools/eslint.microtonic.config.mjs"
+config="$sdk_root/tools/eslint.microtonic.config.mjs"
 
 if [ "$#" -eq 0 ]; then
+	cd "$sdk_root"
 	set -- "JSConsole.mtscript" "examples"
 fi
 
@@ -29,4 +30,4 @@ if [ -x "node_modules/.bin/eslint" ]; then
 	exec "node_modules/.bin/eslint" --no-config-lookup -c "$config" "${paths[@]}"
 fi
 
-exec npx eslint --no-config-lookup -c "$config" "${paths[@]}"
+exec npx --yes eslint --no-config-lookup -c "$config" "${paths[@]}"

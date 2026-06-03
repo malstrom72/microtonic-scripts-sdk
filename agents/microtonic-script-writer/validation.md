@@ -28,6 +28,18 @@ Validate a specific script package, directory, or file with:
 tools/validate-js.sh path/to/MyScript.mtscript
 ```
 
+For the recommended external project layout, run the SDK wrapper from the
+project root and pass the user script folder:
+
+```sh
+references/microtonic-scripts-sdk/tools/validate-js.sh scripts
+```
+
+The wrapper keeps the caller's working directory when paths are supplied, so
+files outside the SDK checkout are validated instead of being ignored by
+ESLint's flat-config base path. With no arguments it changes to the SDK root and
+validates `JSConsole.mtscript` plus `examples`.
+
 This catches modern syntax such as `let`, `const`, arrow functions, classes,
 template literals, destructuring, modules, and async functions. It is still only
 a syntax check. It does not prove that a script behaves correctly inside
