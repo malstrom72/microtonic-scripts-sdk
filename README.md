@@ -20,6 +20,20 @@ Sonic Charge).
 
 The documentation in this repository was written for Microtonic version 3.3.4 (build 1048).
 
+## Prerequisites
+
+For everyday scripting work — writing `.cushy` files, running CushyLint, and validating JavaScript — no extra tools are required beyond what is bundled in this repository. The CushyLint binaries (`PikaCmd`, `MakaronCmd`) are prebuilt for both macOS and Windows and will be used as-is.
+
+**[Node.js](https://nodejs.org/)** is the only tool you may need to install, and only for two tasks:
+
+- **JavaScript validation** (`tools/validate-js.sh`) — runs ESLint via `npx` to catch syntax and style errors in `.js` and `.mtscript` files. ESLint understands the ECMAScript 3 subset used by Microtonic's scripting engine, so it catches mistakes that would only surface at runtime inside the plugin.
+- **IVGFontConverter** — converts TrueType/OpenType fonts to the `.ivgfont` format used by Cushy and IVG. Requires Node.js to run `IVGFontConverter.node.js`.
+
+The following tools are only needed for **SDK maintenance** tasks, not for everyday scripting:
+
+- **C++ compiler** (Xcode/`g++` on macOS, MSVC on Windows) — only needed if the prebuilt `IVG2PNG` binary in `tools/IVG2PNG/` cannot run on your platform (e.g. a Linux machine, or after an upstream update). The validation scripts auto-build from source in that case. `IVG2PNG` renders `.ivg` files to PNG for visual validation and is sourced from the upstream [IVG repository](https://github.com/malstrom72/IVG).
+- **Python 3** — required to run `tools/bootstrap-docling.sh`, which installs [Docling](https://github.com/DS4SD/docling) into a local virtual environment. Docling is used for the one-off task of converting the Microtonic PDF user guide to Markdown (`tools/convert-user-guide.sh`).
+
 ## Technology Overview
 
 Here is a brief list of the technologies used in Microtonic GUIs:
@@ -130,21 +144,18 @@ See [IVG Documentation](docs/IVG%20Documentation.md) for more information on IVG
 
 ### IVG2PNG
 
-The vendored `IVG` snapshot includes the `IVG2PNG` renderer. To build the local copy for static IVG validation:
-
-```sh
-tools/build-ivg2png.sh
-```
+The `IVG` directory is a curated vendored snapshot of the upstream [IVG repository](https://github.com/malstrom72/IVG). A prebuilt `IVG2PNG` binary for macOS and Windows is included in `tools/IVG2PNG/` so no compiler is needed for normal use.
 
 To render all static `.ivg` resources in this SDK:
 
 ```sh
-tools/validate-static-ivg.sh
+tools/validate-static-ivg.sh        # macOS / Linux
+tools\validate-static-ivg.cmd       # Windows
 ```
 
-The rendered PNGs are written to `/tmp/microtonic-static-ivg-validation` by default.
-IVG files that depend on Cushy or GUI variables are reported as dynamic and
-skipped by this static renderer pass.
+The rendered PNGs are written to a temp directory by default (`/tmp/microtonic-static-ivg-validation` on macOS/Linux, `%TEMP%\microtonic-static-ivg-validation` on Windows). IVG files that depend on Cushy or GUI variables are reported as dynamic and skipped by this static renderer pass.
+
+If the prebuilt binary cannot run on your platform, the scripts automatically rebuild `IVG2PNG` from source using `tools/build-ivg2png.sh` (macOS/Linux) or `tools\build-ivg2png.cmd` (Windows, requires MSVC).
 
 ### IVGFontConverter
 

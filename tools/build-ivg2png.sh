@@ -16,7 +16,7 @@ case "$simd" in
 		;;
 esac
 
-mkdir -p IVG/output
+mkdir -p tools/IVG2PNG
 
 c_sources=(
 	IVG/externals/libpng/png.c
@@ -47,7 +47,7 @@ c_sources=(
 	IVG/externals/zlib/zutil.c
 )
 
-IVG/tools/BuildCpp.sh "$target" "$model" IVG/output/IVG2PNG \
+IVG/tools/BuildCpp.sh "$target" "$model" tools/IVG2PNG/IVG2PNG \
 	-ffp-contract=off -UTARGET_OS_MAC IVG/tools/IVG2PNG.cpp -DNUXPIXELS_SIMD="$simd_flag" \
 	-I IVG -I IVG/externals -I IVG/externals/libpng -I IVG/externals/zlib \
 	IVG/src/IVG.cpp IVG/src/IMPD.cpp IVG/externals/NuX/NuXPixels.cpp \

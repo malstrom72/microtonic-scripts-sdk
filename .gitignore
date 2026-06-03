@@ -1,5 +1,6 @@
 
 .DS_Store
+node_modules/
 CushyLint/build/*.sha256
 CushyLint/build/*.tmp
 CushyLint/build/*.tmp.exe

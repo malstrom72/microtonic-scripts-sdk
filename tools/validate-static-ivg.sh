@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-renderer="${IVG2PNG:-IVG/output/IVG2PNG}"
+renderer="${IVG2PNG:-tools/IVG2PNG/IVG2PNG}"
 font_dir="${IVG_FONTS:-IVG/fonts}"
 output_dir="${1:-/tmp/microtonic-static-ivg-validation}"
 
