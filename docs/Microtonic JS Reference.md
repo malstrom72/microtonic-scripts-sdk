@@ -73,6 +73,7 @@
     -   [GUI Script Startup](#gui-script-startup)
     -   [GUI Variables](#gui-variables)
     -   [GUI Actions](#gui-actions)
+    -   [Performance Notes](#performance-notes)
 
 ## Engine
 
@@ -125,11 +126,6 @@ with `getElement('visuals')`, trigger drum channels with `triggerChannel`, edit 
 Because Microtonic's pattern engine can transmit MIDI notes when `midiConfig.patternsSendMidi` is enabled, a script can
 generate live MIDI output indirectly by updating pattern data while the pattern engine is running. If the host supports
 routing or recording MIDI output from plug-ins, that generated output can also be recorded in the DAW.
-
-Long-running scripts block the user interface while they execute. For work that should happen over time, keep each script
-call short and store progress in script state. A GUI script can then use the Cushy interface to invoke actions repeatedly
-at a fixed interval, letting Microtonic update the interface, handle user input, and continue normal playback between
-calls.
 
 ## Constants
 
@@ -1004,3 +1000,47 @@ and `'assign'`
 
 Microtonic also defines these actions for internal use: `'scriptPopup'`, `'programPopup'`, `'morphContextMenu'`,
 `'toggleAbout'`, `'undo'`, `'redo'`, `'register'`, and `'focusToMain'`. Avoid using these names.
+
+### Performance Notes
+
+Script actions run synchronously on the user-interface thread. While a script action is executing, Microtonic cannot
+repaint the interface or process normal input for that window. Calls that open modal user-interface features, such as
+alerts or file dialogs, are an exception: while they wait for user input they may allow the event loop to process other
+events, and that waiting time does not count toward the 20-second suspension timer. The suspension timer applies to each
+individual JavaScript invocation, not cumulatively across repeated GUI actions.
+
+Repeated Cushy `autoexecs` actions are queued if a previous invocation is still running. They run as often as possible,
+but they do not take priority over the rest of the user interface. Use repeat rates that communicate the intended update
+rate. A target of 50 Hz or lower is usually sensible. On Windows, timer resolution limits the practical maximum to about
+64 Hz; on Mac the maximum is about 200 Hz. Avoid "as often as possible" repeats such as `repeat: 0.001` unless there is a
+specific reason. To react to GUI-variable changes, use `onChanged`: it runs asynchronously on the next tick after the
+current action returns, and only when the value actually changes.
+
+Cushy variables are polled by the view system and native code. There is no explicit dependency graph. Poll rates adapt
+per lookup: variables that rarely change are polled less often, down to one fifth of the normal tick rate. In
+Microtonic, full rate is normally 50 fps. Keep JavaScript getters used as GUI variables short and fast. Prefer simple
+JavaScript or Cushy variables for values that are read often, and cache derived getter results when the calculation is
+non-trivial. JavaScript variables shadow Cushy variables with the same name.
+
+Vector views are optimized for static and rarely changing graphics. After the first few redraws, an unchanged vector
+view can be cached in an RLE-compressed offscreen buffer and reused until its source material changes. A vector view
+tracks changes to its IVG source, bound variables that were accessed during the last update, standard native variables
+such as `$width` and `$height` when accessed, and, with `guiVariables: true`, GUI variables accessed during the last
+update. `file:` vector sources are cached by the resource manager until a reload, such as the JSConsole reload button or
+a zoom-scale reload.
+
+IVG/IMPD is interpreted when it renders, and rendering is CPU-based. Large redraw areas, high zoom levels, and
+Retina-scale buffers are often more important to performance than any single IVG instruction. Static IVG source with
+`defines:` and `bindings:` is often the clearest approach and can be tested separately. JavaScript-generated IVG source
+is also valid when it is the clearest way to express the drawing, but generated paths are harder to cover with static
+IVG tests.
+
+For Microtonic state, use the API that matches the operation. `getElement` returns structured data objects for preset,
+current drum patch, current pattern, MIDI config, or visuals. `setElement` writes supported structured data back:
+preset, current drum patch, current pattern, or MIDI config. Use `getElementId` when you only need to know whether a
+preset, drum patch, pattern, or MIDI config has changed. Use `setParam` when changing only a few parameters; it updates
+single parameters directly and does not replace the whole program state.
+
+Use `JSConsole.mtscript`'s FPS display as the practical performance indicator. For script-side measurements, use
+`Date.now()` around action bodies and print occasional averages rather than tracing every tick. CushyLint and ESLint can
+catch syntax and schema problems, but they do not predict runtime performance; measure in Microtonic.

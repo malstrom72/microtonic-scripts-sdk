@@ -7,9 +7,6 @@
   <title>Microtonic Javascript Reference</title>
   <style>
     html {
-      line-height: 1.5;
-      font-family: Georgia, serif;
-      font-size: 20px;
       color: #1a1a1a;
       background-color: #fdfdfd;
     }
@@ -28,13 +25,16 @@
     @media (max-width: 600px) {
       body {
         font-size: 0.9em;
-        padding: 1em;
+        padding: 12px;
       }
       h1 {
         font-size: 1.8em;
       }
     }
     @media print {
+      html {
+        background-color: white;
+      }
       body {
         background-color: transparent;
         color: black;
@@ -58,6 +58,10 @@
       color: #1a1a1a;
     }
     img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
       max-width: 100%;
     }
     h1, h2, h3, h4, h5, h6 {
@@ -84,9 +88,10 @@
       color: #606060;
     }
     code {
-      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
+      hyphens: manual;
     }
     pre {
       margin: 1em 0;
@@ -102,8 +107,8 @@
      overflow: visible;
     }
     hr {
-      background-color: #1a1a1a;
       border: none;
+      border-top: 1px solid #1a1a1a;
       height: 1px;
       margin: 1em 0;
     }
@@ -151,29 +156,17 @@
     div.columns{display: flex; gap: min(4vw, 1.5em);}
     div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
     ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
       width: 0.8em;
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
-  <style>
-    body {
-      max-width: 50em;
-    }
-    pre {
-      background-color: #F8F8FF;
-      padding-left: 2em;
-    }
-    code {
-      color: #101080;
-    }
-  </style>
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
 </head>
 <body>
 <header id="title-block-header">
@@ -184,6 +177,7 @@ API Reference v1.0</h1>
 <h2 id="table-of-contents">Table of Contents</h2>
 <ul>
 <li><a href="#engine">Engine</a></li>
+<li><a href="#runtime-boundaries">Runtime Boundaries</a></li>
 <li><a href="#constants">Constants</a>
 <ul>
 <li><a href="#build-constants">Build Constants</a></li>
@@ -262,13 +256,15 @@ API Reference v1.0</h1>
 <li><a href="#gui-script-startup">GUI Script Startup</a></li>
 <li><a href="#gui-variables">GUI Variables</a></li>
 <li><a href="#gui-actions">GUI Actions</a></li>
+<li><a href="#performance-notes">Performance Notes</a></li>
 </ul></li>
 </ul>
 <h2 id="engine">Engine</h2>
-<p>The JavaScript engine in Microtonic is a proprietary JavaScript
-engine written by Magnus Lidström. It was designed to be small, fast,
-and easy to integrate into existing products. It is fully ECMAScript 3
-compliant with partial ECMAScript 5 support.</p>
+<p>The JavaScript engine in Microtonic is based on <a
+href="https://github.com/malstrom72/NuXJS">NuXJS</a>, a sandboxed
+JavaScript engine written by Magnus Lidström. It was designed to be
+small, fast, and easy to integrate into existing products. It is fully
+ECMAScript 3 compliant with partial ECMAScript 5 support.</p>
 <p>ECMAScript 3 was chosen because it was the first widely adopted
 standardized version of JavaScript. It is a version many programmers are
 familiar with, and it has everything you need from a scripting language.
@@ -284,15 +280,53 @@ ES6 using “polyfills”.</p>
 but different scripts share the same environment. The engine only works
 when the GUI window is open. The entire environment is destroyed and
 reset when the window is closed (all global variables are lost).</p>
-<p>While script code is running, the user interface will freeze. If a
-script runs for more than 20 seconds, it will be suspended, and the user
-gets the option of aborting it or continuing. There is a limit of around
-64MB memory per Microtonic instance (after garbage collection). If a
-script uses more memory than this, it is terminated.</p>
+<p>While JavaScript code is executing, the user interface will freeze.
+If a single script execution runs for more than 20 seconds, it will be
+suspended, and the user gets the option of aborting it or continuing.
+This does not limit how long a GUI script window may remain open; it
+only applies to each individual JavaScript call. There is a limit of
+around 64MB memory per Microtonic instance (after garbage collection).
+If a script uses more memory than this, it is terminated. Memory usage
+can grow faster than raw data size suggests: the smallest allocated
+JavaScript value, such as a number, uses 16 bytes in this engine, before
+any additional array, object, or string storage overhead. Array elements
+are ordinary JavaScript values too, so large numeric arrays can use much
+more memory than a raw binary buffer of the same numbers would. Strings
+are stored as UTF-16 character data in NuXJS, so dense text encodings
+and generated source strings can be significantly more compact than
+equivalent arrays of JavaScript numbers, although the string object,
+vector storage, and allocation overhead still apply.</p>
 <p>A console (<code>JSConsole</code>) is available for developing
 scripts. It runs inside Microtonic and allows you to enter JavaScript
 code interactively, see traces, reload all resources and see script
-performance (as frames per second).</p>
+performance (as frames per second). Microtonic scripts do not have a
+step-through debugger or browser-style developer tools, so the normal
+debugging workflow is to install and open
+<code>JSConsole.mtscript</code> and use <code>print("message")</code>
+from script code to write trace output to the console. For blocking
+checkpoints or user-visible diagnostics, use
+<code>display("message")</code>, which shows a modal alert and pauses
+script flow until the user dismisses it.</p>
+<h2 id="runtime-boundaries">Runtime Boundaries</h2>
+<p>Microtonic scripts do not run in the real-time audio or MIDI
+processing callback. Scripts cannot receive raw incoming MIDI events,
+process audio streams, or render/export Microtonic audio to files. Audio
+export, such as exporting a pattern or pattern chain to a WAV file, is
+available through Microtonic’s user interface menu commands only and is
+not exposed programmatically.</p>
+<p>Scripts can still interact with Microtonic’s sequencer and sound
+engine state. They can inspect visual sequencer state with
+<code>getElement('visuals')</code>, trigger drum channels with
+<code>triggerChannel</code>, edit pattern and preset data with
+<code>setElement</code>, and read or modify MIDI configuration with
+<code>getElement('midiConfig')</code> and
+<code>setElement('midiConfig')</code>. Because Microtonic’s pattern
+engine can transmit MIDI notes when
+<code>midiConfig.patternsSendMidi</code> is enabled, a script can
+generate live MIDI output indirectly by updating pattern data while the
+pattern engine is running. If the host supports routing or recording
+MIDI output from plug-ins, that generated output can also be recorded in
+the DAW.</p>
 <h2 id="constants">Constants</h2>
 <h3 id="build-constants">Build Constants</h3>
 <pre><code>PLATFORM = {
@@ -512,12 +546,15 @@ or <code>'midiConfig'</code></p>
 href="#unmarshal">unmarshal</a></p>
 <h3 id="load">load</h3>
 <pre><code>function load(path: string) : string</code></pre>
-<p>Loads a text file (UTF-8 format). If <code>path</code> is not an
-“absolute full path” it is considered relative to the script directory.
-Alternatively, if the file does not exist and a built-in resource exists
-with the name, the resource is loaded instead. Forward slash
-(<code>'/'</code>) in paths work on both Windows and OS X, backward
-slash (<code>'\'</code>) only works on Windows.</p>
+<p>Loads a complete text file (UTF-8 format) and returns it as a string.
+If <code>path</code> is not an “absolute full path” it is considered
+relative to the script directory. Alternatively, if the file does not
+exist and a built-in resource exists with the name, the resource is
+loaded instead. Forward slash (<code>'/'</code>) in paths work on both
+Windows and OS X, backward slash (<code>'\'</code>) only works on
+Windows. The script API does not expose binary file I/O, streaming
+reads, seeking, or partial file reads. Binary data must be encoded as
+text before it can be loaded.</p>
 <p>See also: <a href="#browse">browse</a>, <a href="#dir">dir</a>, <a
 href="#fullPath">fullPath</a>, <a href="#run">run</a>, <a
 href="#save">save</a></p>
@@ -615,10 +652,13 @@ backward slash (<code>'\'</code>) only works on Windows.</p>
 href="#load">load</a></p>
 <h3 id="save">save</h3>
 <pre><code>function save(path: string, contents: string)</code></pre>
-<p>Saves a file. If <code>path</code> is not an “absolute full path” it
-is considered relative to the script directory. Forward slash
+<p>Saves a complete text file (UTF-8 format), replacing any existing
+file at <code>path</code>. If <code>path</code> is not an “absolute full
+path” it is considered relative to the script directory. Forward slash
 (<code>'/'</code>) in paths work on both Windows and OS X, backward
-slash (<code>'\'</code>) only works on Windows.</p>
+slash (<code>'\'</code>) only works on Windows. The script API does not
+expose binary file I/O, append mode, seeking, or partial file writes.
+Binary data must be encoded as text before it can be saved.</p>
 <p>See also: <a href="#browse">browse</a>, <a href="#dir">dir</a>, <a
 href="#fullpath">fullPath</a>, <a href="#load">load</a></p>
 <h3 id="saveundo">saveUndo</h3>
@@ -992,8 +1032,11 @@ and run it if it exists. In the above example, this would be
 <code>MyScript.mtscript/MyScript_main.js</code>. This JavaScript file
 sets up all the functions necessary to run the script. Notice that Cushy
 runs this Javascript every time the user opens the script and when a
-“rebuild” of the GUI is performed, e.g., when choosing a different zoom
-scale. You should therefore avoid resetting global variables if they
+“rebuild” of the GUI is performed. Rebuilds are not only a developer
+action: an end user changing Microtonic’s zoom scale also forces the GUI
+to reload so graphics resources and exact layout coordinates can be
+rescaled. GUI scripts must therefore survive reloads where the
+JavaScript files are run again. Avoid resetting global variables if they
 already exist.</p>
 <p>Since all scripts share the same JavaScript global variable space,
 putting functions and variables under a single JavaScript object with
@@ -1003,6 +1046,13 @@ other scripts. If you run your script with the <code>JSConsole</code>
 open, it will alert every time a global variable is created. This helps
 you catch mistakes such as missing the <code>var</code> keyword when
 declaring a variable.</p>
+<p>Microtonic caches resources while the GUI window is open, including
+JavaScript source files loaded by scripts. When editing a GUI script,
+click the reload button at the top of the <code>JSConsole</code> window
+to flush cached resources and rebuild the open GUI. Closing and
+reopening the GUI window also forces a reload. Shift-clicking the
+JSConsole reload button performs a full JavaScript engine reset, which
+clears memory and lets you test from a clean scripting environment.</p>
 <h3 id="gui-variables">GUI Variables</h3>
 <p>The GUI views in Cushy will interface with your script (and the
 Microtonic backend) through “GUI variables” and “GUI actions.” You
@@ -1115,5 +1165,68 @@ elsewhere, but this is the list: <code>'nop'</code>, <code>'set'</code>,
 <code>'morphContextMenu'</code>, <code>'toggleAbout'</code>,
 <code>'undo'</code>, <code>'redo'</code>, <code>'register'</code>, and
 <code>'focusToMain'</code>. Avoid using these names.</p>
+<h3 id="performance-notes">Performance Notes</h3>
+<p>Script actions run synchronously on the user-interface thread. While
+a script action is executing, Microtonic cannot repaint the interface or
+process normal input for that window. Calls that open modal
+user-interface features, such as alerts or file dialogs, are an
+exception: while they wait for user input they may allow the event loop
+to process other events, and that waiting time does not count toward the
+20-second suspension timer. The suspension timer applies to each
+individual JavaScript invocation, not cumulatively across repeated GUI
+actions.</p>
+<p>Repeated Cushy <code>autoexecs</code> actions are queued if a
+previous invocation is still running. They run as often as possible, but
+they do not take priority over the rest of the user interface. Use
+repeat rates that communicate the intended update rate. A target of 50
+Hz or lower is usually sensible. On Windows, timer resolution limits the
+practical maximum to about 64 Hz; on Mac the maximum is about 200 Hz.
+Avoid “as often as possible” repeats such as <code>repeat: 0.001</code>
+unless there is a specific reason. To react to GUI-variable changes, use
+<code>onChanged</code>: it runs asynchronously on the next tick after
+the current action returns, and only when the value actually
+changes.</p>
+<p>Cushy variables are polled by the view system and native code. There
+is no explicit dependency graph. Poll rates adapt per lookup: variables
+that rarely change are polled less often, down to one fifth of the
+normal tick rate. In Microtonic, full rate is normally 50 fps. Keep
+JavaScript getters used as GUI variables short and fast. Prefer simple
+JavaScript or Cushy variables for values that are read often, and cache
+derived getter results when the calculation is non-trivial. JavaScript
+variables shadow Cushy variables with the same name.</p>
+<p>Vector views are optimized for static and rarely changing graphics.
+After the first few redraws, an unchanged vector view can be cached in
+an RLE-compressed offscreen buffer and reused until its source material
+changes. A vector view tracks changes to its IVG source, bound variables
+that were accessed during the last update, standard native variables
+such as <code>$width</code> and <code>$height</code> when accessed, and,
+with <code>guiVariables: true</code>, GUI variables accessed during the
+last update. <code>file:</code> vector sources are cached by the
+resource manager until a reload, such as the JSConsole reload button or
+a zoom-scale reload.</p>
+<p>IVG/IMPD is interpreted when it renders, and rendering is CPU-based.
+Large redraw areas, high zoom levels, and Retina-scale buffers are often
+more important to performance than any single IVG instruction. Static
+IVG source with <code>defines:</code> and <code>bindings:</code> is
+often the clearest approach and can be tested separately.
+JavaScript-generated IVG source is also valid when it is the clearest
+way to express the drawing, but generated paths are harder to cover with
+static IVG tests.</p>
+<p>For Microtonic state, use the API that matches the operation.
+<code>getElement</code> returns structured data objects for preset,
+current drum patch, current pattern, MIDI config, or visuals.
+<code>setElement</code> writes supported structured data back: preset,
+current drum patch, current pattern, or MIDI config. Use
+<code>getElementId</code> when you only need to know whether a preset,
+drum patch, pattern, or MIDI config has changed. Use
+<code>setParam</code> when changing only a few parameters; it updates
+single parameters directly and does not replace the whole program
+state.</p>
+<p>Use <code>JSConsole.mtscript</code>’s FPS display as the practical
+performance indicator. For script-side measurements, use
+<code>Date.now()</code> around action bodies and print occasional
+averages rather than tracing every tick. CushyLint and ESLint can catch
+syntax and schema problems, but they do not predict runtime performance;
+measure in Microtonic.</p>
 </body>
 </html>

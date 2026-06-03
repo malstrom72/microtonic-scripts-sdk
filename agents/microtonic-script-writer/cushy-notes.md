@@ -124,6 +124,152 @@ tick: function() {
 Other useful `autoexecs` triggers in the same schema block include
 `onChanged: <var>`, `onClose`, `onReload`, `onInit`, and one-shot `delay`.
 
+## Performance
+
+Measure performance in Microtonic. CushyLint and ESLint can catch syntax and
+schema problems, but they do not predict runtime cost. `JSConsole.mtscript`
+shows an FPS counter; treat FPS drops, visible UI lag, delayed redraw, the
+20-second suspension prompt, or memory termination as real warning signs. For
+script-side profiling, use `Date.now()` around action bodies and print
+occasional averages rather than tracing every tick.
+
+### Actions And Timing
+
+- Script actions run synchronously on the UI thread. They block repaint and
+  input until they return, except when they call modal UI functions such as
+  alerts or file dialogs. Those modal waits may process the event loop while
+  waiting for user input and do not count toward the 20-second suspension timer.
+- The 20-second suspension timer applies per JavaScript invocation, not
+  cumulatively across repeated `autoexecs`.
+- Repeated `autoexecs` queue if the previous invocation is still running. They
+  run as often as possible, but they do not take priority over the entire UI.
+- Use repeat rates that communicate intent. On Windows, the practical maximum
+  is limited by the Win32 15.6 ms timer resolution, around 64 Hz. On Mac, the
+  maximum is around 200 Hz. In normal scripts, target 50 Hz or lower.
+- Avoid "as often as possible" repeats such as `repeat: 0.001` unless there is a
+  very specific reason. For reacting to state changes, use `onChanged` instead.
+  `onChanged` actions run asynchronously on the next tick after the current
+  action returns, and only when the value actually changes.
+
+### GUI Variables And Polling
+
+- Cushy does not maintain a dependency graph. Views and native code poll GUI
+  variables regularly. Poll rates adapt per lookup: variables that rarely
+  change are polled less often, down to one fifth of the normal tick rate. In
+  Microtonic, full rate is normally 50 fps.
+- Updating a variable every tick is acceptable when the view needs full-rate
+  updates. If a variable is read by views, changing it frequently keeps those
+  reads active at the full rate.
+- Keep GUI-variable getters short and fast. Variable data is polled a lot in
+  Cushy, not only by IVG views. Prefer simple JavaScript or Cushy variables for
+  values that are read often. If a getter must compute derived text or data,
+  cache the result based on its inputs.
+- JavaScript variables shadow Cushy variables with the same name. Account for
+  that when naming GUI state or debugging why a view reads a particular value.
+- For dynamic IVG data, compact list strings are usually fine for payloads of a
+  few hundred characters, or even around a thousand characters. If the IVG only
+  needs a tiny part of a very large structure, do not serialize the whole thing
+  every tick; `guiVariables: true` can be a better fit.
+- There is no simple "bindings are faster" or "guiVariables is faster" rule.
+  Choose based on clarity and update pattern.
+
+### View Redraw And Vector Caching
+
+- Cushy uses dirty-rectangle redraws and occlusion culling. Small independent
+  invalidated regions can redraw separately; overlapping regions may merge into
+  one larger redraw. Views covered by non-transparent views can often be partly
+  or fully skipped.
+- Bounds and clipping affect both correctness and performance: drawing outside a
+  view's bounds is clipped, and the clipped-away work is not drawn.
+- Cushy can handle thousands of views. The cost depends on update patterns,
+  variable refreshes, redraw area, and what each view does.
+- Hidden or invisible views usually do not carry meaningful cost, unless their
+  state depends on heavy variable refreshes. Exactly what updates while hidden
+  depends on the native view implementation.
+- `hover` and `mousePosition` updates are not inherently expensive, but avoid
+  doing unnecessary work in their actions or getters.
+- A `cluster` is often the right UX for many repeated cells because it tracks a
+  mouse-down gesture across cells. Individual buttons are still fine when the
+  interaction is one button at a time.
+
+Vector views have additional caching:
+
+- For the first five ticks after creation or cache flush, a vector view draws
+  directly to the destination buffer when it uses normal blending and 100%
+  opacity.
+- On the fifth redraw with no changes, it draws into an RLE-compressed offscreen
+  buffer. Later redraws can reuse that cache until source material changes.
+- Static or rarely updated vector views are therefore usually cheap after the
+  initial redraws.
+- A vector view tracks changes to the IVG source, bound variables that were
+  accessed during the last update, standard native parameters such as `$width`
+  and `$height` when accessed, and, with `guiVariables: true`, global GUI
+  variables accessed during the last update.
+- `file:` vector sources are cached by the resource manager until a reload, such
+  as JSConsole reload or a zoom-scale reload.
+- `defines:` are IVG variables with constant values. They are available during
+  rendering, not a one-time textual substitution pass.
+- `bindings:` are available during rendering too. How often the vector actually
+  rerenders depends on the change tracking and cache behavior above.
+
+### IVG And Drawing Cost
+
+- IVG/IMPD is interpreted when it renders. There is no GPU acceleration; drawing
+  is CPU-rendered.
+- IVG itself is not a fast language, but large pixel areas are often the bigger
+  cost than individual language constructs. Very large UI areas, high zoom
+  levels, and Retina-scale buffers are common reasons to notice FPS drops.
+- Basic shapes, paths, masks, gradients, patterns, opacity, blend modes, image
+  transforms, and text can all be practical. Do not assume a feature is too
+  expensive without measuring it in the actual UI size and update pattern.
+- Static IVG source with `defines:` and `bindings:` is usually preferable for
+  clarity, separation of presentation from data, and static regression testing.
+  Generated IVG source is also fine when it is the clearest expression of the
+  drawing.
+- Splitting graphics into multiple layered vector views can improve performance
+  when some layers are static or rarely updated. It can also be unnecessary.
+  Measure the actual result.
+
+### JavaScript Data And Memory
+
+- The memory cap is checked after garbage collection. There is no script-visible
+  explicit GC call in this version of Microtonic.
+- Returning from an action is enough to make large temporary data collectible if
+  no global or retained object still references it.
+- Avoid keeping large transient data in persistent globals. Shift-reload in
+  JSConsole resets the JavaScript engine and is useful for clean memory tests.
+- `StringBuilder` is useful when building very long strings or appending many
+  pieces. Repeated `+=` one character at a time creates many intermediate
+  strings and heavy GC pressure.
+- `Array.prototype.join` uses `StringBuilder` internally. Ordinary `+`
+  concatenation is fine for a small number of short strings; use `StringBuilder`
+  or `join` when combining hundreds or thousands of pieces.
+- Arrays store full 16-byte JavaScript values for elements, including numbers
+  and booleans. Dense arrays use continuous storage; sparse arrays with large
+  holes become object-like internally.
+- Object maps and many small objects are normal JavaScript tools, but they carry
+  object/value overhead. Compact strings can be much cheaper for dense payloads
+  such as IVG list data.
+
+### Microtonic API Calls
+
+- `getElement` returns structured Microtonic data as JavaScript objects:
+  preset, current drum patch, current pattern, MIDI config, or visuals.
+  `setElement` writes supported structured data back: preset, current drum
+  patch, current pattern, or MIDI config.
+- Use `getElement` / `setElement` when the operation is naturally about one of
+  those structured elements, such as editing pattern steps, copying drum-patch
+  properties, or changing MIDI configuration.
+- Use `getElementId` instead of `getElement` when the script only needs to know
+  whether a preset, drum patch, pattern, or MIDI config has changed.
+- Use `setParam` when changing only a few parameters. It creates less JavaScript
+  structure and, more importantly, does not disturb real-time DAW parameter
+  updates the way replacing the whole program can.
+- `saveUndo(..., collapse)` is a UX choice, not a performance optimization. Use
+  `collapse: true` when repeated actions with the same description should become
+  one undo item instead of many.
+- `triggerChannel` is cheap enough for normal GUI interaction.
+
 ## Easy `.cushy` Mistakes
 
 - `@define` captures everything to the end of the line unless the value is
