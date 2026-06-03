@@ -327,6 +327,14 @@ generate live MIDI output indirectly by updating pattern data while the
 pattern engine is running. If the host supports routing or recording
 MIDI output from plug-ins, that generated output can also be recorded in
 the DAW.</p>
+<p>Scripts can stop the pattern engine by writing <code>PlayStop</code>,
+but should not rely on script code to start it. In standalone use,
+writing a play or forced-play value does not perform the same action as
+manually double-clicking the Play Button to force-start from the waiting
+state described in the User Guide. As a plug-in, forced play can only
+begin playback while the host transport is already running. Treat
+starting playback as a user action: write pattern or preset data from
+the script, then let the user press Play.</p>
 <h2 id="constants">Constants</h2>
 <h3 id="build-constants">Build Constants</h3>
 <pre><code>PLATFORM = {
@@ -399,6 +407,38 @@ parameter from integer to floating point, use the following formula:</p>
 <p>To convert a normalized floating point value back to an unnormalized
 integer, use this formula:</p>
 <pre><code>steppedInteger = Math.min(Math.floor(paramValue * STEPS), STEPS - 1)</code></pre>
+<p>The <code>PARAMS</code> array is laid out as 15 global parameters
+(indices 0 to 14), followed by 200 drum parameters (indices 15 to 214).
+The drum parameters are the 25 <code>DRUM_PATCH_PARAMS</code> entries
+repeated for each of the 8 channels, with names suffixed <code>.1</code>
+through <code>.8</code>.</p>
+<p>Global parameters, in <code>PARAMS</code> order:</p>
+<pre><code>Morph, Pattern, PlayStop, StepRate, Swing, FillRate, MastVol,
+Mute.1, Mute.2, Mute.3, Mute.4, Mute.5, Mute.6, Mute.7, Mute.8</code></pre>
+<p>Per-channel drum parameters, in both <code>PARAMS</code> and
+<code>DRUM_PATCH_PARAMS</code> order:</p>
+<pre><code>OscWave, OscFreq, OscAtk, OscDcy, ModMode, ModRate, ModAmt, NFilMod, NFilFrq,
+NFilQ, NStereo, NEnvMod, NEnvAtk, NEnvDcy, Mix, DistAmt, EQFreq, EQGain, Level,
+Pan, Output, Choke, OscVel, NVel, ModVel</code></pre>
+<p>In <code>PARAMS</code>, each drum parameter has a channel suffix, for
+example <code>OscFreq.3</code>. In <code>DRUM_PATCH_PARAMS</code>, drum
+parameter names are unsuffixed.</p>
+<p>Stepped parameters are:</p>
+<pre><code>Pattern (12), PlayStop (4), StepRate (5), Mute.1 .. Mute.8 (2),
+OscWave.1 .. OscWave.8 (3), ModMode.1 .. ModMode.8 (3),
+NFilMod.1 .. NFilMod.8 (3), NStereo.1 .. NStereo.8 (2),
+NEnvMod.1 .. NEnvMod.8 (3), Output.1 .. Output.8 (2),
+Choke.1 .. Choke.8 (2)</code></pre>
+<p>The corresponding unsuffixed <code>DRUM_PATCH_PARAMS</code> entries
+have the same step counts. All other parameters are continuous.</p>
+<p>To dump the authoritative parameter list from the installed
+Microtonic version:</p>
+<pre class="javascript"><code>var sb = new StringBuilder();
+for (var i = 0; i &lt; PARAMS.length; ++i) {
+    var p = PARAMS[i];
+    sb.append(i + &#39;\t&#39; + p.NAME + &#39;\t&#39; + (p.STEPS != null ? p.STEPS + &#39; steps&#39; : &#39;continuous&#39;) + &#39;\n&#39;);
+}
+save(DIRS.SCRIPTS + &#39;microtonic_params.txt&#39;, sb.build());</code></pre>
 <h2 id="functions">Functions</h2>
 <h3 id="ask">ask</h3>
 <pre><code>function ask(question: string, [defaultAnswer: string = &#39;&#39;]) : string|null</code></pre>
@@ -881,7 +921,7 @@ are automatically translated to CR LF (<code>'\r\n'</code>).</p>
     path:           string|null                     // Notice that this path will always be a full path with native directory slashes (`\` on Windows, `/` on Mac).
     tempo:          number|null                     // 1 .. 999
     Pattern:        number                          // 0 .. 1 in 1 / 12 steps
-    PlayStop:       number                          // 0 | 1/3 | 2/3 | 1: forced stop | stop | play | forced play
+    PlayStop:       number                          // 0 | 1/3 | 2/3 | 1: forced stop | stop | play | forced play; scripts can stop, but should not rely on this field to start playback
     StepRate:       number                          // 0 | 0.25 | 0.5 | 0.75 | 1: 1/8 | 1/8T | 1/16 | 1/16T | 1/32
     Swing:          number                          // 0 .. 1
     FillRate:       number                          // 0 .. 1

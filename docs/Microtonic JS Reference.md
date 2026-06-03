@@ -127,6 +127,12 @@ Because Microtonic's pattern engine can transmit MIDI notes when `midiConfig.pat
 generate live MIDI output indirectly by updating pattern data while the pattern engine is running. If the host supports
 routing or recording MIDI output from plug-ins, that generated output can also be recorded in the DAW.
 
+Scripts can stop the pattern engine by writing `PlayStop`, but should not rely on script code to start it. In
+standalone use, writing a play or forced-play value does not perform the same action as manually double-clicking the
+Play Button to force-start from the waiting state described in the User Guide. As a plug-in, forced play can only begin
+playback while the host transport is already running. Treat starting playback as a user action: write pattern or preset
+data from the script, then let the user press Play.
+
 ## Constants
 
 ### Build Constants
@@ -206,6 +212,46 @@ like all other parameters. To normalize a stepped parameter from integer to floa
 To convert a normalized floating point value back to an unnormalized integer, use this formula:
 
     steppedInteger = Math.min(Math.floor(paramValue * STEPS), STEPS - 1)
+
+The `PARAMS` array is laid out as 15 global parameters (indices 0 to 14), followed by 200 drum parameters (indices 15 to
+214). The drum parameters are the 25 `DRUM_PATCH_PARAMS` entries repeated for each of the 8 channels, with names
+suffixed `.1` through `.8`.
+
+Global parameters, in `PARAMS` order:
+
+    Morph, Pattern, PlayStop, StepRate, Swing, FillRate, MastVol,
+    Mute.1, Mute.2, Mute.3, Mute.4, Mute.5, Mute.6, Mute.7, Mute.8
+
+Per-channel drum parameters, in both `PARAMS` and `DRUM_PATCH_PARAMS` order:
+
+    OscWave, OscFreq, OscAtk, OscDcy, ModMode, ModRate, ModAmt, NFilMod, NFilFrq,
+    NFilQ, NStereo, NEnvMod, NEnvAtk, NEnvDcy, Mix, DistAmt, EQFreq, EQGain, Level,
+    Pan, Output, Choke, OscVel, NVel, ModVel
+
+In `PARAMS`, each drum parameter has a channel suffix, for example `OscFreq.3`. In `DRUM_PATCH_PARAMS`, drum parameter
+names are unsuffixed.
+
+Stepped parameters are:
+
+    Pattern (12), PlayStop (4), StepRate (5), Mute.1 .. Mute.8 (2),
+    OscWave.1 .. OscWave.8 (3), ModMode.1 .. ModMode.8 (3),
+    NFilMod.1 .. NFilMod.8 (3), NStereo.1 .. NStereo.8 (2),
+    NEnvMod.1 .. NEnvMod.8 (3), Output.1 .. Output.8 (2),
+    Choke.1 .. Choke.8 (2)
+
+The corresponding unsuffixed `DRUM_PATCH_PARAMS` entries have the same step counts. All other parameters are
+continuous.
+
+To dump the authoritative parameter list from the installed Microtonic version:
+
+```javascript
+var sb = new StringBuilder();
+for (var i = 0; i < PARAMS.length; ++i) {
+    var p = PARAMS[i];
+    sb.append(i + '\t' + p.NAME + '\t' + (p.STEPS != null ? p.STEPS + ' steps' : 'continuous') + '\n');
+}
+save(DIRS.SCRIPTS + 'microtonic_params.txt', sb.build());
+```
 
 ## Functions
 
@@ -711,7 +757,7 @@ See also: [readClipboard](#readclipboard)
         path:           string|null                     // Notice that this path will always be a full path with native directory slashes (`\` on Windows, `/` on Mac).
         tempo:          number|null                     // 1 .. 999
         Pattern:        number                          // 0 .. 1 in 1 / 12 steps
-        PlayStop:       number                          // 0 | 1/3 | 2/3 | 1: forced stop | stop | play | forced play
+        PlayStop:       number                          // 0 | 1/3 | 2/3 | 1: forced stop | stop | play | forced play; scripts can stop, but should not rely on this field to start playback
         StepRate:       number                          // 0 | 0.25 | 0.5 | 0.75 | 1: 1/8 | 1/8T | 1/16 | 1/16T | 1/32
         Swing:          number                          // 0 .. 1
         FillRate:       number                          // 0 .. 1

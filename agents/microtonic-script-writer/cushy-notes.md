@@ -562,6 +562,35 @@ for (var ch = 0; ch < CHANNEL_COUNT; ch++) {
 setElement('preset', preset);
 ```
 
+## Isolating a Pattern For Looping
+
+Writing a beat into the selected pattern does not necessarily make it loop on
+its own. If the preset's patterns are chained, Microtonic can continue into the
+next pattern. Break the chain around the target pattern by clearing `chained`
+on the previous pattern and on the target pattern. The `chained` field exists
+on patterns 0..10, so only the last pattern needs an index guard.
+
+```javascript
+var preset = getElement('preset');
+var pi = selected('pattern');
+var pat = preset.patterns[pi];
+
+if (pi > 0) {
+    preset.patterns[pi - 1].chained = false;
+}
+if (pi < PATTERN_COUNT - 1) {
+    pat.chained = false;
+}
+
+// Write pat.channels[ch].triggers / accents / fills here.
+// Set pat.steps to the intended loop length, 1..16.
+
+setElement('preset', preset);
+```
+
+`pat.steps` sets the loop length. The visible play position
+(`getElement('visuals').currentStep`) only advances within that length.
+
 ## Window Default Position
 
 Microtonic's main canvas is `{ 0, 0, 740, 550 }` (from `main.cushy`). Script
