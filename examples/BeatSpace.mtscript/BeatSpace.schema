@@ -1,6 +1,6 @@
-include: ../../Resources/microtonic.schema
+include: ../../Microtonic Resources/microtonic.schema
 resources: ../
-resources: ../../Resources
+resources: ../../Microtonic Resources
 
 <actions> = <microtonicAction>
         | { action: "beatspace.press", params: "standard"|"solo"|"fine"|"mute" }

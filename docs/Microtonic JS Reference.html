@@ -275,7 +275,11 @@ compilers/interpreters.</p>
 into this engine. Most notably: using <code>[ ]</code> for reading
 individual characters from String objects and JSON support. Microtonic
 also sets up <code>Object.assign</code> and <code>Date.now</code> from
-ES6 using “polyfills”.</p>
+ES6 using “polyfills”. <code>Date.now()</code> returns epoch time in
+milliseconds as a floating-point value with sub-millisecond resolution,
+not the integer result specified by standard JavaScript. It is safe for
+elapsed-time deltas. If you need an integer-millisecond identity or
+cache key, use <code>Math.floor(Date.now())</code>.</p>
 <p>Every instance of Microtonic runs in its own JavaScript environment,
 but different scripts share the same environment. The engine only works
 when the GUI window is open. The entire environment is destroyed and
@@ -935,7 +939,7 @@ are automatically translated to CR LF (<code>'\r\n'</code>).</p>
     isPlaying:         boolean
     currentPattern:    number                       // 0 .. 11
     currentStep:       number                       // 0 .. 15
-    lastTriggers:      parseArray                   // [ null|number * 8 ]. Timestamps when channel was last triggered (epoch milliseconds, as with `Date.now()`). Will initially be null.
+    lastTriggers:      parseArray                   // [ null|number * 8 ]. Timestamps when channel was last triggered (fractional epoch milliseconds, as with `Date.now()`). Will initially be null.
 }</code></pre>
 <h2 id="utilities">Utilities</h2>
 <h3 id="cbrt">cbrt</h3>

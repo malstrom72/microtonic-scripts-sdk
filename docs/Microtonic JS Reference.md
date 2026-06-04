@@ -89,7 +89,9 @@ compilers/interpreters.
 
 With that said, a few features from ECMAScript 5 were “retrofitted” into this engine. Most notably: using `[ ]` for
 reading individual characters from String objects and JSON support. Microtonic also sets up `Object.assign` and
-`Date.now` from ES6 using "polyfills".
+`Date.now` from ES6 using "polyfills". `Date.now()` returns epoch time in milliseconds as a floating-point value with
+sub-millisecond resolution, not the integer result specified by standard JavaScript. It is safe for elapsed-time deltas.
+If you need an integer-millisecond identity or cache key, use `Math.floor(Date.now())`.
 
 Every instance of Microtonic runs in its own JavaScript environment, but different scripts share the same environment.
 The engine only works when the GUI window is open. The entire environment is destroyed and reset when the window is
@@ -773,7 +775,7 @@ See also: [readClipboard](#readclipboard)
         isPlaying:         boolean
         currentPattern:    number                       // 0 .. 11
         currentStep:       number                       // 0 .. 15
-        lastTriggers:      parseArray                   // [ null|number * 8 ]. Timestamps when channel was last triggered (epoch milliseconds, as with `Date.now()`). Will initially be null.
+        lastTriggers:      parseArray                   // [ null|number * 8 ]. Timestamps when channel was last triggered (fractional epoch milliseconds, as with `Date.now()`). Will initially be null.
     }
 
 ## Utilities

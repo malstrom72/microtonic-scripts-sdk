@@ -76,6 +76,42 @@ Directories must end with a slash:
 CushyLint/CushyLint "$(pwd)/examples/" "$(pwd)/Microtonic Resources"
 ```
 
+## Package Schema Header
+
+Every `.mtscript` package should include a package-local `.schema` file next to
+the main `.cushy` file. The schema should declare the Microtonic schema include
+and the resource roots needed by both CushyLint and editor integrations. Paths
+are relative to the `.schema` file:
+
+```schema
+include:   <rel>/Microtonic Resources/microtonic.schema
+resources: ../
+resources: <rel>/Microtonic Resources
+
+<actions> = <microtonicAction>
+        | <yourCustomActions>
+
+<view> = <microtonicView>
+```
+
+For packages inside this SDK's `examples/` directory, `<rel>` is usually
+`../..`. For a package in a normal external project such as
+`scripts/MyTool.mtscript/`, `<rel>` should point from
+`scripts/MyTool.mtscript/MyTool_main.schema` to the SDK checkout, for example
+`../../references/microtonic-scripts-sdk`.
+
+The `include:` line brings in Microtonic-specific view and action definitions,
+including `closeCushy`. The `resources: ../` line lets file references such as
+`file: "@scriptRoot/MyGraphic"` resolve through the package's parent directory.
+The `resources: <rel>/Microtonic Resources` line lets `@include
+scriptSupport.makaron` and built-in resources such as `rectDropShadow` resolve.
+
+Declare these resource roots in the schema, not only through the second
+CushyLint command-line argument. CushyLint can use the CLI resource argument,
+but editor integrations need the schema's own `resources:` lines to resolve
+includes and file references consistently. A self-contained schema like the
+example above also lints cleanly without the second CLI resource argument.
+
 ## Expected Practice
 
 - Run CushyLint before returning a generated `.mtscript` package that includes a

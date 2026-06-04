@@ -33,7 +33,11 @@ For GUI scripts, prefer rerun-safe startup code:
 - Assume startup may run again when the GUI reopens or rebuilds. End-user zoom
   scale changes also force GUI reloads so resources and layout coordinates can
   be rescaled.
-- Wire close controls to an actual close action.
+- For normal tool windows, include `scriptSupport.makaron` and use the shared
+  `@window(...)` macro instead of rebuilding window chrome from primitive views;
+  see [`cushy-notes.md`](cushy-notes.md).
+- Include a package `.schema` file with the Microtonic schema include and
+  resource roots; see [`validation.md`](validation.md).
 
 ## Generated Pattern Tools
 

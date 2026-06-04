@@ -75,6 +75,19 @@ Practical rule of thumb: use a plain array only when it is okay for the cluster
 to modify it directly. Use `readonly: true` or per-cell `get` / `set` objects
 when the displayed values are derived from script state.
 
+Per-cell `get` / `set` objects are for editable cells that need to intercept
+writes. For readonly data that changes over time, such as animations or
+play-position overlays, prefer a plain array refreshed by an `autoexecs` tick.
+Do not call `getElement(...)` from a per-cell getter; it runs once per cell per
+poll.
+
+A cluster is also not always the right primitive for an overlay. If each row
+only needs one moving marker, put the marker view in a `group` and drive the
+group's `offset: { <var>, <var> }` and `visibility: <var>` from the tick. Those
+fields are documented as changing without recreating views, and the script only
+has to write one position and visible flag per marker instead of one value per
+cell.
+
 ## `mouseIndex`
 
 - `mouseIndex` is useful for tracking which rect the pointer is over.
@@ -591,16 +604,45 @@ setElement('preset', preset);
 `pat.steps` sets the loop length. The visible play position
 (`getElement('visuals').currentStep`) only advances within that length.
 
+## Standard Window Chrome
+
+Do not assemble normal script-window chrome from primitive views. Include the
+shared support macros and use `@window`:
+
+```makaron
+@include scriptSupport.makaron
+
+@window(left, top, width, height, "Title", @backgroundColor, @frameColor, white, @script, @<
+    // Content views go here.
+@>)
+```
+
+`@window` is defined in `Microtonic Resources/common.makaron`, included through
+`scriptSupport.makaron`. It emits the top-level `bounds:` and `views:` for the
+window and provides the standard drop shadow, click blocker, drag area, rounded
+frame, centered title, and close button. The close button is already wired to
+the Microtonic `closeCushy` action.
+
+The macro places the supplied content block in a group below the title bar, so
+content coordinates start at the content area's top-left. Declare
+`transitions:` and `autoexecs:` separately; `@window` does not emit them.
+
+The macro owns its internal `@shadowBlur`, `@shadowExpand`, `@shadowX`,
+`@shadowY`, `@titleBarHeight`, and related chrome constants. Do not redefine
+those at top level for a standard window.
+
 ## Window Default Position
 
 Microtonic's main canvas is `{ 0, 0, 740, 550 }` (from `main.cushy`). Script
 windows must fit within this — clipping is hard, not graceful.
 
 The `@window(left, top, width, height, ...)` macro's `height` **includes** the
-24px title bar (defined as `@titleBarHeight` in `common.makaron`). To stay
-within bounds: `left + width ≤ 740` and `top + height ≤ 550`.
+24px title bar (defined as `@titleBarHeight` in `common.makaron`). It also
+expands the actual top-level bounds by the macro's shadow margin. For the
+standard macro constants, keep roughly `left >= 4`, `top >= 2`,
+`left + width + 4 <= 740`, and `top + height + 6 <= 550`.
 
-To center a window:
+To center the visible frame:
 
 ```
 left = (740 - width) / 2
