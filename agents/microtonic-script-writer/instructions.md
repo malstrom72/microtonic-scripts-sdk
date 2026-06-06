@@ -114,30 +114,80 @@ equally valid alternative that serves every Microtonic project on the machine.
 **The bridge lives inside JSConsole**, so Microtonic must be running *this SDK's*
 `JSConsole.mtscript` (the copy in the checkout, which contains the bridge) — not
 a factory or previously installed JSConsole, which has no `bridge on` command.
-Install it into Microtonic's scripts folder one of two ways:
+During bootstrap, first ask whether the user wants to link Microtonic's live
+scripts folder to the project `scripts/` folder for development. Linking is not
+an alternative to installing JSConsole; it only decides which folder Microtonic
+will read scripts from.
 
-- Simplest: copy `references/microtonic-scripts-sdk/JSConsole.mtscript` into the
+Do not create the linked development folder automatically. The linked setup
+copies Microtonic's entire current `Microtonic Scripts` folder into the project
+`scripts/` folder, moves the original scripts folder aside as a backup, and
+links Microtonic's scripts folder to the project `scripts/` folder. It changes
+the live Microtonic scripts installation and may require elevated permissions,
+so it needs explicit user approval. See the "Development Scripts Folder" section
+of `references/microtonic-scripts-sdk/README.md` for the macOS/Windows commands.
+
+After the scripts-folder decision, install the SDK's `JSConsole.mtscript` into
+the folder Microtonic will actually read:
+
+- If the user did not choose linked-folder development, copy
+  `references/microtonic-scripts-sdk/JSConsole.mtscript` into the live
   `Microtonic Scripts` folder (find it via *Open Scripts Folder* in Microtonic's
   puzzle menu), replacing any existing `JSConsole.mtscript`.
-- Project-integrated (recommended when also iterating on the user's own scripts):
-  link Microtonic's scripts folder to the project `scripts/` folder and keep
-  `scripts/JSConsole.mtscript` (copied from the SDK) under version control with
-  the project. See the "Development Scripts Folder" section of
-  `references/microtonic-scripts-sdk/README.md` for the macOS/Windows link
-  commands.
+- If the user chose linked-folder development, copy
+  `references/microtonic-scripts-sdk/JSConsole.mtscript` into the project as
+  `scripts/JSConsole.mtscript`; because the live Microtonic scripts folder is
+  linked to project `scripts/`, Microtonic will see that copied package there.
+
+If `JSConsole.mtscript` is copied from the SDK checkout into project
+`scripts/`, update the copied package's `.schema` file to point back to the SDK
+checkout, exactly like any other external-project `.mtscript` package. For the
+standard bootstrap layout, `scripts/JSConsole.mtscript/JSConsole_main.schema`
+must start with:
+
+```schema
+include:   ../../references/microtonic-scripts-sdk/Microtonic Resources/microtonic.schema
+resources: ../
+resources: ../../references/microtonic-scripts-sdk/Microtonic Resources
+```
+
+Do not copy `Microtonic Resources/` into `scripts/`. A path such as
+`scripts/Microtonic Resources/` means the schema paths are wrong; fix the copied
+`.schema` file instead. Keep the SDK's `Microtonic Resources/` only in
+`references/microtonic-scripts-sdk/Microtonic Resources/` and use that location
+for schema includes, resource roots, and CushyLint.
 
 Whenever the SDK's JSConsole is updated, reinstall/recopy it so the bridge stays
 current.
 
-To use the bridge, once `.mcp.json` exists and the SDK's JSConsole is installed:
+To use the bridge, once `.mcp.json` exists and the SDK's JSConsole is installed,
+make the remaining setup explicit:
 
-1. Restart Claude Code and approve the one-time project MCP-server prompt.
-2. In Microtonic, open `JSConsole.mtscript` and type `bridge on` (granting the
-   folder write-permission prompt the first time).
+1. Tell the user that the MCP client must be restarted before the new
+   project-scoped server will appear. For Claude Code, restart Claude Code and
+   approve the one-time project MCP-server prompt. For Codex or other MCP
+   clients, restart/reload the client or session according to that client's MCP
+   discovery behavior. Do not pretend bridge tools are available until the MCP
+   server has actually been loaded.
+2. Treat the restart as a handoff point. Before ending the pre-restart session,
+   give the user a short resume checklist:
+   - Restart/reload the MCP client and approve the project MCP server if asked.
+   - Open Microtonic.
+   - Open the SDK `JSConsole.mtscript`.
+   - Type `bridge on` and grant the folder write-permission prompt the first
+     time.
+   - Resume the assistant session and type:
+     `Run the Microtonic bridge smoke test now. Check mt_status, then evaluate 1 + 1 over the bridge.`
+3. In the resumed session, after the bridge tools are actually available,
+   perform a small bridge test before relying on live debugging:
+   - Call `mt_status`; it should report `attached: yes`.
+   - Call `mt_eval` with a harmless expression such as `1 + 1`; it should return
+     `2`.
 
-Then `mt_status` should report `attached: yes`, and `mt_eval` evaluates code in
-the running instrument. If it reports `attached: no`, JSConsole either is not the
-SDK's bridged copy or does not have `bridge on` enabled.
+If `mt_status` reports `attached: no`, JSConsole either is not the SDK's bridged
+copy, does not have `bridge on` enabled, or the MCP client has not loaded the
+project server yet. Report that state plainly and ask the user to complete the
+missing setup step.
 
 To rerun the user's edited script files and rebuild the GUI without leaving the
 bridge, evaluate the reload action over the bridge:

@@ -79,6 +79,27 @@ Scripts` folder and link Microtonic's scripts folder to it. See
 [`README.md`](../../README.md#development-scripts-folder) for macOS and Windows
 commands.
 
+An assistant bootstrapping a project should ask before doing this. Linking the
+folder changes Microtonic's live scripts installation, moves the original folder
+aside as a backup, and may require elevated permissions. Linking is not an
+alternative to installing the SDK `JSConsole.mtscript`; it only decides whether
+JSConsole should be copied into the live `Microtonic Scripts` folder directly or
+into project `scripts/` after Microtonic's scripts folder has been linked there.
+
+When copying this SDK's `JSConsole.mtscript` into project `scripts/`, also fix
+the copied `scripts/JSConsole.mtscript/JSConsole_main.schema` paths so they
+point back to the SDK checkout:
+
+```schema
+include:   ../../references/microtonic-scripts-sdk/Microtonic Resources/microtonic.schema
+resources: ../
+resources: ../../references/microtonic-scripts-sdk/Microtonic Resources
+```
+
+Never copy `Microtonic Resources/` into `scripts/`. If CushyLint or an editor is
+looking for `scripts/Microtonic Resources/`, the copied package schema is wrong;
+update the schema paths instead.
+
 ## Minimal Project `AGENTS.md`
 
 In your project root, add an `AGENTS.md` like this:
@@ -142,6 +163,26 @@ references/microtonic-scripts-sdk/CushyLint/CushyLint \
 
 A CushyLint pass means the Cushy syntax and schema references are valid. It does
 not prove the script has been tested inside Microtonic.
+
+## Bridge Smoke Test
+
+After creating `.mcp.json`, tell the user that their MCP client may need to be
+restarted or reloaded before the `microtonic-bridge` server appears. Claude Code
+requires a restart and one-time approval of the project MCP server. Treat that
+restart as a handoff point: before ending the pre-restart session, give the user
+a resume checklist to restart/reload the client, approve the project MCP server
+if asked, open Microtonic, open the SDK `JSConsole.mtscript`, type `bridge on`,
+approve the folder write-permission prompt if shown, and resume the assistant
+session with this exact prompt:
+
+```text
+Run the Microtonic bridge smoke test now. Check mt_status, then evaluate 1 + 1 over the bridge.
+```
+
+In the resumed session, once the client exposes the bridge tools, call
+`mt_status`; it should report `attached: yes`. Finally call `mt_eval` with a
+harmless expression such as `1 + 1` and confirm it returns `2` before relying on
+the bridge for live debugging.
 
 ## Reloading While Iterating
 

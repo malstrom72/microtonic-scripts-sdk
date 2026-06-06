@@ -100,6 +100,23 @@ For packages inside this SDK's `examples/` directory, `<rel>` is usually
 `scripts/MyTool.mtscript/MyTool_main.schema` to the SDK checkout, for example
 `../../references/microtonic-scripts-sdk`.
 
+The same rule applies to SDK packages copied into the external project's
+`scripts/` folder. For example, if `JSConsole.mtscript` is copied from
+`references/microtonic-scripts-sdk/JSConsole.mtscript` to
+`scripts/JSConsole.mtscript`, rewrite the copied
+`scripts/JSConsole.mtscript/JSConsole_main.schema` header to:
+
+```schema
+include:   ../../references/microtonic-scripts-sdk/Microtonic Resources/microtonic.schema
+resources: ../
+resources: ../../references/microtonic-scripts-sdk/Microtonic Resources
+```
+
+Do not make `scripts/Microtonic Resources/` to satisfy the copied schema's
+original SDK-relative paths. That directory should not exist in the project
+scripts folder; the correct fix is to point the copied `.schema` file back to
+the SDK checkout under `references/`.
+
 The `include:` line brings in Microtonic-specific view and action definitions,
 including `closeCushy`. The `resources: ../` line lets file references such as
 `file: "@scriptRoot/MyGraphic"` resolve through the package's parent directory.
