@@ -226,6 +226,8 @@ API Reference v1.0</h1>
 </ul></li>
 <li><a href="#objects">Objects</a>
 <ul>
+<li><a href="#state-hierarchy-and-selection">State hierarchy and
+selection</a></li>
 <li><a href="#drumpatch-object">drumPatch object</a></li>
 <li><a href="#file-object">file object</a></li>
 <li><a href="#midiconfig-object">midiConfig object</a></li>
@@ -707,17 +709,36 @@ Binary data must be encoded as text before it can be saved.</p>
 href="#fullpath">fullPath</a>, <a href="#load">load</a></p>
 <h3 id="saveundo">saveUndo</h3>
 <pre><code>function saveUndo(label: string, [collapse: boolean = false])</code></pre>
-<p>Stores a snapshot of the entire Microtonic state in the undo history.
+<p>Stores a snapshot of the Microtonic document state in the undo
+history: preset, drum patches, patterns, parameters, and MIDI config.
 <code>label</code> should be a user-readable string (e.g. “Undo Mute
 Channel 1”). (A good idea is to call <code>translate</code> on the
-static part of the label text to support localization in the future.).
-If <code>collapse</code> is <code>true</code> and <code>label</code> is
-identical to the last element in the undo history, Microtonic will not
-create a new snapshot (use for repeated actions to avoid “spamming” the
-undo history). Notice that calling this function is rarely necessary for
-GUI-less scripts since they automatically save an undo snapshot when
-they detect a change of the Microtonic state.</p>
-<p>See also: <a href="#cushy-interface">Cushy Interface</a>, <a
+static part of the label text to support localization in the
+future.).</p>
+<p>Call <code>saveUndo</code> immediately before applying a change. The
+snapshot captures the state to return to, so the pattern is
+snapshot-then-mutate. Calling it after the change records the
+already-modified state and can make the undo step a no-op.</p>
+<p>The undo snapshot does not include a script’s own JavaScript state,
+such as global variables, GUI-local selection state, drag state, caches,
+or generated display buffers. Undo or redo can therefore rewind the
+document while a running GUI script’s derived state is left unchanged.
+GUI scripts that mirror or derive from document state should reconcile
+after external document changes, for example by watching
+<code>getElementId</code> for the relevant element and re-reading only
+when the id changes. If the script depends on the selected drum channel,
+also watch <code>selected('channel')</code>; channel selection is not
+part of the preset data.</p>
+<p>For a continuous gesture such as a drag, call <code>saveUndo</code>
+once at the gesture’s first document-changing update, not on every mouse
+move. If <code>collapse</code> is <code>true</code> and
+<code>label</code> is identical to the last element in the undo history,
+Microtonic will not create a new snapshot (use for repeated actions to
+avoid “spamming” the undo history). Notice that calling this function is
+rarely necessary for GUI-less scripts since they automatically save an
+undo snapshot when they detect a change of the Microtonic state.</p>
+<p>See also: <a href="#getelementid">getElementId</a>, <a
+href="#cushy-interface">Cushy Interface</a>, <a
 href="#translate">translate</a></p>
 <h3 id="select">select</h3>
 <pre><code>function select(type: string, index: number)</code></pre>
@@ -792,6 +813,26 @@ href="#marshal">marshal</a>, <a href="#setelement">setElement</a></p>
 are automatically translated to CR LF (<code>'\r\n'</code>).</p>
 <p>See also: <a href="#readclipboard">readClipboard</a></p>
 <h2 id="objects">Objects</h2>
+<h3 id="state-hierarchy-and-selection">State hierarchy and
+selection</h3>
+<p>Microtonic has 16 program slots. In the script API, the current
+program selects which preset-like document state is current. Calling
+<code>select('program', index)</code> changes the current program slot,
+and <code>getElement('preset')</code> /
+<code>getElementId('preset')</code> then refer to the preset state in
+that slot.</p>
+<p>A preset contains the 8 drum patches, 12 patterns, global parameters,
+mute state, and the current pattern parameter (<code>Pattern</code>).
+Pattern selection is therefore part of preset state:
+<code>select('pattern', index)</code> changes the preset’s
+<code>Pattern</code> parameter and updates the preset id.</p>
+<p>Drum channel selection is not part of preset data. It selects which
+channel the user is editing: the visible drum-patch controls, the
+per-channel pattern edit lanes, and current-channel operations such as
+<code>getElement('drumPatch')</code>,
+<code>getElementId('drumPatch')</code>, and
+<code>setElement('drumPatch')</code>. If script behavior depends on the
+selected channel, watch <code>selected('channel')</code> explicitly.</p>
 <h3 id="drumpatch-object">drumPatch object</h3>
 <pre><code>{
     id:         number                              // Unique identifier integer (incremented automatically on write).
@@ -1093,10 +1134,17 @@ declaring a variable.</p>
 <p>Microtonic caches resources while the GUI window is open, including
 JavaScript source files loaded by scripts. When editing a GUI script,
 click the reload button at the top of the <code>JSConsole</code> window
-to flush cached resources and rebuild the open GUI. Closing and
-reopening the GUI window also forces a reload. Shift-clicking the
-JSConsole reload button performs a full JavaScript engine reset, which
-clears memory and lets you test from a clean scripting environment.</p>
+to flush cached resources and rebuild the open GUI, or type
+<code>reload</code> in JSConsole. A normal reload reruns the relevant
+JavaScript files but keeps the current JavaScript engine and existing
+globals alive, so stale global objects can retain old methods or cached
+data.</p>
+<p>Shift-clicking the JSConsole reload button, or typing
+<code>reset</code> in JSConsole, performs a full JavaScript engine reset
+before rebuilding the GUI. This clears memory and globals and lets you
+test from a clean scripting environment. Closing the Microtonic GUI
+window also destroys the entire JavaScript environment, so reopening the
+GUI starts with no previous script globals, like a full reset.</p>
 <h3 id="gui-variables">GUI Variables</h3>
 <p>The GUI views in Cushy will interface with your script (and the
 Microtonic backend) through “GUI variables” and “GUI actions.” You

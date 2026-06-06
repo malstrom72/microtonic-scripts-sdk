@@ -47,6 +47,7 @@
     -   [unmarshal](#unmarshal)
     -   [writeClipboard](#writeclipboard)
 -   [Objects](#objects)
+    -   [State hierarchy and selection](#state-hierarchy-and-selection)
     -   [drumPatch object](#drumpatch-object)
     -   [file object](#file-object)
     -   [midiConfig object](#midiconfig-object)
@@ -523,14 +524,27 @@ See also: [browse](#browse), [dir](#dir), [fullPath](#fullpath), [load](#load)
 
     function saveUndo(label: string, [collapse: boolean = false])
 
-Stores a snapshot of the entire Microtonic state in the undo history. `label` should be a user-readable string
-(e.g. "Undo Mute Channel 1"). (A good idea is to call `translate` on the static part of the label text to support
-localization in the future.). If `collapse` is `true` and `label` is identical to the last element in the undo history,
-Microtonic will not create a new snapshot (use for repeated actions to avoid "spamming" the undo history). Notice that
-calling this function is rarely necessary for GUI-less scripts since they automatically save an undo snapshot when they
-detect a change of the Microtonic state. 
+Stores a snapshot of the Microtonic document state in the undo history: preset, drum patches, patterns, parameters, and
+MIDI config. `label` should be a user-readable string (e.g. "Undo Mute Channel 1"). (A good idea is to call `translate`
+on the static part of the label text to support localization in the future.).
 
-See also: [Cushy Interface](#cushy-interface), [translate](#translate)
+Call `saveUndo` immediately before applying a change. The snapshot captures the state to return to, so the pattern is
+snapshot-then-mutate. Calling it after the change records the already-modified state and can make the undo step a no-op.
+
+The undo snapshot does not include a script's own JavaScript state, such as global variables, GUI-local selection state,
+drag state, caches, or generated display buffers. Undo or redo can therefore rewind the document while a running GUI
+script's derived state is left unchanged. GUI scripts that mirror or derive from document state should reconcile after
+external document changes, for example by watching `getElementId` for the relevant element and re-reading only when the
+id changes. If the script depends on the selected drum channel, also watch `selected('channel')`; channel selection is
+not part of the preset data.
+
+For a continuous gesture such as a drag, call `saveUndo` once at the gesture's first document-changing update, not on
+every mouse move. If `collapse` is `true` and `label` is identical to the last element in the undo history, Microtonic
+will not create a new snapshot (use for repeated actions to avoid "spamming" the undo history). Notice that calling this
+function is rarely necessary for GUI-less scripts since they automatically save an undo snapshot when they detect a
+change of the Microtonic state.
+
+See also: [getElementId](#getelementid), [Cushy Interface](#cushy-interface), [translate](#translate)
 
 ### select
 
@@ -616,6 +630,21 @@ Puts a string to the clipboard. On Windows, LF (`'\n'`) are automatically transl
 See also: [readClipboard](#readclipboard)
 
 ## Objects
+
+### State hierarchy and selection
+
+Microtonic has 16 program slots. In the script API, the current program selects which preset-like document state is
+current. Calling `select('program', index)` changes the current program slot, and `getElement('preset')` /
+`getElementId('preset')` then refer to the preset state in that slot.
+
+A preset contains the 8 drum patches, 12 patterns, global parameters, mute state, and the current pattern parameter
+(`Pattern`). Pattern selection is therefore part of preset state: `select('pattern', index)` changes the preset's
+`Pattern` parameter and updates the preset id.
+
+Drum channel selection is not part of preset data. It selects which channel the user is editing: the visible drum-patch
+controls, the per-channel pattern edit lanes, and current-channel operations such as `getElement('drumPatch')`,
+`getElementId('drumPatch')`, and `setElement('drumPatch')`. If script behavior depends on the selected channel,
+watch `selected('channel')` explicitly.
 
 ### drumPatch object
 
@@ -957,8 +986,13 @@ a variable.
 
 Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
 editing a GUI script, click the reload button at the top of the `JSConsole` window to flush cached resources and rebuild
-the open GUI. Closing and reopening the GUI window also forces a reload. Shift-clicking the JSConsole reload button
-performs a full JavaScript engine reset, which clears memory and lets you test from a clean scripting environment.
+the open GUI, or type `reload` in JSConsole. A normal reload reruns the relevant JavaScript files but keeps the current
+JavaScript engine and existing globals alive, so stale global objects can retain old methods or cached data.
+
+Shift-clicking the JSConsole reload button, or typing `reset` in JSConsole, performs a full JavaScript engine reset
+before rebuilding the GUI. This clears memory and globals and lets you test from a clean scripting environment.
+Closing the Microtonic GUI window also destroys the entire JavaScript environment, so reopening the GUI starts with no
+previous script globals, like a full reset.
 
 ### GUI Variables
 

@@ -191,8 +191,11 @@ choosing `Open Scripts Folder` from the "puzzle menu" in Microtonic.)
 
 Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
 editing a GUI script, use the reload button at the top of the JSConsole window to flush cached resources and rebuild the
-open GUI. You can also close and reopen the GUI window to force a reload. Shift-clicking the JSConsole reload button
-performs a full JavaScript engine reset, which clears memory and starts from a clean scripting environment.
+open GUI, or type `reload` in JSConsole. A normal reload reruns JavaScript files but keeps the current JavaScript engine
+and existing globals alive. Shift-clicking the JSConsole reload button, or typing `reset`, performs a full JavaScript
+engine reset, which clears memory and starts from a clean scripting environment. Closing the Microtonic GUI window also
+destroys the entire JavaScript environment, so reopening the GUI starts with no previous script globals, like a full
+reset.
 
 ### Development Scripts Folder
 

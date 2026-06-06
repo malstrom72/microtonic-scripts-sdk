@@ -157,10 +157,14 @@ The repository documents environment constraints that should shape answers:
 - Microtonic caches resources while the GUI window is open, including
   JavaScript source files loaded by scripts. When giving development or
   debugging guidance for GUI scripts, tell users to click the reload button at
-  the top of `JSConsole` to flush cached resources and rebuild the open GUI, or
-  close and reopen the GUI window. Shift-clicking the JSConsole reload button
+  the top of `JSConsole`, or type `reload` in JSConsole, to flush cached
+  resources and rebuild the open GUI. A normal reload reruns JavaScript files
+  but keeps the current JavaScript engine and existing globals alive.
+  Shift-clicking the JSConsole reload button, or typing `reset` in JSConsole,
   performs a full JavaScript engine reset, clearing memory and testing from a
-  clean scripting environment.
+  clean scripting environment. Closing the Microtonic GUI window also destroys
+  the entire JavaScript environment, so reopening the GUI starts with no
+  previous script globals, like a full reset.
 - When using a standard moveable and closable window pattern, make sure the
   close control is actually wired to a working close action rather than only
   being visually present.

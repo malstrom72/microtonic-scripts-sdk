@@ -100,11 +100,18 @@ cell.
 
 - Cushy reruns the matching `_main.js` on GUI reload, but existing globals
   survive normal JSConsole reload.
+- The JSConsole reload button and typing `reload` do the same normal reload:
+  flush cached resources, rebuild the open GUI, and rerun JavaScript without
+  replacing the JavaScript engine.
 - If object instances are kept across reloads, they may retain old methods and
   old action closures.
 - For development, recreate interaction objects on each reload and copy over
   only persistent user state.
-- Shift-reload resets the whole JavaScript engine and clears stale instances.
+- Shift-clicking the JSConsole reload button and typing `reset` do the same full
+  reset: recreate the JavaScript engine, clear globals and memory, then rebuild
+  the GUI.
+- Closing the Microtonic GUI window also destroys the JavaScript environment.
+  Reopening the GUI starts with no previous globals, like a full reset.
 
 ## Timed Actions / Animation Loop
 
@@ -283,6 +290,36 @@ Vector views have additional caching:
   one undo item instead of many.
 - `triggerChannel` is cheap enough for normal GUI interaction.
 
+### Undo And Document Sync
+
+- `saveUndo` captures Microtonic document state, not the script's own JavaScript
+  state. If undo or redo rewinds the preset or pattern data, GUI globals such as
+  selected tool state, drag boundaries, cached source data, or display flags
+  remain whatever the script last set them to.
+- Call `saveUndo` before mutating Microtonic state. The saved snapshot is the
+  state the user should return to. Calling after the mutation records the wrong
+  side of the change.
+- For a continuous gesture, save undo on the first actual document-changing
+  update, then guard further drag updates until release. This gives one undo
+  entry per gesture.
+- GUI scripts that mirror document state should poll a cheap change key such as
+  `getElementId('preset')`, `getElementId('drumPatch')`, or
+  `getElementId('midiConfig')` and only re-read the full element when the id
+  changes.
+- Pattern selection is part of preset state: `select('pattern', index)` changes
+  the preset's `Pattern` parameter and updates the preset id. Program selection
+  changes which program slot, and therefore which preset state, is current.
+- Drum channel selection is UI state, not preset data. If the script's meaning
+  depends on the current channel, watch `selected('channel')` explicitly
+  alongside the relevant element id.
+- To make a GUI recover its own controls after undo/redo, derive script state
+  from the document when possible. When generation is many-to-one, memoize the
+  inputs that produced an output and key them by a compact content signature of
+  the generated document region. BeatSpace uses this style with
+  `pointHistory` and `presetIdChanged`: when the preset id changes, it hashes
+  the current pattern content and restores known points if it recognizes the
+  output.
+
 ## Easy `.cushy` Mistakes
 
 - `@define` captures everything to the end of the line unless the value is
@@ -309,6 +346,16 @@ Vector views have additional caching:
   `transparent`; IVG's `<color>` uses `none` for invisible paint. Use
   `fill: "transparent"` in `.cushy` view fields, and use `fill none` / `pen
   none` inside `.ivg` or inline `ivgCode`.
+
+- Cushy `rgb(r,g,b[,a])` and `hsv(h,s,v[,a])` color components are normalized
+  floats. Use `rgb(1,1,1,0.35)`, not `rgb(255,255,255,0.35)`. CushyLint checks
+  syntax, but it may not catch out-of-range color components that Microtonic
+  rejects when loading the GUI.
+
+- Keep `.cushy` source text ASCII unless you have explicitly tested the exact
+  character path. Typographic punctuation in string literals can produce
+  confusing parse or display failures. Prefer plain `-`, `'`, `"`, and `...` in
+  captions and hints.
 
 - A `button` caption can be a plain text value, or an object with both `text`
   and `offset`. If you use object form, the offset is required:
