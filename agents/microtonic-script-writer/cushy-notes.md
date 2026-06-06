@@ -122,6 +122,9 @@ cell.
 
 - Cushy reruns the matching `_main.js` on GUI reload, but existing globals
   survive normal JSConsole reload.
+- All loaded scripts share one JavaScript global variable space while the
+  Microtonic GUI environment is alive. This is why JSConsole and the bridge can
+  inspect another script's global object, and why script-named namespaces matter.
 - The JSConsole reload button and typing `reload` do the same normal reload:
   flush cached resources, rebuild the open GUI, and rerun JavaScript without
   replacing the JavaScript engine. Normal reload does not unload or close the
@@ -381,6 +384,11 @@ Vector views have additional caching:
   `pointHistory` and `presetIdChanged`: when the preset id changes, it hashes
   the current pattern content and restores known points if it recognizes the
   output.
+- Keep numeric fingerprints inside 32-bit integer operations. JavaScript
+  numbers are doubles; repeated multiplication by large constants can lose low
+  bits before the next bitwise coercion. For compact content signatures, prefer
+  a shift/add step that truncates every round, such as
+  `hash = (((hash << 5) - hash) + value) | 0;`.
 
 ## Easy `.cushy` Mistakes
 

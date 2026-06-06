@@ -265,15 +265,19 @@ source files loaded by scripts.
 
 When editing GUI scripts:
 
-- Click the reload button at the top of JSConsole to flush cached resources and
-  rebuild the open GUI.
-- Close and reopen the GUI window to force a reload.
-- Shift-click the JSConsole reload button for a full JavaScript engine reset,
-  clearing memory and testing from a clean scripting environment.
+- Click the reload button at the top of JSConsole, or type `reload`, to flush
+  cached resources, rebuild the open GUI, rerun JavaScript, and keep existing
+  globals.
+- Shift-click the JSConsole reload button, or type `reset`, for a full
+  JavaScript engine reset that clears memory and globals before rebuilding.
+- Toggling a script's own window with `toggleCushy(...)` does not reload edited
+  resources. Closing Microtonic's main GUI window destroys the whole JavaScript
+  environment; reopening it starts clean, like a full reset.
 
 End-user zoom scale changes also force GUI reloads so graphics resources and
 exact layout coordinates can be rescaled. GUI scripts must survive their
-JavaScript files being run again.
+JavaScript files being run again. See [`cushy-notes.md`](cushy-notes.md)
+"Reload And State" for the detailed reload/reset behavior.
 
 ## JavaScript Style
 
