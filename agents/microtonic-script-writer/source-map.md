@@ -48,6 +48,9 @@ Use these repository files as the grounding map for Microtonic scripting work.
 
 - [`JSConsole.mtscript`](../../JSConsole.mtscript): JavaScript console package
   and a useful reference for script package structure.
+- [`tools/jsconsole-bridge-mcp/README.md`](../../tools/jsconsole-bridge-mcp/README.md):
+  MCP bridge setup, `mt_eval` usage, launching scripts with `run(...)`, and
+  reload/reset behavior over the live JSConsole bridge.
 - [`examples/EuclideanBeat.mtscript`](../../examples/EuclideanBeat.mtscript):
   Euclidean pattern generation and GUI package structure.
 - [`examples/FMTool.mtscript`](../../examples/FMTool.mtscript): patch editing

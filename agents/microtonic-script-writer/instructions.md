@@ -282,13 +282,28 @@ copy, does not have `bridge on` enabled, or the MCP client has not loaded the
 project server yet. Report that state plainly and ask the user to complete the
 missing setup step.
 
+To run a script over the bridge, evaluate Microtonic's `run()` function with
+the script's `.js` entry point path relative to the live `Microtonic Scripts`
+folder: `mt_eval("run('MyScript.mtscript/MyScript.js')")`. For GUI packages,
+the entry `.js` usually calls `toggleCushy(...)`, so `run(...)` toggles the
+package window: it opens the GUI if closed and closes it if already open. For
+example: `mt_eval("run('PolyrhythmChain.mtscript/PolyrhythmChain.js')")`.
+
+To check which Cushy GUI script is currently open over the bridge, read
+`modal.current`: `mt_eval("getCushyVariable('modal.current')")`. It returns a
+layout path such as `PolyrhythmChain.mtscript/PolyrhythmChain_main`, or an empty
+value when no modal script window is open. To check for a specific package, use
+the same prefix test as the built-in script popup:
+`getCushyVariable('modal.current').substring(0, 'MyScript.mtscript/'.length) === 'MyScript.mtscript/'`.
+
 To rerun the user's edited script files and rebuild the GUI without leaving the
 bridge, evaluate the reload action over the bridge:
 `mt_eval("performCushyAction('reload')")`. A normal reload keeps the engine and
-globals alive, so the bridge survives it — this is the edit → reload → re-test
-loop. Do not drive a full reset (`performCushyAction('reload', 'reset')`) over
-the bridge: it wipes JS memory on the next tick and tears down the bridge, which
-then has to be re-enabled with `bridge on` in the JSConsole window. See
+globals alive and does not unload or close the current script window, so the
+bridge survives it — this is the edit → reload → re-test loop. Do not drive a
+full reset (`performCushyAction('reload', 'reset')`) over the bridge: it wipes
+JS memory on the next tick and tears down the bridge, which then has to be
+re-enabled with `bridge on` in the JSConsole window. See
 `references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/README.md`.
 
 **One Microtonic instance only.** The bridge uses a single fixed machine-global

@@ -93,6 +93,52 @@ the file protocol described above.
 
 You'll see each command echo as `BRIDGE> …` in the JSConsole window.
 
+## Running or toggling a script over the bridge
+
+Use Microtonic's `run()` function with the script's `.js` entry point path
+relative to the live `Microtonic Scripts` folder:
+
+```js
+mt_eval("run('MyScript.mtscript/MyScript.js')")
+```
+
+For GUI packages, the entry `.js` normally calls `toggleCushy(...)`, so this
+usually toggles the package window, not just launches it. If the package GUI is
+closed, `run(...)` opens it; if the same package GUI is already open,
+`run(...)` closes it. For example:
+
+```js
+mt_eval("run('PolyrhythmChain.mtscript/PolyrhythmChain.js')")
+```
+
+To force a GUI package open without toggling, call the modal action directly
+with the package's layout path:
+
+```js
+mt_eval("performCushyAction('modal.open', 'MyScript.mtscript/MyScript_main')")
+```
+
+## Checking the currently open script
+
+The current modal Cushy script window is stored in `modal.current`:
+
+```js
+mt_eval("getCushyVariable('modal.current')")
+```
+
+It returns a layout path such as
+`PolyrhythmChain.mtscript/PolyrhythmChain_main`, or an empty value when no modal
+script window is open. To test whether a specific package is open, use the same
+prefix check as Microtonic's built-in script popup:
+
+```js
+mt_eval("getCushyVariable('modal.current').substring(0, 'MyScript.mtscript/'.length) === 'MyScript.mtscript/'")
+```
+
+`JSConsole` itself is usually hosted through the development layout
+(`devLayout`), not `modal.current`, so `modal.current` is the useful value for
+the user script window you are debugging.
+
 ## Reloading the target script over the bridge
 
 The console's `reload` / `reset` are JSConsole *commands*, not globals, so
@@ -105,8 +151,9 @@ mt_eval("performCushyAction('reload')")
 ```
 
 A normal reload reruns the JavaScript files but keeps the engine and globals
-alive, so **the bridge survives its own reload** and keeps working. The call
-returns `true`.
+alive. It does not unload or close the current script window, so
+**the bridge survives its own reload** and keeps working. The call returns
+`true`.
 
 Do **not** drive a full reset (`performCushyAction('reload', 'reset')`) over the
 bridge. It is deferred to the next tick, so your current call still gets a reply,

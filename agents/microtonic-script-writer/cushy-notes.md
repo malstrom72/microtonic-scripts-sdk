@@ -102,7 +102,10 @@ cell.
   survive normal JSConsole reload.
 - The JSConsole reload button and typing `reload` do the same normal reload:
   flush cached resources, rebuild the open GUI, and rerun JavaScript without
-  replacing the JavaScript engine.
+  replacing the JavaScript engine. Normal reload does not unload or close the
+  current script window.
+- Over the JSConsole MCP bridge, normal reload is
+  `mt_eval("performCushyAction('reload')")`.
 - If object instances are kept across reloads, they may retain old methods and
   old action closures.
 - For development, recreate interaction objects on each reload and copy over
@@ -112,6 +115,12 @@ cell.
   the GUI.
 - Closing the Microtonic GUI window also destroys the JavaScript environment.
   Reopening the GUI starts with no previous globals, like a full reset.
+- Running a GUI package's entry script with `run('MyScript.mtscript/MyScript.js')`
+  usually toggles the window, because the entry script normally calls
+  `toggleCushy(...)`. To inspect the currently open script window over the
+  bridge, use `mt_eval("getCushyVariable('modal.current')")`; it returns a
+  layout path such as `MyScript.mtscript/MyScript_main` when a modal script
+  window is open.
 
 ## Timed Actions / Animation Loop
 
