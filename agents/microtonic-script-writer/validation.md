@@ -180,6 +180,24 @@ Colors in IVG are ARGB pre-multiplied (`#AARRGGBB`). All of R, G, B must be
 ≤ A — the renderer will error on invalid values. Fully opaque 6-digit colors
 (`#RRGGBB`) are always safe.
 
+For tiny glyphs or cell-sized artwork, render a scaled test version that shows
+the glyph in context. Put `scale N` after `bounds` and size the bounds
+proportionally, for example `bounds 0,0,288,64` plus `scale 4` for a 72×16
+layout. Stroke widths scale too, so use this to judge proportions rather than
+exact pixel thickness.
+
+When testing transparent or stroke-only glyphs, pass a realistic background
+color to the renderer:
+
+```sh
+IVG/output/IVG2PNG --fonts IVG/fonts --background "#202020" "path/to/MyGlyph_test.ivg" "/tmp/MyGlyph_test.png"
+```
+
+For comparing variants, render each variant as its own `_test.ivg` strip with
+neighboring cells or surrounding UI color included. Inspecting the generated PNG
+inside the assistant only verifies it for the assistant; if the user needs to
+see the result, open or share the rendered PNG explicitly.
+
 Keep `_test.ivg` files out of the shipped package (`.gitignore` or delete after
 verification).
 

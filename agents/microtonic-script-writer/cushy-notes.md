@@ -11,8 +11,8 @@ exact syntax or supported fields matter, verify against the references listed in
 ## scriptRoot Convention
 
 Always define `@scriptRoot` at the top of every `.cushy` file and use it
-wherever the package folder name appears (e.g. `file:` references). This means
-renaming the package requires only a one-line change.
+wherever the package folder name appears in Cushy fields, such as `file:` and
+`ivgFile:` references.
 
 ```makaron
 @define scriptRoot=MyScript.mtscript
@@ -28,6 +28,28 @@ file: "@scriptRoot/MyScript_someGraphic"
 Note: `@scriptRoot` is a Makaron define and only expands in `.cushy` files.
 The entry-point `.js` file (`toggleCushy(...)`) is plain JavaScript and must
 still use the literal folder name.
+
+`@scriptRoot` only abstracts resource paths inside `.cushy`. Renaming a
+script's identity is a multi-point change. Keep these coupled identifiers in
+sync or action dispatch can break:
+
+- `@define script=<name>` in the `.cushy` file.
+- The top-level JavaScript global object, such as
+  `if (!myScript) { var myScript = ... }`.
+- The schema action prefix and wrapper rule names, such as
+  `action: "myScript.startup"`.
+
+The filesystem and user-facing layer usually changes too:
+
+- The package folder, `<Name>.mtscript/`, and package-local filenames.
+- `@define scriptRoot=<Name>.mtscript`.
+- The entry `.js` literal path, such as
+  `toggleCushy("<Name>.mtscript/<Name>_main")`.
+- The `@window(...)` title, if it should match the new name.
+
+After a rename, search for the old name in the package. Remaining matches
+should be intentional human-readable text, not dispatch, schema, filename, or
+path references.
 
 ## CushyLint
 
@@ -121,6 +143,13 @@ cell.
   bridge, use `mt_eval("getCushyVariable('modal.current')")`; it returns a
   layout path such as `MyScript.mtscript/MyScript_main` when a modal script
   window is open.
+- Loading a GUI package over the bridge is asynchronous at the Cushy boundary:
+  `toggleCushy("MyScript.mtscript/MyScript_main")` returns `undefined`, and the
+  package's `_main.js` runs on a later tick. Do not assert the package global in
+  the same `mt_eval`; check it in a follow-up eval. Relative paths resolve
+  against `DIRS.SCRIPTS`, which you can confirm with `mt_eval("DIRS.SCRIPTS")`.
+  Stale globals from previous names or versions can remain after normal reload;
+  use a JSConsole reset when a clean JavaScript environment matters.
 
 ## Timed Actions / Animation Loop
 
@@ -195,6 +224,30 @@ occasional averages rather than tracing every tick.
   cache the result based on its inputs.
 - JavaScript variables shadow Cushy variables with the same name. Account for
   that when naming GUI state or debugging why a view reads a particular value.
+- Object members with `get` and/or `set`, such as
+  `captureCaption: { get: function() { ... } }`, are Cushy variable
+  descriptors. They are not native JavaScript getter/setter properties. Reading
+  `script.captureCaption` from JavaScript returns the descriptor object; it does
+  not call `get`. To reuse the computed value in script logic, call the getter
+  explicitly, for example `script.captureCaption.get()`.
+- Object members used as actions can be Cushy action descriptors. A typical
+  action descriptor has `execute` for performing the action, plus optional
+  state functions such as `checked` and `enabled` that Cushy uses to render or
+  gate the control. For example:
+
+  ```javascript
+  selectChannel: {
+      execute: function(channel) { select('channel', +channel); },
+      checked: function(channel) { return selected('channel') === +channel; },
+      enabled: function(channel) { return +channel >= 0; }
+  }
+  ```
+
+  Reading `script.selectChannel` from JavaScript returns this descriptor object;
+  it does not run the action or ask whether it is checked/enabled. If script
+  code needs the same behavior directly, call the relevant function explicitly,
+  such as `script.selectChannel.execute(channel)` or
+  `script.selectChannel.checked(channel)`.
 - For dynamic IVG data, compact list strings are usually fine for payloads of a
   few hundred characters, or even around a thousand characters. If the IVG only
   needs a tiny part of a very large structure, do not serialize the whole thing
