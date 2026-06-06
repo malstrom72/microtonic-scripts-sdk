@@ -174,16 +174,35 @@ Code, start it again in the project, and approve the project MCP server prompt
 if it appears.
 
 Do not assume Codex discovers project `.mcp.json` by restarting. Codex uses its
-own MCP server configuration. For Codex builds that support MCP management
-commands, add the server with an absolute path:
+own MCP server configuration; a project `.mcp.json` alone is not enough for
+Codex. First check which CLI is being invoked:
+
+```sh
+which -a codex
+codex --version
+codex mcp --help
+```
+
+If `codex mcp --help` shows `add`, `list`, `get`, and `remove`, register the
+bridge with that CLI using an absolute `server.js` path:
 
 ```sh
 codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
 codex mcp list
 ```
 
-If the installed Codex does not have `codex mcp add` / `codex mcp list`, add the
-server directly to `~/.codex/config.toml`:
+If plain `codex` is an older binary whose `mcp` command only says "run Codex as
+an MCP server", but the Codex desktop app is installed, try the app-bundled CLI:
+
+```sh
+/Applications/Codex.app/Contents/Resources/codex mcp --help
+/Applications/Codex.app/Contents/Resources/codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
+/Applications/Codex.app/Contents/Resources/codex mcp list
+```
+
+If no available Codex CLI supports MCP management, add the bridge directly to
+`~/.codex/config.toml`, or ask the user for approval to edit that file because
+it is outside the project workspace:
 
 ```toml
 [mcp_servers.microtonic-bridge]
@@ -195,7 +214,10 @@ enabled = true
 Then restart Codex or reopen the project so it reloads its MCP configuration. In
 the resumed Codex session, first verify that `mt_status` and `mt_eval` are
 actually exposed as tools. If they are absent, say plainly that Codex has not
-loaded the Microtonic bridge tools and do not keep asking for blind restarts.
+loaded the Microtonic bridge tools and do not keep asking for blind restarts. If
+the assistant cannot edit `~/.codex/config.toml`, print the exact TOML block
+with the resolved absolute `server.js` path and tell the user to add it
+manually.
 
 When a restart/reload is known to load the bridge server, treat that restart as
 a handoff point: before ending the pre-restart session, give the user a resume

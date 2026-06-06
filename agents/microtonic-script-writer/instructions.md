@@ -104,16 +104,35 @@ where Claude Code resolves project-scoped servers:
 ```
 
 Do not assume every assistant reads `.mcp.json`. Codex uses its own MCP server
-configuration. For Codex builds that support MCP management commands, add the
-server with an absolute path:
+configuration; a project `.mcp.json` alone is not enough for Codex. For Codex,
+first check which CLI is being invoked:
+
+```sh
+which -a codex
+codex --version
+codex mcp --help
+```
+
+If `codex mcp --help` shows `add`, `list`, `get`, and `remove`, register the
+bridge with that CLI using an absolute `server.js` path:
 
 ```sh
 codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
 codex mcp list
 ```
 
-If the installed Codex does not have `codex mcp add` / `codex mcp list`, add the
-server directly to `~/.codex/config.toml`:
+If plain `codex` is an older binary whose `mcp` command only says "run Codex as
+an MCP server", but the Codex desktop app is installed, try the app-bundled CLI:
+
+```sh
+/Applications/Codex.app/Contents/Resources/codex mcp --help
+/Applications/Codex.app/Contents/Resources/codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
+/Applications/Codex.app/Contents/Resources/codex mcp list
+```
+
+If no available Codex CLI supports MCP management, add the bridge directly to
+`~/.codex/config.toml`, or ask the user for approval to edit that file because
+it is outside the project workspace:
 
 ```toml
 [mcp_servers.microtonic-bridge]
@@ -125,7 +144,9 @@ enabled = true
 Then restart Codex or reopen the project so it reloads its MCP configuration.
 After restart, verify whether Codex exposes `mt_status` and `mt_eval` before
 claiming the bridge is available. If those tools are absent, Codex has not loaded
-the MCP server; do not keep asking for blind restarts.
+the MCP server; do not keep asking for blind restarts. If the assistant cannot
+edit `~/.codex/config.toml`, print the exact TOML block with the resolved
+absolute `server.js` path and tell the user to add it manually.
 
 The server is zero-dependency (needs only Node) and stateless with respect to
 the project: it brokers files in a fixed, machine-global folder
@@ -184,8 +205,8 @@ for schema includes, resource roots, and CushyLint.
 Whenever the SDK's JSConsole is updated, reinstall/recopy it so the bridge stays
 current.
 
-To use the bridge, once `.mcp.json` exists and the SDK's JSConsole is installed,
-make the remaining setup explicit:
+To use the bridge, once the MCP server is configured for the chosen assistant
+and the SDK's JSConsole is installed, make the remaining setup explicit:
 
 1. Tell the user, in product-specific language, how this assistant loads new
    bridge tools. Avoid saying only "restart the MCP client/session"; most users
@@ -194,19 +215,20 @@ make the remaining setup explicit:
    appears." For Codex, do not claim that project `.mcp.json` will be discovered
    by restarting unless the current Codex environment actually exposes the
    bridge tools after doing so. First search/check for `mt_status` and `mt_eval`.
-   If they are absent, report: "Codex has not loaded the Microtonic bridge tools
-   from this project `.mcp.json`; use an MCP client that loads this server, or
-   configure the bridge through Codex's available tool/server mechanism if one
-   is available." For another MCP-capable assistant, name that app and tell the
-   user how to reload its project tools. Do not pretend bridge tools are
-   available until the MCP server has actually been loaded.
+   If they are absent, report: "Codex has not loaded the Microtonic bridge tools.
+   Project `.mcp.json` is not enough for Codex; configure
+   `~/.codex/config.toml` with the Microtonic bridge server." For another
+   MCP-capable assistant, name that app and tell the user how to reload its
+   project tools. Do not pretend bridge tools are available until the MCP server
+   has actually been loaded.
 2. Treat the restart as a handoff point. Before ending the pre-restart session,
    give the user a short resume checklist:
    - Reload the assistant app in the way that is known to load this bridge
      server. In Claude Code, exit and start Claude Code again in this project,
      then approve the project MCP server prompt if asked. In Codex, only use a
-     restart/reopen instruction if Codex is known to load this project's MCP
-     server; otherwise say that no Codex bridge tools are available yet.
+     restart/reopen instruction after the bridge has been registered in Codex's
+     MCP configuration; otherwise tell the user the Codex MCP registration step
+     is still missing.
    - Open Microtonic.
    - Open the SDK `JSConsole.mtscript`.
    - Type `bridge on` and grant the folder write-permission prompt the first
