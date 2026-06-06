@@ -197,6 +197,17 @@ the live Microtonic scripts installation and may require elevated permissions,
 so it needs explicit user approval. See the "Development Scripts Folder" section
 of `references/microtonic-scripts-sdk/README.md` for the macOS/Windows commands.
 
+On macOS, if the assistant cannot modify the live scripts folder because it
+needs elevated permission, do not stop at printing `sudo` commands for the user
+to run. Ask the user for approval, then use `osascript` with administrator
+privileges so macOS presents the permission prompt and the assistant can finish
+the operation. For example, adapt the command to the resolved source and target
+paths:
+
+```sh
+osascript -e 'do shell script "rm " & quoted form of "/Library/Application Support/Sonic Charge/Microtonic Scripts" & " && ln -s " & quoted form of "/ABS/PATH/TO/project/scripts" & " " & quoted form of "/Library/Application Support/Sonic Charge/Microtonic Scripts" with administrator privileges'
+```
+
 After the scripts-folder decision, install the SDK's `JSConsole.mtscript` into
 the folder Microtonic will actually read:
 

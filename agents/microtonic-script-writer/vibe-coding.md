@@ -105,6 +105,10 @@ alternative to installing the SDK `JSConsole.mtscript`; it only decides whether
 JSConsole should be copied into the live `Microtonic Scripts` folder directly or
 into project `scripts/` after Microtonic's scripts folder has been linked there.
 
+On macOS, if elevated permission blocks the link step, the assistant should ask
+for approval and use `osascript` with administrator privileges to complete the
+operation instead of only printing `sudo` commands for the user to run.
+
 When copying this SDK's `JSConsole.mtscript` into project `scripts/`, also fix
 the copied `scripts/JSConsole.mtscript/JSConsole_main.schema` paths so they
 point back to the SDK checkout:
