@@ -67,6 +67,12 @@ Clone the SDK into `references/microtonic-scripts-sdk/` and treat that checkout
 as the source of truth. Keep user scripts under `scripts/`, never inside the SDK
 checkout unless the user is deliberately contributing SDK examples.
 
+Bootstrap order matters. Do the filesystem scaffold first, then resolve the live
+Microtonic scripts-folder decision before presenting bridge restart instructions
+or validation commands. Do not call the bootstrap "complete" while waiting for a
+scripts-folder decision, JSConsole installation, MCP registration, or a
+restart/smoke-test handoff.
+
 Create a root `AGENTS.md` with this minimal pointer:
 
 ```md
@@ -87,6 +93,25 @@ The SDK ships a JSConsole file bridge and a small MCP server
 client evaluate JavaScript against the *live* Microtonic engine and read the
 result back, with no GUI automation. Wire it up during bootstrap so debugging is
 available from the start.
+
+Recommended bootstrap phase order:
+
+1. Create `AGENTS.md`, `.mcp.json` for Claude Code compatibility, `scripts/`,
+   and `references/microtonic-scripts-sdk/`.
+2. Ask the user whether to link Microtonic's live scripts folder to project
+   `scripts/`; do not proceed with live scripts changes until this is answered.
+3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
+   If copied into project `scripts/`, rewrite the copied schema paths as
+   described below.
+4. Register the bridge MCP server for the active assistant. For Codex, use the
+   Codex MCP configuration flow below; for Claude Code, `.mcp.json` is enough
+   after restart and approval.
+5. If a restart/reload is required before bridge tools appear, stop at a
+   handoff checklist. Do not print the bridge smoke test as already runnable in
+   the current session.
+6. Only after the bridge setup is either verified or handed off, report the
+   project layout and the future CushyLint command, then wait for the user's
+   script idea.
 
 For Claude Code, generate a project-root `.mcp.json` that launches the bridged
 server from the SDK checkout. The path is relative to the user's project root,
@@ -262,9 +287,26 @@ two Microtonic instances that both have the bridge enabled would make them race
 over the same `request.json`/`response.json` and is unsupported; enable
 `bridge on` in only one instance at a time.
 
-After bootstrapping, report the project layout and the exact CushyLint command
-to use for a `.mtscript` package in that project, then wait for the user's
-script idea.
+Bootstrap reporting should match the actual state:
+
+- If waiting for the user's live scripts-folder decision, say that setup is
+  paused on that decision. Do not say bootstrap is complete, and do not lead with
+  CushyLint.
+- If JSConsole is installed and MCP registration requires a restart/reload,
+  give the restart checklist and exact smoke-test resume prompt. Keep the future
+  CushyLint command as a short "for later" note after the handoff instructions.
+- If the bridge smoke test has passed or the user explicitly skips live bridge
+  setup, then report the project layout, the exact CushyLint command for a
+  future `.mtscript` package in that project, and wait for the user's script
+  idea.
+
+Use this order in final bootstrap messages:
+
+1. Current project files created.
+2. Pending user action, if any.
+3. Bridge status or restart/smoke-test handoff.
+4. Future CushyLint command.
+5. "No script logic has been added yet; waiting for your script idea."
 
 ## Microtonic SDK Grounding
 

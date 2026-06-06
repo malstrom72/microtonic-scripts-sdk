@@ -46,6 +46,25 @@ my-microtonic-scripts/
 The assistant should write project scripts under your own `scripts/` folder, not
 inside the SDK, unless you are deliberately contributing SDK examples.
 
+## Bootstrap Order
+
+When bootstrapping an empty project, keep the user-facing sequence clear:
+
+1. Create the project scaffold: `AGENTS.md`, `.mcp.json` for Claude Code
+   compatibility, `scripts/`, and `references/microtonic-scripts-sdk/`.
+2. Ask whether to link Microtonic's live scripts folder to project `scripts/`.
+   Do not call bootstrap complete while this decision is pending.
+3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
+   If it is copied into project `scripts/`, fix the copied schema paths.
+4. Register the bridge MCP server for the active assistant.
+5. If restart/reload is needed, stop at a handoff checklist and exact resume
+   prompt for the bridge smoke test.
+6. Only after bridge setup is verified, handed off, or explicitly skipped, show
+   the future CushyLint command and wait for the user's script idea.
+
+Do not lead with CushyLint while a live scripts-folder decision or bridge
+restart/smoke-test handoff is still pending.
+
 ## Installing Scripts In Microtonic
 
 Microtonic finds runnable scripts in the `Microtonic Scripts` folder. Open it
