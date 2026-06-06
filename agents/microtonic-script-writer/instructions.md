@@ -57,6 +57,7 @@ Use this layout unless the user asks for something else:
 ```text
 my-microtonic-scripts/
   AGENTS.md
+  .mcp.json
   scripts/
   references/
     microtonic-scripts-sdk/
@@ -78,6 +79,81 @@ For Microtonic scripting work, follow:
 Use the SDK checkout as the source of truth for docs, examples, schemas,
 resources, packaging, and validation.
 ```
+
+### Live Debugging Bridge
+
+The SDK ships a JSConsole file bridge and a small MCP server
+(`references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/`) that let an MCP
+client evaluate JavaScript against the *live* Microtonic engine and read the
+result back, with no GUI automation. Wire it up during bootstrap so debugging is
+available from the start.
+
+Generate a project-root `.mcp.json` that launches the bridged server from the
+SDK checkout. The path is relative to the user's project root, where Claude Code
+resolves project-scoped servers:
+
+```json
+{
+  "mcpServers": {
+    "microtonic-bridge": {
+      "command": "node",
+      "args": ["references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js"]
+    }
+  }
+}
+```
+
+The server is zero-dependency (needs only Node) and stateless with respect to
+the project: it brokers files in a fixed, machine-global folder
+(`/Users/Shared/Sonic Charge/Microtonic/jsconsole-bridge/` on Mac,
+`C:/Users/Public/Sonic Charge/Microtonic/jsconsole-bridge/` on Windows), so the
+bridge works regardless of where the SDK or project lives. A user-scoped
+`claude mcp add -s user microtonic-bridge -- node <abs-path>/server.js` is an
+equally valid alternative that serves every Microtonic project on the machine.
+
+**The bridge lives inside JSConsole**, so Microtonic must be running *this SDK's*
+`JSConsole.mtscript` (the copy in the checkout, which contains the bridge) — not
+a factory or previously installed JSConsole, which has no `bridge on` command.
+Install it into Microtonic's scripts folder one of two ways:
+
+- Simplest: copy `references/microtonic-scripts-sdk/JSConsole.mtscript` into the
+  `Microtonic Scripts` folder (find it via *Open Scripts Folder* in Microtonic's
+  puzzle menu), replacing any existing `JSConsole.mtscript`.
+- Project-integrated (recommended when also iterating on the user's own scripts):
+  link Microtonic's scripts folder to the project `scripts/` folder and keep
+  `scripts/JSConsole.mtscript` (copied from the SDK) under version control with
+  the project. See the "Development Scripts Folder" section of
+  `references/microtonic-scripts-sdk/README.md` for the macOS/Windows link
+  commands.
+
+Whenever the SDK's JSConsole is updated, reinstall/recopy it so the bridge stays
+current.
+
+To use the bridge, once `.mcp.json` exists and the SDK's JSConsole is installed:
+
+1. Restart Claude Code and approve the one-time project MCP-server prompt.
+2. In Microtonic, open `JSConsole.mtscript` and type `bridge on` (granting the
+   folder write-permission prompt the first time).
+
+Then `mt_status` should report `attached: yes`, and `mt_eval` evaluates code in
+the running instrument. If it reports `attached: no`, JSConsole either is not the
+SDK's bridged copy or does not have `bridge on` enabled.
+
+To rerun the user's edited script files and rebuild the GUI without leaving the
+bridge, evaluate the reload action over the bridge:
+`mt_eval("performCushyAction('reload')")`. A normal reload keeps the engine and
+globals alive, so the bridge survives it — this is the edit → reload → re-test
+loop. Do not drive a full reset (`performCushyAction('reload', 'reset')`) over
+the bridge: it wipes JS memory on the next tick and tears down the bridge, which
+then has to be re-enabled with `bridge on` in the JSConsole window. See
+`references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/README.md`.
+
+**One Microtonic instance only.** The bridge uses a single fixed machine-global
+folder, so it assumes exactly one live bridge per machine — one running
+Microtonic with one JSConsole and `bridge on`. This is the normal case. Running
+two Microtonic instances that both have the bridge enabled would make them race
+over the same `request.json`/`response.json` and is unsupported; enable
+`bridge on` in only one instance at a time.
 
 After bootstrapping, report the project layout and the exact CushyLint command
 to use for a `.mtscript` package in that project, then wait for the user's

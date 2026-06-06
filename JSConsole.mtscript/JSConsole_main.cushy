@@ -36,6 +36,7 @@ autoexecs: {
 	{ action: "jsConsole.fpsTick", repeat: 0.001 }
 	{ action: "jsConsole.shutdown", onClose: true, onReload: false }
 	{ action: "jsConsole.checkLitter", repeat: 0.25 }
+	{ action: "jsConsole.bridgeTick", repeat: 0.1 }
 }
 
 translations: {

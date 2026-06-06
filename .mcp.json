@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "microtonic-bridge": {
+      "command": "node",
+      "args": ["tools/jsconsole-bridge-mcp/server.js"]
+    }
+  }
+}
