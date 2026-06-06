@@ -88,9 +88,9 @@ client evaluate JavaScript against the *live* Microtonic engine and read the
 result back, with no GUI automation. Wire it up during bootstrap so debugging is
 available from the start.
 
-Generate a project-root `.mcp.json` that launches the bridged server from the
-SDK checkout. The path is relative to the user's project root, where Claude Code
-resolves project-scoped servers:
+For Claude Code, generate a project-root `.mcp.json` that launches the bridged
+server from the SDK checkout. The path is relative to the user's project root,
+where Claude Code resolves project-scoped servers:
 
 ```json
 {
@@ -102,6 +102,30 @@ resolves project-scoped servers:
   }
 }
 ```
+
+Do not assume every assistant reads `.mcp.json`. Codex uses its own MCP server
+configuration. For Codex builds that support MCP management commands, add the
+server with an absolute path:
+
+```sh
+codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
+codex mcp list
+```
+
+If the installed Codex does not have `codex mcp add` / `codex mcp list`, add the
+server directly to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.microtonic-bridge]
+command = "node"
+args = ["/ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js"]
+enabled = true
+```
+
+Then restart Codex or reopen the project so it reloads its MCP configuration.
+After restart, verify whether Codex exposes `mt_status` and `mt_eval` before
+claiming the bridge is available. If those tools are absent, Codex has not loaded
+the MCP server; do not keep asking for blind restarts.
 
 The server is zero-dependency (needs only Node) and stateless with respect to
 the project: it brokers files in a fixed, machine-global folder
@@ -163,15 +187,26 @@ current.
 To use the bridge, once `.mcp.json` exists and the SDK's JSConsole is installed,
 make the remaining setup explicit:
 
-1. Tell the user that the MCP client must be restarted before the new
-   project-scoped server will appear. For Claude Code, restart Claude Code and
-   approve the one-time project MCP-server prompt. For Codex or other MCP
-   clients, restart/reload the client or session according to that client's MCP
-   discovery behavior. Do not pretend bridge tools are available until the MCP
-   server has actually been loaded.
+1. Tell the user, in product-specific language, how this assistant loads new
+   bridge tools. Avoid saying only "restart the MCP client/session"; most users
+   will not know what that means. For Claude Code, say: "Exit Claude Code, start
+   it again in this project, and approve the project MCP server prompt if it
+   appears." For Codex, do not claim that project `.mcp.json` will be discovered
+   by restarting unless the current Codex environment actually exposes the
+   bridge tools after doing so. First search/check for `mt_status` and `mt_eval`.
+   If they are absent, report: "Codex has not loaded the Microtonic bridge tools
+   from this project `.mcp.json`; use an MCP client that loads this server, or
+   configure the bridge through Codex's available tool/server mechanism if one
+   is available." For another MCP-capable assistant, name that app and tell the
+   user how to reload its project tools. Do not pretend bridge tools are
+   available until the MCP server has actually been loaded.
 2. Treat the restart as a handoff point. Before ending the pre-restart session,
    give the user a short resume checklist:
-   - Restart/reload the MCP client and approve the project MCP server if asked.
+   - Reload the assistant app in the way that is known to load this bridge
+     server. In Claude Code, exit and start Claude Code again in this project,
+     then approve the project MCP server prompt if asked. In Codex, only use a
+     restart/reopen instruction if Codex is known to load this project's MCP
+     server; otherwise say that no Codex bridge tools are available yet.
    - Open Microtonic.
    - Open the SDK `JSConsole.mtscript`.
    - Type `bridge on` and grant the folder write-permission prompt the first

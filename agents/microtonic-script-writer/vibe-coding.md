@@ -166,14 +166,43 @@ not prove the script has been tested inside Microtonic.
 
 ## Bridge Smoke Test
 
-After creating `.mcp.json`, tell the user that their MCP client may need to be
-restarted or reloaded before the `microtonic-bridge` server appears. Claude Code
-requires a restart and one-time approval of the project MCP server. Treat that
-restart as a handoff point: before ending the pre-restart session, give the user
-a resume checklist to restart/reload the client, approve the project MCP server
-if asked, open Microtonic, open the SDK `JSConsole.mtscript`, type `bridge on`,
-approve the folder write-permission prompt if shown, and resume the assistant
-session with this exact prompt:
+After creating `.mcp.json`, tell the user in product-specific language how the
+assistant app loads the `microtonic-bridge` server. Avoid saying only "restart
+the MCP client/session"; most users will not know what that means. `.mcp.json`
+is a Claude Code project-server convention: for Claude Code, say to exit Claude
+Code, start it again in the project, and approve the project MCP server prompt
+if it appears.
+
+Do not assume Codex discovers project `.mcp.json` by restarting. Codex uses its
+own MCP server configuration. For Codex builds that support MCP management
+commands, add the server with an absolute path:
+
+```sh
+codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
+codex mcp list
+```
+
+If the installed Codex does not have `codex mcp add` / `codex mcp list`, add the
+server directly to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.microtonic-bridge]
+command = "node"
+args = ["/ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js"]
+enabled = true
+```
+
+Then restart Codex or reopen the project so it reloads its MCP configuration. In
+the resumed Codex session, first verify that `mt_status` and `mt_eval` are
+actually exposed as tools. If they are absent, say plainly that Codex has not
+loaded the Microtonic bridge tools and do not keep asking for blind restarts.
+
+When a restart/reload is known to load the bridge server, treat that restart as
+a handoff point: before ending the pre-restart session, give the user a resume
+checklist to reload the assistant app, approve the project MCP server if asked,
+open Microtonic, open the SDK `JSConsole.mtscript`, type `bridge on`, approve
+the folder write-permission prompt if shown, and resume the assistant session
+with this exact prompt:
 
 ```text
 Run the Microtonic bridge smoke test now. Check mt_status, then evaluate 1 + 1 over the bridge.
