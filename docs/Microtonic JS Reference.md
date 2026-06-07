@@ -939,7 +939,9 @@ sophisticated user interface, you need to create a GUI script with JavaScript an
 
 Cushy is the GUI / layout engine used in all Sonic Charge products. A full description of the Cushy system is beyond the
 scope of this document, but `.cushy` files define the layout of views and configure how the user can interact with the
-plug-in through "GUI variables" and "GUI actions."
+plug-in through "GUI variables" and "GUI actions." For an orientation to the Cushy system and a map of where each part
+is documented, see [Cushy Documentation](Cushy%20Documentation.md); for the exhaustive syntax reference, see
+`CushyLint/cushy.schema`.
 
 Note: Microtonic 3.x is still not fully ported to Cushy. Most of the standard knobs and buttons are legacy "hard-wired"
 GUI elements, but on top of this, there is a layer of Cushy.

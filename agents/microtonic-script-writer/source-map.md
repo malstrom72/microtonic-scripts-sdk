@@ -24,6 +24,10 @@ Use these repository files as the grounding map for Microtonic scripting work.
 
 ## Cushy And GUI References
 
+- [`docs/Cushy Documentation.md`](../../docs/Cushy%20Documentation.md):
+  orientation to the Cushy system — mental model, minimal window walkthrough,
+  and a map of where each part of Cushy is documented. Start here, then drill
+  into the schema for exact syntax.
 - [`CushyLint/cushy.schema`](../../CushyLint/cushy.schema): official `.cushy`
   format reference, view types, built-in actions, schema rules, and comments.
 - [`Microtonic Resources/microtonic.schema`](../../Microtonic%20Resources/microtonic.schema):

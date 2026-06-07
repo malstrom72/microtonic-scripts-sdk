@@ -60,6 +60,7 @@ Here is a brief list of the technologies used in Microtonic GUIs:
     2. Contains [`cushy.schema`](CushyLint/cushy.schema), the official reference for the `.cushy` format.
 
 - `docs`:
+    - [Cushy Documentation](docs/Cushy%20Documentation.md)
     - [ImpD Documentation](docs/ImpD%20Documentation.md)
     - [IVG Documentation](docs/IVG%20Documentation.md)
     - [ivgfont Documentation](docs/ivgfont%20Documentation.md)
@@ -130,7 +131,9 @@ Furthermore, you can use macros when writing `.cushy` files for easier developme
 [Makaron Documentation](docs/Makaron%20Documentation.md) for documentation on the macro expansion language we use. Macros
 you write are expanded when `.cushy` files are loaded inside the plugin, before they are parsed.
 
-See [`cushy.schema`](CushyLint/cushy.schema) and [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md) for more
+For an orientation to the Cushy system — the mental model, coordinates and scaling, what is static versus dynamic, and a
+map of where each part is documented — see [Cushy Documentation](docs/Cushy%20Documentation.md). See also
+[`cushy.schema`](CushyLint/cushy.schema) and [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md) for more
 information on how to write Cushy.
 
 ### IVGFiddle
