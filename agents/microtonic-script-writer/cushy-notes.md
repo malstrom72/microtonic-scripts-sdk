@@ -8,6 +8,11 @@ These notes do not replace the schema, JS reference, or example packages. When
 exact syntax or supported fields matter, verify against the references listed in
 [`source-map.md`](source-map.md).
 
+For an orientation to the Cushy system — the mental model, coordinates and
+scaling, and what is static versus dynamic — start with
+[`docs/Cushy Documentation.md`](../../docs/Cushy%20Documentation.md). This file
+picks up where that one leaves off, with practical gotchas and patterns.
+
 ## scriptRoot Convention
 
 Always define `@scriptRoot` at the top of every `.cushy` file and use it
