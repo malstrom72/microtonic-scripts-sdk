@@ -1,0 +1,31 @@
+name: Validate examples
+
+# Runs the aggregate example validator (Cushy schema + JavaScript + static IVG).
+# macOS runners match the prebuilt PikaCmd / IVG2PNG binaries in the repo and the
+# usual development environment; both auto-build from source if a prebuilt binary
+# cannot run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: validate-examples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-examples:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate example packages
+        run: tools/validate-examples.sh

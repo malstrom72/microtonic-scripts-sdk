@@ -1,0 +1,10 @@
+/**
+ * Play-position highlight overlay for one 12x16 step cell.
+ */
+
+format IVG-2 requires:IMPD-1
+bounds 0,0,12,16
+
+fill rgb(1,1,1,0.35)
+pen #2F7771 width:1.5
+path svg:M1,2H11V14H1Z

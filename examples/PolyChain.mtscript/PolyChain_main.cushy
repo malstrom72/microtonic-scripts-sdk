@@ -1,0 +1,270 @@
+@include scriptSupport.makaron
+
+@define width=336
+@define height=300
+@define backgroundColor=#F4F1EA
+@define panelColor=#FBF9F3
+@define frameColor=#6E7F62
+@define accentColor=#A8B89A
+@define textColor=#364032
+@define mutedTextColor=#68735E
+@define emptyColor=rgb(0,0,0,0)
+@define outOffStepColor=#F6F3EC
+@define outOnStepColor=#C4CEBA
+@define outAccentStepColor=#D7CAB5
+@define outFrameColor=#D7D0C2
+@define offStepColor=#E8E4D9
+@define onStepColor=#6E7F62
+@define accentStepColor=#8C7A57
+@define startColor=#3A8079
+@define endColor=#A85C48
+@define scrimColor=#DAD6CB
+@define barTextColor=#FBF9F3
+
+@define scriptRoot=PolyChain.mtscript
+@define script=polyChain
+
+@begin row(index, label, y)
+    {
+        type: "caption"
+        bounds: { 14, @y + 2, 34, 16 }
+        font: { ivgfont: "sans-serif", size: 13, color: "@textColor" }
+        align: "middle left"
+        text: "#@label"
+    }
+    {
+        type: "cluster"
+        bounds: { 52, @y, 216, 16 }
+        array: @script.loopRows.@index.cells
+        range: { 0, 8 }
+        hint: "Channel @label [var]@script.loopRows.@index[/var]"
+        readonly: true
+        images: {
+            { ivgCode: "bounds 0,0,12,16; fill @emptyColor" }
+            { ivgFile: "@scriptRoot/PolyChain_step", defines: { "fill": "@outOffStepColor", "frame": "@outFrameColor" } }
+            { ivgFile: "@scriptRoot/PolyChain_step", defines: { "fill": "@outOnStepColor", "frame": "@outFrameColor" } }
+            { ivgFile: "@scriptRoot/PolyChain_step", defines: { "fill": "@outAccentStepColor", "frame": "@outFrameColor" } }
+            { ivgFile: "@scriptRoot/PolyChain_step", defines: { "fill": "@offStepColor", "frame": "@accentColor" } }
+            { ivgFile: "@scriptRoot/PolyChain_step", defines: { "fill": "@onStepColor", "frame": "@frameColor" } }
+            { ivgFile: "@scriptRoot/PolyChain_step", defines: { "fill": "@accentStepColor", "frame": "@frameColor" } }
+            { ivgFile: "@scriptRoot/PolyChain_mark", defines: { "color": "@startColor", "d": "M4,3V13M4,3H8M4,13H8" } }
+            { ivgFile: "@scriptRoot/PolyChain_mark", defines: { "color": "@endColor", "d": "M8,3V13M8,3H4M8,13H4" } }
+        }
+        rects: {
+            { 0, { $,$,$,$ }, { 0,0,12,16 } }
+            { 1, { $,$,$,$ }, { 12,0,12,16 } }
+            { 2, { $,$,$,$ }, { 24,0,12,16 } }
+            { 3, { $,$,$,$ }, { 36,0,12,16 } }
+            { 4, { $,$,$,$ }, { 48,0,12,16 } }
+            { 5, { $,$,$,$ }, { 60,0,12,16 } }
+            { 6, { $,$,$,$ }, { 72,0,12,16 } }
+            { 7, { $,$,$,$ }, { 84,0,12,16 } }
+            { 8, { $,$,$,$ }, { 96,0,12,16 } }
+            { 9, { $,$,$,$ }, { 108,0,12,16 } }
+            { 10, { $,$,$,$ }, { 120,0,12,16 } }
+            { 11, { $,$,$,$ }, { 132,0,12,16 } }
+            { 12, { $,$,$,$ }, { 144,0,12,16 } }
+            { 13, { $,$,$,$ }, { 156,0,12,16 } }
+            { 14, { $,$,$,$ }, { 168,0,12,16 } }
+            { 15, { $,$,$,$ }, { 180,0,12,16 } }
+            { 16, { $,$,$,$ }, { 192,0,12,16 } }
+            { 17, { $,$,$,$ }, { 204,0,12,16 } }
+        }
+    }
+    {
+        type: "group"
+        bounds: { 52, @y, 216, 16 }
+        visibility: @script.loopRows.@index.playOn
+        offset: { @script.loopRows.@index.playX, @script.zero }
+        views: {
+            {
+                type: "vector"
+                bounds: { 0, 0, 12, 16 }
+                file: "@scriptRoot/PolyChain_playhead"
+            }
+        }
+    }
+    {
+        type: "cluster"
+        bounds: { 52, @y, 216, 16 }
+        mouseIndex: @script.loopRows.@index.mouseIndex
+        hint: "Channel @label [var]@script.loopRows.@index[/var]"
+        clickActions: {
+            { "press", "@script.loopRows.@index.pointerDown" }
+            { "release", "@script.loopRows.@index.pointerUp" }
+        }
+        rects: {
+            { 0, { $,$,$,$ }, { 0,0,12,16 } }
+            { 1, { $,$,$,$ }, { 12,0,12,16 } }
+            { 2, { $,$,$,$ }, { 24,0,12,16 } }
+            { 3, { $,$,$,$ }, { 36,0,12,16 } }
+            { 4, { $,$,$,$ }, { 48,0,12,16 } }
+            { 5, { $,$,$,$ }, { 60,0,12,16 } }
+            { 6, { $,$,$,$ }, { 72,0,12,16 } }
+            { 7, { $,$,$,$ }, { 84,0,12,16 } }
+            { 8, { $,$,$,$ }, { 96,0,12,16 } }
+            { 9, { $,$,$,$ }, { 108,0,12,16 } }
+            { 10, { $,$,$,$ }, { 120,0,12,16 } }
+            { 11, { $,$,$,$ }, { 132,0,12,16 } }
+            { 12, { $,$,$,$ }, { 144,0,12,16 } }
+            { 13, { $,$,$,$ }, { 156,0,12,16 } }
+            { 14, { $,$,$,$ }, { 168,0,12,16 } }
+            { 15, { $,$,$,$ }, { 180,0,12,16 } }
+            { 16, { $,$,$,$ }, { 192,0,12,16 } }
+            { 17, { $,$,$,$ }, { 204,0,12,16 } }
+        }
+    }
+    {
+        type: "caption"
+        bounds: { 272, @y + 2, 34, 16 }
+        font: { ivgfont: "monospace", size: 10, color: "@textColor" }
+        align: "middle right"
+        text: "[var]@script.loopRows.@index[/var]"
+    }
+@end
+
+transitions: {
+    open: {
+        time: 0.1
+        scale: 85
+        opacity: 0
+    }
+    close: {
+        time: 0.1
+        scale: 85
+        opacity: 0
+    }
+}
+
+autoexecs: {
+    { action: "set", params: { @script.windowZOrder, 0 }, onReload: false }
+    { action: "@script.startup", onReload: false }
+    { action: "@script.shutdown", onClose: true, onReload: false }
+    { action: "@script.updatePlayheads", repeat: 1/30 }
+}
+
+@window(202, 125, @width, @height, "PolyChain", @backgroundColor, @frameColor, white, @script, @<
+    {
+        type: "group"
+        bounds: { 8, 10, 316, 256 }
+        views: {
+            {
+                type: "rectangle"
+                fill: "@backgroundColor"
+            }
+            {
+                type: "button"
+                bounds: { 30, 14, 122, 24 }
+                action: "@script.capture"
+                caption: { text: "[var]@script.captureCaption[/var]", offset: { 0, 0 } }
+                hint: "Copy the selected pattern into the source buffer"
+                rounded: { 3, 3 }
+                standard: {
+                    fill: "@backgroundColor"
+                    frame: { color: "@frameColor", stroke: 1 }
+                    font: { ivgfont: "sans-serif", size: 12, color: "@textColor" }
+                }
+                down: {
+                    fill: "@accentColor"
+                    frame: { color: "@frameColor", stroke: 1 }
+                    font: { ivgfont: "sans-serif", size: 12, color: "@textColor" }
+                }
+            }
+            {
+                type: "button"
+                bounds: { 164, 14, 122, 24 }
+                action: "popup"
+                mask: "down"
+                caption: { text: "[var]@script.chainLengthControl[/var]", offset: { 0, 0 } }
+                hint: "Choose how many bars/patterns the generated chain should span"
+                rounded: { 3, 3 }
+                params: {
+                    items: {
+                        { "Repeat 1 Bar", "set", { @script.chainLengthValue, 1 } }
+                        { "Repeat 2 Bars", "set", { @script.chainLengthValue, 2 } }
+                        { "Repeat 4 Bars", "set", { @script.chainLengthValue, 4 } }
+                        { "Repeat 8 Bars", "set", { @script.chainLengthValue, 8 } }
+                        { "Repeat 12 Bars", "set", { @script.chainLengthValue, 12 } }
+                    }
+                    autoDisable: true
+                    autoCheck: true
+                }
+                standard: {
+                    fill: "@backgroundColor"
+                    frame: { color: "@frameColor", stroke: 1 }
+                    font: { ivgfont: "sans-serif", size: 12, color: "@textColor" }
+                }
+                down: {
+                    fill: "@accentColor"
+                    frame: { color: "@frameColor", stroke: 1 }
+                    font: { ivgfont: "sans-serif", size: 12, color: "@textColor" }
+                }
+            }
+            @row(7, 8, 58)
+            @row(6, 7, 78)
+            @row(5, 6, 98)
+            @row(4, 5, 118)
+            @row(3, 4, 138)
+            @row(2, 3, 158)
+            @row(1, 2, 178)
+            @row(0, 1, 198)
+            {
+                type: "group"
+                bounds: { 4, 51, 308, 170 }
+                visibility: @script.outOfSyncOn
+                views: {
+                    {
+                        type: "rectangle"
+                        fill: "@scrimColor"
+                        opacity: 70
+                        rounded: { 3, 3 }
+                    }
+                    {
+                        type: "rectangle"
+                        frame: { color: "@endColor", stroke: 2 }
+                        rounded: { 3, 3 }
+                    }
+                }
+            }
+            {
+                type: "group"
+                bounds: { 12, 230, w - 24, 18 }
+                visibility: @script.syncedOn
+                views: {
+                    {
+                        type: "rectangle"
+                        bounds: { 0, 5, 8, 8 }
+                        fill: "@startColor"
+                        rounded: { 4, 4 }
+                    }
+                    {
+                        type: "caption"
+                        bounds: { 14, 0, w - 38, 18 }
+                        font: { ivgfont: "sans-serif", size: 9, color: "@mutedTextColor" }
+                        align: "middle left"
+                        text: "In sync with generated patterns."
+                    }
+                }
+            }
+            {
+                type: "group"
+                bounds: { 4, 226, w - 8, 24 }
+                visibility: @script.outOfSyncOn
+                views: {
+                    {
+                        type: "rectangle"
+                        fill: "@endColor"
+                        rounded: { 3, 3 }
+                    }
+                    {
+                        type: "caption"
+                        bounds: { 0, 0, w - 8, 24 }
+                        font: { ivgfont: "sans-serif", size: 11, color: "@barTextColor" }
+                        align: "middle center"
+                        text: "OUT OF SYNC - showing last generated chain, not playback"
+                    }
+                }
+            }
+        }
+    }
+@>)

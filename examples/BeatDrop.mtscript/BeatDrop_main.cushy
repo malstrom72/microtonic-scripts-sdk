@@ -1,0 +1,353 @@
+@include scriptSupport.makaron
+
+@define scriptRoot=BeatDrop.mtscript
+@define script=beatdrop
+
+// --- layout ---
+// cols=8 channels, rows=22 (bottom 16 = steps, zoneTop=rows-16), cell=16
+@define cols=8
+@define rows=22
+@define cell=18
+@define zoneTop=6
+@define boardW=144
+@define boardH=396
+@define nextCell=14
+@define panelX=170
+@define panelW=92
+@define fps=30
+
+// --- theme ---
+@define uiHue=0.62
+@define backgroundColor=hsv(@uiHue,0.22,0.11)
+@define frameColor=hsv(@uiHue,0.28,0.22)
+@define boardFrame=hsv(@uiHue,0.28,0.30)
+
+@define bg=#0E1014
+@define zoneBg=#14161C
+@define stepLine=#1A1A1A1A
+@define divider=#404048
+// extremely faded version of playEdge (premultiplied orange at ~12% alpha)
+@define playhead=#201C1400
+@define playEdge=#E0A000
+@define inert=#565B66
+@define accentPen=#FFFFFFFF
+@define ghost=#40404040
+// solid white strobe on completed rows during a line clear
+@define flash=#FFFFFFFF
+
+// per-channel colors (col 0..7)
+@define c0=#E5484D
+@define c1=#E5872B
+@define c2=#E5C72B
+@define c3=#5BD15B
+@define c4=#2BB5C7
+@define c5=#3B7DE5
+@define c6=#8A5BE5
+@define c7=#E55BB0
+
+// generic, channel-agnostic trigger color — shared by the NEXT preview and the
+// legend so neither masquerades as a specific channel (c0..c7). It is a muted
+// steel tone (not one of the 8 vivid channel hues) and dark enough that the
+// white @accentPen inset reads. Accent = this same fill + the inset, like the board.
+@define genTrig=#6E84BE
+
+@define labelFont={ ivgfont: "sans-serif", size: 10, color: "hsv(@uiHue,0.15,0.5)", gamma:1.8 }
+@define valueFont={ ivgfont: "sans-serif", size: 20, color: "hsv(@uiHue,0.10,0.85)", gamma:1.8 }
+@define statusFont={ ivgfont: "sans-serif", size: 20, color: "hsv(0.08,0.7,0.95)", gamma:1.8, outlineWidth: 2, outlineColor: "#000000" }
+@define instrFont={ ivgfont: "sans-serif", size: 11, color: "hsv(@uiHue,0.12,0.62)", gamma:1.8 }
+@define ctaFont={ ivgfont: "sans-serif", size: 14, color: "hsv(@uiHue,0.32,0.80)", gamma:1.8 }
+@define btnFont={ ivgfont: "sans-serif", size: 12, color: "hsv(@uiHue,0.10,0.85)" }
+@define btnFill=hsv(@uiHue,0.25,0.26)
+@define btnDown=hsv(@uiHue,0.35,0.40)
+@define btnStroke=hsv(@uiHue,0.25,0.40)
+@define btnChecked=hsv(0.08,0.45,0.45)
+
+transitions: {
+	open:  { time: 0.1, scale: 90, opacity: 0 }
+	close: { time: 0.1, scale: 90, opacity: 0 }
+}
+
+autoexecs: {
+	{
+		action: "set"
+		params: { @script.windowZOrder, 0 }
+		onReload: false
+	}
+	{
+		action: "@script.startup"
+		onReload: true
+	}
+	{
+		action: "@script.tick"
+		repeat: 1/@fps
+	}
+}
+
+@window(232, 55, 276, 482, "BeatDrop", @backgroundColor, @frameColor, white, @script, @<
+
+	// ---- playfield ----
+	{
+		type: "group"
+		bounds: { 10, 10, @boardW, @boardH }
+		views: {
+			{
+				type: "vector"
+				file: "@scriptRoot/BeatDrop_board"
+				defines: {
+					"cols": "@cols"
+					"rows": "@rows"
+					"cell": "@cell"
+					"zoneTop": "@zoneTop"
+					"bg": "@bg"
+					"zoneBg": "@zoneBg"
+					"stepLine": "@stepLine"
+					"divider": "@divider"
+					"playhead": "@playhead"
+					"playEdge": "@playEdge"
+					"inert": "@inert"
+					"accentPen": "@accentPen"
+					"ghost": "@ghost"
+					"flash": "@flash"
+					"c0": "@c0"
+					"c1": "@c1"
+					"c2": "@c2"
+					"c3": "@c3"
+					"c4": "@c4"
+					"c5": "@c5"
+					"c6": "@c6"
+					"c7": "@c7"
+				}
+				bindings: {
+					"cells": @script.cells
+					"ghostCells": @script.ghostCells
+					"playRow": @script.playRow
+					"flashRows": @script.flashRows
+				}
+			}
+			{
+				type: "rectangle"
+				frame: { color: "@boardFrame", stroke: 1 }
+			}
+			{
+				type: "click"
+				actions: {
+					{ "press", "@script.hardDrop" }
+					{ "context", "@script.rotate" }
+				}
+				cursor: "hand"
+				hint: "Left-click: drop - Right-click: rotate - move mouse to steer"
+			}
+			{
+				type: "hover"
+				mousePosition: { xy: @script.mousePosition, integer: false }
+			}
+		}
+	}
+
+	// status overlay (GAME OVER / PAUSED)
+	{
+		type: "caption"
+		bounds: { 10, 194, @boardW, 28 }
+		font: @statusFont
+		align: "middle center"
+		text: "[var]@script.statusText[/var]"
+	}
+
+	// ---- side panel ----
+	{
+		type: "caption"
+		bounds: { @panelX, 8, @panelW,12 }
+		font: @labelFont
+		align: "left"
+		text: "NEXT"
+	}
+	{
+		type: "group"
+		bounds: { @panelX, 24, 56, 56 }
+		views: {
+			{
+				type: "vector"
+				file: "@scriptRoot/BeatDrop_next"
+				defines: {
+					"cell": "@nextCell"
+					"bg": "@zoneBg"
+					"inert": "@inert"
+					"trig": "@genTrig"
+					"accentPen": "@accentPen"
+				}
+				bindings: {
+					"nextCells": @script.nextCells
+				}
+			}
+			{
+				type: "rectangle"
+				frame: { color: "@boardFrame", stroke: 1 }
+			}
+		}
+	}
+
+	{
+		type: "caption"
+		bounds: { @panelX, 100, @panelW,12 }
+		font: @labelFont
+		align: "left"
+		text: "PATTERN"
+	}
+	{
+		type: "caption"
+		bounds: { @panelX, 114, @panelW,22 }
+		font: @valueFont
+		align: "left"
+		text: "[var]@script.patternText[/var]"
+	}
+
+	{
+		type: "caption"
+		bounds: { @panelX, 152, @panelW,12 }
+		font: @labelFont
+		align: "left"
+		text: "LINES"
+	}
+	{
+		type: "caption"
+		bounds: { @panelX, 166, @panelW,22 }
+		font: @valueFont
+		align: "left"
+		text: "[var]@script.linesText[/var]"
+	}
+
+	{
+		type: "caption"
+		bounds: { @panelX, 204, @panelW,12 }
+		font: @labelFont
+		align: "left"
+		text: "LOOP (STEPS)"
+	}
+	{
+		type: "caption"
+		bounds: { @panelX, 218, @panelW,22 }
+		font: @valueFont
+		align: "left"
+		text: "[var]@script.loopText[/var]"
+	}
+
+	{
+		type: "caption"
+		bounds: { @panelX, 256, @panelW,12 }
+		font: @labelFont
+		align: "left"
+		text: "CONTROLS"
+	}
+	{
+		type: "caption"
+		bounds: { @panelX, 272, @panelW,12 }
+		font: @instrFont
+		align: "left"
+		text: "Move: steer"
+	}
+	{
+		type: "caption"
+		bounds: { @panelX, 286, @panelW,12 }
+		font: @instrFont
+		align: "left"
+		text: "Left-click: drop"
+	}
+	{
+		type: "caption"
+		bounds: { @panelX, 300, @panelW,12 }
+		font: @instrFont
+		align: "left"
+		text: "Right-click: rotate"
+	}
+
+	// ---- buttons ----
+	{
+		type: "button"
+		bounds: { @panelX, 330, @panelW,26 }
+		action: "@script.newGame"
+		rounded: { 4, 4 }
+		cursor: "hand"
+		hint: "Clear the grid and start over"
+		caption: { text: "NEW", offset: { 0, 0 } }
+		standard: { fill: "@btnFill", frame: { color: "@btnStroke", stroke: 1 }, font: @btnFont }
+		down:     { fill: "@btnDown", frame: { color: "@btnStroke", stroke: 1 }, font: @btnFont }
+	}
+	{
+		type: "button"
+		bounds: { @panelX, 362, @panelW,26 }
+		action: "@script.pause"
+		rounded: { 4, 4 }
+		cursor: "hand"
+		hint: "Pause / resume the falling pieces"
+		caption: { text: "PAUSE", offset: { 0, 0 } }
+		standard:    { fill: "@btnFill",    frame: { color: "@btnStroke", stroke: 1 }, font: @btnFont }
+		down:        { fill: "@btnDown",    frame: { color: "@btnStroke", stroke: 1 }, font: @btnFont }
+		checked:     { fill: "@btnChecked", frame: { color: "@btnStroke", stroke: 1 }, font: @btnFont }
+		checkedDown: { fill: "@btnDown",    frame: { color: "@btnStroke", stroke: 1 }, font: @btnFont }
+	}
+
+	// ---- cell legend (mirrors the board: muted = inert, colored = trigger,
+	//      colored + white inset = accent) ----
+	{
+		type: "rectangle"
+		bounds: { 34, 412, 12, 12 }
+		rounded: { 2, 2 }
+		fill: "@inert"
+	}
+	{
+		type: "caption"
+		bounds: { 50, 410, 50, 16 }
+		font: @labelFont
+		align: "middle left"
+		text: "INERT"
+	}
+	{
+		type: "rectangle"
+		bounds: { 110, 412, 12, 12 }
+		rounded: { 2, 2 }
+		fill: "@genTrig"
+	}
+	{
+		type: "caption"
+		bounds: { 126, 410, 60, 16 }
+		font: @labelFont
+		align: "middle left"
+		text: "TRIGGER"
+	}
+	{
+		type: "rectangle"
+		bounds: { 190, 412, 12, 12 }
+		rounded: { 2, 2 }
+		fill: "@genTrig"
+	}
+	{
+		type: "rectangle"
+		bounds: { 192, 414, 8, 8 }
+		rounded: { 1, 1 }
+		frame: { color: "@accentPen", stroke: 1 }
+	}
+	{
+		type: "caption"
+		bounds: { 206, 410, 60, 16 }
+		font: @labelFont
+		align: "middle left"
+		text: "ACCENT"
+	}
+
+	// ---- playback hint: hidden once transport runs; blinks while the game is
+	//      running but stopped (see updatePlayhead -> hintVisible) ----
+	{
+		type: "group"
+		bounds: { 6, 430, 260, 22 }
+		visibility: @script.hintVisible
+		views: {
+			{
+				type: "caption"
+				bounds: { 0, 0, 260, 22 }
+				font: @ctaFont
+				align: "middle center"
+				text: "PRESS PLAY IN MICROTONIC"
+			}
+		}
+	}
+@>)

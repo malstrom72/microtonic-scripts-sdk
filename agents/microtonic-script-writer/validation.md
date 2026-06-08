@@ -1,5 +1,25 @@
 # Validation
 
+## All Examples At Once
+
+To validate every bundled example package (Cushy schema, JavaScript, and static
+IVG) in one command, use the aggregate runner:
+
+```sh
+tools/validate-examples.sh
+```
+
+It runs CushyLint over each `*.mtscript` package under `examples/` plus
+`JSConsole.mtscript`, then delegates to `tools/validate-js.sh` and
+`tools/validate-static-ivg.sh`. It runs all three sections even if one fails, so
+a single run surfaces every problem, and exits non-zero if anything fails. Use
+this as the regression gate after changing an example or the shared schema; use
+the per-language tools below when working on a single script.
+
+This same script runs in CI on every push to `main` and on pull requests, via
+[`.github/workflows/validate-examples.yml`](../../.github/workflows/validate-examples.yml)
+(macOS runner, to match the prebuilt CushyLint and IVG2PNG binaries).
+
 ## JavaScript Syntax
 
 Microtonic's JavaScript engine is based on

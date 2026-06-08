@@ -1,0 +1,104 @@
+/**
+ * BeatDrop playfield renderer.
+ *
+ * @param {number} cols       board width in cells (8 channels)
+ * @param {number} rows       board height in cells
+ * @param {number} cell       cell size in pixels
+ * @param {number} zoneTop    first row (from top) of the 16-step grid = rows-16
+ * @param {color}  bg         play-space background
+ * @param {color}  zoneBg     step-grid background
+ * @param {color}  stepLine   faint step separators
+ * @param {color}  divider    line between play space and step grid
+ * @param {color}  playhead   highlight bar for the playing step row
+ * @param {color}  playEdge   bright scan-line edge on the playing row
+ * @param {color}  inert      inert (non-triggering) cell fill
+ * @param {color}  accentPen  bright inset frame marking accent cells
+ * @param {color}  ghost      landing-preview outline
+ * @param {color}  flash      solid fill for rows flashing during a line clear
+ * @param {[y][]}  flashRows  board rows to strobe white during a clear, or []
+ * @param {color}  c0..c7     per-channel colors
+ * @param {[x,y,st][]} cells       locked blocks + active piece (st: 1 inert, 2 trig, 3 accent)
+ * @param {[x,y][]}    ghostCells  landing preview
+ * @param {number}     playRow     board row currently playing, or -1
+ */
+
+format IVG-2 requires:IMPD-1
+options aa-gamma:1.8
+
+split = call [ local e; local i=0; for e in:$into [ local into.$i=$e; i={$i+1} ]; i=0; for e in:$0 [ return {$into.$i}=$e; i={$i+1} ] ]
+
+g  = {$cell - 1}
+cw = {$cols * $cell}
+bh = {$rows * $cell}
+zy = {$zoneTop * $cell}
+
+// backgrounds
+pen none
+fill $bg;     RECT 0,0,$cw,$bh
+fill $zoneBg; RECT 0,$zy,$cw,{$bh - $zy}
+
+// playing-step highlight (drawn under the cells): translucent band + bright edges
+if {$playRow >= 0} [
+	pen none
+	fill $playhead
+	RECT 0,{$playRow * $cell},$cw,$cell
+	pen $playEdge width:2
+	yt = {$playRow * $cell}
+	path svg:[M0,$yt L$cw,$yt M0,{$yt + $cell} L$cw,{$yt + $cell}]
+	pen none
+]
+
+// faint step separators inside the grid
+pen $stepLine width:1
+for i from:1 to:{$rows - $zoneTop - 1} [
+	y = {($zoneTop + $i) * $cell}
+	path svg:[M0,$y L$cw,$y]
+]
+
+// divider between play space and the step grid
+pen $divider width:1
+path svg:[M0,$zy L$cw,$zy]
+
+// landing preview
+fill none
+for p in:$ghostCells [
+	$split $p into:gx,gy
+	context [
+		offset {($cols - 1 - $gx) * $cell},{$gy * $cell}
+		pen $ghost width:1
+		RECT 1,1,{$g - 1},{$g - 1} rounded:2
+	]
+]
+
+// cells
+pen none
+for p in:$cells [
+	$split $p into:cx,cy,st
+	context [
+		// channel 1 (col 0) on the right, channel 8 (col 7) on the left -> mirror x
+		offset {($cols - 1 - $cx) * $cell},{$cy * $cell}
+		if {$st == 1} [
+			// inert: a solid muted block (occupied, but writes no trigger)
+			fill $inert
+			RECT 0.5,0.5,$g,$g rounded:2
+		] else: [
+			cc = {$cx==0?$c0:($cx==1?$c1:($cx==2?$c2:($cx==3?$c3:($cx==4?$c4:($cx==5?$c5:($cx==6?$c6:$c7))))))}
+			fill $cc
+			pen none
+			RECT 0.5,0.5,$g,$g rounded:2
+			if {$st == 3} [
+				fill none
+				pen $accentPen width:1.5
+				RECT 2,2,{$g - 3},{$g - 3} rounded:2
+				pen none
+			]
+		]
+	]
+]
+
+// line-clear strobe: flash completed rows solid (over everything) before collapse
+pen none
+fill $flash
+for fy in:$flashRows [
+	RECT 0,{$fy * $cell},$cw,$cell
+]

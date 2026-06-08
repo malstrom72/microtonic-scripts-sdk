@@ -1,0 +1,62 @@
+include: ../../Microtonic Resources/microtonic.schema
+resources: ../
+resources: ../../Microtonic Resources
+
+<view> = <microtonicView>
+
+<actions> = <microtonicAction>
+          | <polyChainStartup>
+          | <polyChainShutdown>
+          | <polyChainCapture>
+          | <polyChainUpdatePlayheads>
+          | <polyChainLoopPointer>
+
+<polyChainStartup> = {
+    action: "polyChain.startup"
+}
+
+<polyChainUpdatePlayheads> = {
+    action: "polyChain.updatePlayheads"
+}
+
+<polyChainShutdown> = {
+    action: "polyChain.shutdown"
+}
+
+<polyChainCapture> = {
+    action: "polyChain.capture"
+}
+
+<polyChainLoopPointer> = {
+    action: "polyChain.loopRows.0.pointerDown"
+} | {
+    action: "polyChain.loopRows.0.pointerUp"
+} | {
+    action: "polyChain.loopRows.1.pointerDown"
+} | {
+    action: "polyChain.loopRows.1.pointerUp"
+} | {
+    action: "polyChain.loopRows.2.pointerDown"
+} | {
+    action: "polyChain.loopRows.2.pointerUp"
+} | {
+    action: "polyChain.loopRows.3.pointerDown"
+} | {
+    action: "polyChain.loopRows.3.pointerUp"
+} | {
+    action: "polyChain.loopRows.4.pointerDown"
+} | {
+    action: "polyChain.loopRows.4.pointerUp"
+} | {
+    action: "polyChain.loopRows.5.pointerDown"
+} | {
+    action: "polyChain.loopRows.5.pointerUp"
+} | {
+    action: "polyChain.loopRows.6.pointerDown"
+} | {
+    action: "polyChain.loopRows.6.pointerUp"
+} | {
+    action: "polyChain.loopRows.7.pointerDown"
+} | {
+    action: "polyChain.loopRows.7.pointerUp"
+}
