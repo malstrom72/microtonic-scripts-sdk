@@ -1457,10 +1457,10 @@ metaTitle           <- '[title]' (!'[/title]' metaTag / metaChars)* '[/title]'
 
         can:<action>[,<params>]      // converts to `false` or `true` if it is possible to execute <action>
         checked:<action>[,<params>]  // converts to `false` or `true` if the <action> is "checked"
-        lowercase:<var>              // converts <var> to lowercase
         modifiable:<var>             // converts to `false` or `true` if <var> can be modified
-        trimmed:<var>                // trims leading and trailing whitespace from <var>
+        lowercase:<var>              // converts <var> to lowercase
         uppercase:<var>              // converts <var> to uppercase
+        trimmed:<var>                // trims leading and trailing whitespace from <var>
         translated:<var>             // runs <var> through the translation table (see `translations` in root)
         calculated:<expression>      // calculates <expression> using + - * / ( ), decimal constants and <var> lookup
         text:<text>                  // use literal <text>
