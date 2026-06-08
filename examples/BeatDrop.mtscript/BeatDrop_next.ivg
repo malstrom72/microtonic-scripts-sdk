@@ -1,0 +1,43 @@
+/**
+ * Next-piece preview (4x4). Colors encode cell state, not channel.
+ *
+ * @param {number} cell
+ * @param {color}  bg
+ * @param {color}  inert      inert (non-triggering) cell
+ * @param {color}  trig       triggering cell (channel-agnostic; piece has no column yet)
+ * @param {color}  accentPen  inset frame marking accent cells (same fill as trig)
+ * @param {[x,y,st][]} nextCells   upcoming piece cells (st: 1 inert, 2 trig, 3 accent)
+ */
+
+format IVG-2 requires:IMPD-1
+options aa-gamma:1.8
+
+split = call [ local e; local i=0; for e in:$into [ local into.$i=$e; i={$i+1} ]; i=0; for e in:$0 [ return {$into.$i}=$e; i={$i+1} ] ]
+
+g = {$cell - 1}
+
+pen none
+fill $bg
+RECT 0,0,{4 * $cell},{4 * $cell}
+
+for p in:$nextCells [
+	$split $p into:cx,cy,st
+	context [
+		offset {$cx * $cell},{$cy * $cell}
+		if {$st == 1} [
+			fill $inert
+			RECT 0.5,0.5,$g,$g rounded:2
+		] else: [
+			// trigger and accent share the fill; accent adds the white inset (like the board)
+			fill $trig
+			pen none
+			RECT 0.5,0.5,$g,$g rounded:2
+			if {$st == 3} [
+				fill none
+				pen $accentPen width:1.5
+				RECT 2,2,{$g - 3},{$g - 3} rounded:2
+				pen none
+			]
+		]
+	]
+]

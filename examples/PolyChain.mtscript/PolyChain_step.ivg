@@ -1,0 +1,12 @@
+/**
+ * One 12x16 step cell: filled rounded-rect with a thin frame.
+ * @param {color} fill   cell body colour
+ * @param {color} frame  cell border colour
+ */
+
+format IVG-2 requires:IMPD-1
+bounds 0,0,12,16
+
+fill $fill
+pen $frame width:0.75
+path svg:M1,2H11V14H1Z

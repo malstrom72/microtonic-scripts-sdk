@@ -1,0 +1,12 @@
+/**
+ * Loop start/end marker bracket inside a 12x16 cell.
+ * @param {color}  color  stroke colour
+ * @param {string} d      SVG path for the bracket glyph
+ */
+
+format IVG-2 requires:IMPD-1
+bounds 0,0,12,16
+
+fill none
+pen $color width:1.8 caps:square joints:miter
+path svg:$d

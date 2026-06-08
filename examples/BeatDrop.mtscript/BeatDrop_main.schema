@@ -1,0 +1,13 @@
+include: ../../Microtonic Resources/microtonic.schema
+resources: ../
+resources: ../../Microtonic Resources
+
+<actions> = <microtonicAction>
+        | { action: "beatdrop.startup" }
+        | { action: "beatdrop.tick" }
+        | { action: "beatdrop.rotate" }
+        | { action: "beatdrop.hardDrop" }
+        | { action: "beatdrop.newGame" }
+        | { action: "beatdrop.pause" }
+
+<view> = <microtonicView>
