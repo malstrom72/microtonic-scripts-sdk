@@ -1455,14 +1455,16 @@ metaTitle           <- '[title]' (!'[/title]' metaTag / metaChars)* '[/title]'
     A meta variable can be used anywhere a <var> is used. They are always read-only. The following meta variables are
     supported:
 
-        can:<action>[,<params>]     // converts to `false` or `true` if it is possible to execute <action>
-        checked:<action>[,params>]  // converts to `false` or `true` if it the <action> is "checked"
-        lowercase:<var>             // converts <var> to lowercase
-        uppercase:<var>             // converts <var> to uppercase
-        translated:<var>            // runs <var> through the translation table (see `translations` in root)
-        calculated:<expression>     // calculates <expression> using + - * / ( ), decimal constants and <var> lookup
-        text:<text>                 // use literal <text>
-        metatext:<text>             // use <text> processed with meta tags
+        can:<action>[,<params>]      // converts to `false` or `true` if it is possible to execute <action>
+        checked:<action>[,<params>]  // converts to `false` or `true` if the <action> is "checked"
+        lowercase:<var>              // converts <var> to lowercase
+        modifiable:<var>             // converts to `false` or `true` if <var> can be modified
+        trimmed:<var>                // trims leading and trailing whitespace from <var>
+        uppercase:<var>              // converts <var> to uppercase
+        translated:<var>             // runs <var> through the translation table (see `translations` in root)
+        calculated:<expression>      // calculates <expression> using + - * / ( ), decimal constants and <var> lookup
+        text:<text>                  // use literal <text>
+        metatext:<text>              // use <text> processed with meta tags
 
     FUTURE: check actions and params of these too somehow (maybe also variables).
     TODO: add 'editable: <variable>' to cushy?

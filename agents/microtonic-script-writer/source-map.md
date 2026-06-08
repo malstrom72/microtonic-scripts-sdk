@@ -29,7 +29,8 @@ Use these repository files as the grounding map for Microtonic scripting work.
   and a map of where each part of Cushy is documented. Start here, then drill
   into the schema for exact syntax.
 - [`CushyLint/cushy.schema`](../../CushyLint/cushy.schema): official `.cushy`
-  format reference, view types, built-in actions, schema rules, and comments.
+  format reference, view types, built-in actions, meta text and meta variables,
+  schema rules, and comments.
 - [`Microtonic Resources/microtonic.schema`](../../Microtonic%20Resources/microtonic.schema):
   Microtonic-specific schema additions.
 - [`Microtonic Resources/`](../../Microtonic%20Resources/): Microtonic GUI

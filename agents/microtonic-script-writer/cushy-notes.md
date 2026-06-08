@@ -13,6 +13,23 @@ scaling, and what is static versus dynamic — start with
 [`docs/Cushy Documentation.md`](../../docs/Cushy%20Documentation.md). This file
 picks up where that one leaves off, with practical gotchas and patterns.
 
+## Meta Text And Meta Variables
+
+Cushy `<metaText>` fields support tags such as `[var]...[/var]`,
+`[trim]...[/trim]`, `[mac]...[/mac]`, and `[windows]...[/windows]`. Inside
+`[var]...[/var]`, meta variables can be used anywhere a variable can be used.
+
+Examples:
+
+```cushy
+hint: "Channel [var]calculated:@index+1[/var]"
+variable: "can:undo"
+variable: "can:@script.@parameter.rotation,@inc"
+```
+
+See [`CushyLint/cushy.schema`](../../CushyLint/cushy.schema) for the full strict
+syntax.
+
 ## scriptRoot Convention
 
 Always define `@scriptRoot` at the top of every `.cushy` file and use it
