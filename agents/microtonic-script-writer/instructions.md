@@ -98,8 +98,9 @@ Recommended bootstrap phase order:
 
 1. Create `AGENTS.md`, `.mcp.json` for Claude Code compatibility, `scripts/`,
    and `references/microtonic-scripts-sdk/`.
-2. Ask the user whether to link Microtonic's live scripts folder to project
-   `scripts/`; do not proceed with live scripts changes until this is answered.
+2. Resolve the current live scripts folder state, then ask the user whether to
+   link Microtonic's live scripts folder to project `scripts/`; do not proceed
+   with live scripts changes until this is answered.
 3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
    If copied into project `scripts/`, rewrite the copied schema paths as
    described below.
@@ -188,6 +189,16 @@ During bootstrap, first ask whether the user wants to link Microtonic's live
 scripts folder to the project `scripts/` folder for development. Linking is not
 an alternative to installing JSConsole; it only decides which folder Microtonic
 will read scripts from.
+
+Before treating project `scripts/` as the live folder or deploying anything
+there, check whether the existing live `Microtonic Scripts` folder is already a
+symlink or junction. On macOS, inspect
+`/Library/Application Support/Sonic Charge/Microtonic Scripts` with `ls -ld` and
+`readlink`. If it points somewhere outside the current project, do not write
+into that target and do not assume local edits are live. Ask the user how to
+proceed: relink with the documented `osascript ... with administrator
+privileges` flow, copy the package to the current live folder, or let the user
+deploy manually.
 
 Do not create the linked development folder automatically. The linked setup
 copies Microtonic's entire current `Microtonic Scripts` folder into the project

@@ -963,6 +963,13 @@ specifying a color is as follows:
               | ( aqua|black|blue|fuchsia|gray|green|lime|maroon
                   |navy|olive|purple|red|silver|teal|white|yellow )
 
+-   `rgb(...)` and `hsv(...)` color literals must reach IVG as one argument. In ordinary unquoted IVG source, write
+    their components comma-separated with no internal whitespace, such as `hsv(0.6,0.2,1.0)`, not
+    `hsv(0.6, 0.2, 1.0)`, because ImpD splits arguments on whitespace before IVG parses the color. If you want spaces,
+    keep the color literal in one ImpD argument with quotes, brackets, or escaped spaces, for example
+    `pen "hsv(0.6, 0.2, 1.0)"` or `pen [hsv(0.6, 0.2, 1.0)]`. Use `{...}` for per-component expressions, such as
+    `hsv(0.6,{0.2+0.55*$t},1.0)`.
+
 -   The `rgb` alternative specifies the color using the red, green, and blue components. The values for `<r>`, `<g>`,
     and `<b>` are decimal numbers between 0 and 1, representing the intensity of each component. The optional
     `<opacity>` value is also a decimal number between 0 and 1, where 0 is full transparency, and 1 is full opacity.

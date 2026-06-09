@@ -53,7 +53,9 @@ When bootstrapping an empty project, keep the user-facing sequence clear:
 1. Create the project scaffold: `AGENTS.md`, `.mcp.json` for Claude Code
    compatibility, `scripts/`, and `references/microtonic-scripts-sdk/`.
 2. Ask whether to link Microtonic's live scripts folder to project `scripts/`.
-   Do not call bootstrap complete while this decision is pending.
+   First verify whether the existing live scripts folder is already a symlink or
+   junction to another workspace. Do not call bootstrap complete while this
+   decision is pending.
 3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
    If it is copied into project `scripts/`, fix the copied schema paths.
 4. Register the bridge MCP server for the active assistant.
@@ -104,6 +106,13 @@ aside as a backup, and may require elevated permissions. Linking is not an
 alternative to installing the SDK `JSConsole.mtscript`; it only decides whether
 JSConsole should be copied into the live `Microtonic Scripts` folder directly or
 into project `scripts/` after Microtonic's scripts folder has been linked there.
+
+Before treating project `scripts/` as live, verify the current live scripts
+folder target. On macOS, inspect
+`/Library/Application Support/Sonic Charge/Microtonic Scripts` with `ls -ld` and
+`readlink`. If it already links to a different workspace, do not write through
+that link. Ask whether to relink it to this project, copy the package to the
+current live folder, or let the user deploy manually.
 
 On macOS, if elevated permission blocks the link step, the assistant should ask
 for approval and use `osascript` with administrator privileges to complete the
