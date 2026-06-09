@@ -54,7 +54,7 @@ separated by comma).
 Comments are written in C++ style:
 
 	// single line comment
-
+	
 	/*
 	    multi
 	    -line
@@ -109,10 +109,10 @@ Brackets are one of three different techniques that exist for including spaces i
 	    linefeeds, etc., are joined into one single space character. Also, /* comments
 	    are removed */.
 	]
-
+	
 	TEXT Backslash\ can\ escape\ spaces\
 	and\ even\ linefeeds
-
+	
 	TEXT "Quotes will preserve spaces exactly
 	    including tabs, linefeeds, etc., and no $var_expansion is performed."
 
@@ -145,11 +145,11 @@ Notice: semicolon terminates a variable assignment line too. E.g.:
 	// $brokenLine will be `trace A` only:
 	brokenLine=trace A; trace B
 	$brokenLine
-
-	// This on the other hand will trace A, then B,
-	// $wholeLine will be `[trace A; trace B]`:
-	wholeLine=[trace A; trace B]
-	$wholeLine
+ 	
+ 	// This on the other hand will trace A, then B,
+ 	// $wholeLine will be `[trace A; trace B]`:
+ 	wholeLine=[trace A; trace B]
+ 	$wholeLine
 
 ### Expressions
 
@@ -162,7 +162,7 @@ operations are supported (in order of descending precedence):
 | `{$myVar}`       | `???`   | variable lookup                                        |
 | `{$number$i}`    | `???`   | spliced variable name lookup (same as `{$(number$i)}`) |
 | `{2 ** 3}`       | `8`     | exponentiation                                         |
-| `{10%}`          | `0`.1   | percentage                                             |
+| `{10%}`          | `0.1`   | percentage                                             |
 | `{"b"{1}}`       | `b`     | indexing (first character is `{0}`)                    |
 | `{"abcde"{1:2}}` | `bc`    | substring (`{offset:length}`)                          |
 | `{!(5 < 3)}`     | `yes`   | logical not                                            |
@@ -200,7 +200,7 @@ string as it would be processed outside curly brackets. E.g.:
 	myVar = 99
 	trace {[$myVar bottles of beer]}
 	trace $myVar bottles of beer
-
+	
 	// But this one will concatenate all strings to 99bottlesofbeer:
 	trace {$myVar bottles of beer}
 
@@ -239,7 +239,7 @@ There is also a single constant: `pi`.
 The `call` instruction parses the unlabeled `args` into `$0` and up (labeled arguments go into `$<name>`) and then
 executes the `body` code in a new _function frame_:
 
-	call <body> [args ...]
+	call <body> [args ...]                                              
 
 `body` is usually a variable that contains the function definition. For example:
 
@@ -253,7 +253,7 @@ executes the `body` code in a new _function frame_:
 		]
 		return $0 = $y
 	]
-
+ 	
 	local result
 	call $fibonacci result 10
 	trace the 10th fibonacci number is $result
@@ -262,9 +262,9 @@ Another choice is to put the `call` instruction in the function definition inste
 
 	sum = [ return $0 = {$1 + $2} ]
 	call $sum x 123 456
-
+ 	
 	// Can also be written like this:
-
+ 	
 	sum = call [ return $0 = {$1 + $2} ]
 	$sum x 123 456
 
@@ -290,7 +290,7 @@ Notice that _ImpD_ uses *dynamic* scoping. All local variables of the caller are
 
 The `_debug` instruction is for testing only:
 
-	_debug [expand:(yes|no)=no] [args ...]
+	_debug [expand:(yes|no)=no] [args ...]                                
 
 It outputs the specified `args` after optional "preprocessing" according to the `expand` parameter.
 
@@ -311,7 +311,7 @@ Examples:
 	for i from:1 to:5 [
 		trace $i
 	]
-
+ 	
 	// This example traces:
 	// 	orange
 	// 	banana
@@ -417,11 +417,11 @@ Here is an example of using faux key/value structures:
 		fill {$($0).color}
 		ellipse {$($0).x},{$($0).y},{$($0).size}
 	]
-
+ 	
 	ballA.color=yellow; ballA.size=5;  ballA.x=23;  ballA.y=50
 	ballB.color=lime;   ballB.size=25; ballB.x=77;  ballB.y=33
 	ballC.color=red;    ballC.size=13; ballC.x=133; ballC.y=20
-
+ 	
 	$drawBall ballA
 	$drawBall ballB
 	$drawBall ballC

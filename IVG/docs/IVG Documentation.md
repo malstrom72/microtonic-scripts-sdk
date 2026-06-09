@@ -389,7 +389,7 @@ Demonstration:
     /*
         The shear transformation creates a slant, and the tracking value increases the space
         between letters. IVG in itself has no built-in fonts, but "serif", "sans-serif" and
-        "code" are used when creating this documentation (and they are included in ivgfiddle).
+        "monospace" are used when creating this documentation (and they are included in ivgfiddle).
     */
     font serif size:$size color:hsv(0.47,0.3,0.9) outline:black
         .. transform:[shear -0.3,0] tracking:0.1
@@ -893,7 +893,7 @@ Demonstration of different stroke styles:
     
     // Wipe canvas and setup styles.
     WIPE #F0F0D0
-    font code size:16
+    font monospace size:16
     pen #202040 width:20 caps:butt joints:miter
     fill none
     
@@ -963,6 +963,13 @@ specifying a color is as follows:
               | ( aqua|black|blue|fuchsia|gray|green|lime|maroon
                   |navy|olive|purple|red|silver|teal|white|yellow )
 
+-   `rgb(...)` and `hsv(...)` color literals must reach IVG as one argument. In ordinary unquoted IVG source, write
+    their components comma-separated with no internal whitespace, such as `hsv(0.6,0.2,1.0)`, not
+    `hsv(0.6, 0.2, 1.0)`, because ImpD splits arguments on whitespace before IVG parses the color. If you want spaces,
+    keep the color literal in one ImpD argument with quotes, brackets, or escaped spaces, for example
+    `pen "hsv(0.6, 0.2, 1.0)"` or `pen [hsv(0.6, 0.2, 1.0)]`. Use `{...}` for per-component expressions, such as
+    `hsv(0.6,{0.2+0.55*$t},1.0)`.
+
 -   The `rgb` alternative specifies the color using the red, green, and blue components. The values for `<r>`, `<g>`,
     and `<b>` are decimal numbers between 0 and 1, representing the intensity of each component. The optional
     `<opacity>` value is also a decimal number between 0 and 1, where 0 is full transparency, and 1 is full opacity.
@@ -995,7 +1002,7 @@ Colors example:
         RECT 0,0,10,10
         RECT 10,10,20,20
     ]
-    font code size:16 color:white outline:[black width:2]
+    font monospace size:16 color:white outline:[black width:2]
     pen white width:1
     
     // Iterate through all named colors and some other examples.
@@ -1082,7 +1089,7 @@ Gradient demonstration:
 
 `<paint>` is used in many directives, such as [`pen`](#pen), [`fill`](#fill), [`font`](#font), and others. It can be a
 solid [`<color>`](#color-specification) specification, a [gradient](#gradient-specification), or a
-[pattern](#pattern-specification). The paint specification provides different ways of specifying how the paint should
+pattern. The paint specification provides different ways of specifying how the paint should
 look like. You can select a solid color, a gradient of colors, or a pattern.
 
     <paint> = <color> | gradient:<gradient> | pattern:<instructions>

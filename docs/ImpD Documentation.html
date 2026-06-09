@@ -377,7 +377,7 @@ operations are supported (in order of descending precedence):</p>
 </tr>
 <tr>
 <td style="text-align: left;"><code>{10%}</code></td>
-<td style="text-align: left;"><code>0</code>.1</td>
+<td style="text-align: left;"><code>0.1</code></td>
 <td style="text-align: left;">percentage</td>
 </tr>
 <tr>
@@ -699,14 +699,18 @@ requirements:</p>
 <pre><code>format &lt;id&gt; [uses:&lt;id&gt;[,&lt;id&gt;,...]] [requires:&lt;id&gt;[,&lt;id&gt;,...]]</code></pre>
 <p>The <code>id</code> is typically in the form of
 <code>&lt;name&gt;-&lt;version&gt;</code>. The <code>uses</code>
-parameter specifies meta tags <code>id</code>s. The
-<code>requires</code> parameter specifies the baseline <em>ImpD</em>
-(e.g. <code>ImpD-1</code>) and any custom extensions. If the parser does
-not recognize a required <code>id</code>, it cannot load the file.</p>
-<p>Including a <code>format</code> instruction in your <em>ImpD</em>
-document is good practice, although not strictly necessary. It should be
-the first instruction in your document, and no more than one
-<code>format</code> instruction should be present.</p>
+parameter lists meta tokens <code>&lt;id&gt;-&lt;version&gt;</code> that
+the document may issue later, while <code>requires</code> specifies the
+baseline <em>ImpD</em> (for example <code>impd-1</code>) and any custom
+extensions. If the parser does not recognize a required <code>id</code>,
+it cannot load the file.</p>
+<p>The interpreter enforces that only one <code>format</code>
+instruction appears per document. Each embedded sub-document (for
+example an inline font) receives its own fresh format scope. Because
+<code>uses:</code> entries are recorded verbatim, any later
+<code>meta</code> instruction must match one of the declared
+<code>&lt;id&gt;-&lt;version&gt;</code> tokens or it will fail with a
+syntax error.</p>
 <h4 id="if">if</h4>
 <p>The <code>if</code> instruction executes a code <code>body</code> if
 a <code>condition</code> is <code>yes</code> (otherwise, it executes an
@@ -733,10 +737,15 @@ You cannot create a local variable with a name that already exist.</p>
 <p>The <code>meta</code> instruction is akin to a comment for the client
 software or a vendor-specific instruction:</p>
 <pre><code>meta &lt;id&gt; ...</code></pre>
-<p>The <code>id</code> must be a unique identifier. The <a
-href="#format"><code>format</code></a> instruction should have listed it
-in the <code>uses</code> argument. Unknown <code>id</code>s are
-ignored.</p>
+<p>The <code>&lt;id&gt;</code> must have been declared by the <a
+href="#format"><code>format</code></a> instruction’s <code>uses:</code>
+list. You may reference an explicit
+<code>&lt;id&gt;-&lt;version&gt;</code> token (for example
+<code>meta snapshot-1</code>) or omit the version to have the
+interpreter resolve the highest declared version for that identifier. If
+a meta token was not declared—or requests a version that was never
+listed—the interpreter throws a syntax error. Executors are still
+allowed to ignore recognized metas silently.</p>
 <h4 id="repeat">repeat</h4>
 <p>The <code>repeat</code> instruction repeats a code <code>body</code>
 either until the <code>condition</code> is not <code>yes</code> or the

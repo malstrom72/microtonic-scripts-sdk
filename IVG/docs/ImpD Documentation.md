@@ -162,7 +162,7 @@ operations are supported (in order of descending precedence):
 | `{$myVar}`       | `???`   | variable lookup                                        |
 | `{$number$i}`    | `???`   | spliced variable name lookup (same as `{$(number$i)}`) |
 | `{2 ** 3}`       | `8`     | exponentiation                                         |
-| `{10%}`          | `0`.1   | percentage                                             |
+| `{10%}`          | `0.1`   | percentage                                             |
 | `{"b"{1}}`       | `b`     | indexing (first character is `{0}`)                    |
 | `{"abcde"{1:2}}` | `bc`    | substring (`{offset:length}`)                          |
 | `{!(5 < 3)}`     | `yes`   | logical not                                            |
