@@ -33,6 +33,7 @@ The following tools are only needed for **SDK maintenance** tasks, not for every
 
 - **C++ compiler** (Xcode/`g++` on macOS, MSVC on Windows) — only needed if the prebuilt `IVG2PNG` binary in `tools/IVG2PNG/` cannot run on your platform (e.g. a Linux machine, or after an upstream update). The validation scripts auto-build from source in that case. `IVG2PNG` renders `.ivg` files to PNG for visual validation and is sourced from the upstream [IVG repository](https://github.com/malstrom72/IVG).
 - **Python 3** — required to run `tools/bootstrap-docling.sh`, which installs [Docling](https://github.com/DS4SD/docling) into a local virtual environment. Docling is used for the one-off task of converting the Microtonic PDF user guide to Markdown (`tools/convert-user-guide.sh`).
+- **Pandoc** — required to regenerate the checked-in HTML copies of Markdown reference docs.
 
 ## Technology Overview
 
@@ -78,6 +79,19 @@ Here is a brief list of the technologies used in Microtonic GUIs:
 - `tools`: utilities for maintaining generated documentation and repository support files.
 
 - `tmLanguages`: syntax highlighting support for Sonic Charge formats and languages.
+
+## Maintaining Documentation
+
+Most reference documentation is edited as Markdown under `docs/`. Some files also have checked-in `.html` copies for
+offline viewing. After editing a Markdown file with a matching HTML file, regenerate the HTML with:
+
+```sh
+tools/regenerate-doc-html.sh "docs/Microtonic JS Reference.md"
+```
+
+Run `tools/regenerate-doc-html.sh` with no arguments to regenerate every Markdown file in `docs/` that already has a
+checked-in HTML target. The script uses `pandoc -s --no-highlight` so regenerated output stays close to the existing
+plain code-block style.
 
 ### Cushy
 

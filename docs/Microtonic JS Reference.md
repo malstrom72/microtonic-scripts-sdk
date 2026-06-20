@@ -533,16 +533,47 @@ snapshot-then-mutate. Calling it after the change records the already-modified s
 
 The undo snapshot does not include a script's own JavaScript state, such as global variables, GUI-local selection state,
 drag state, caches, or generated display buffers. Undo or redo can therefore rewind the document while a running GUI
-script's derived state is left unchanged. GUI scripts that mirror or derive from document state should reconcile after
-external document changes, for example by watching `getElementId` for the relevant element and re-reading only when the
-id changes. If the script depends on the selected drum channel, also watch `selected('channel')`; channel selection is
-not part of the preset data.
+script's JavaScript state is left unchanged. GUI scripts that keep their own state should reconcile it against the
+document after undo, redo, and other external document changes.
+
+#### Script state, undo and reconciliation
+
+For simple state that is derived from the document, reconciliation can be as small as watching `getElementId` for the
+relevant element and rebuilding the cache when the id changes. If the script depends on selection, also watch the
+selection explicitly, for example `selected('channel')` or `selected('pattern')`; selection is not part of the preset
+data and does not by itself change the preset id.
+
+Generator scripts often need a stronger pattern. A generator may produce document state from inputs that cannot be read
+back from the document alone. For example, `examples/PolyChain.mtscript` generates chained patterns from a captured
+source pattern and per-channel loop windows, and `examples/BeatSpace.mtscript` generates drum patch and pattern data
+from latent points. The generated document data is not enough to recover those inputs later.
+
+A common reconciliation pattern is:
+
+1. Call `saveUndo(label)` immediately before changing the document.
+2. Write the generated document state with `setElement` or parameter setters.
+3. Compute a content hash for the generated document region and memoize the generator inputs under that hash.
+4. Mark the write as your own by storing the new `getElementId` value immediately after the write. This prevents the
+   script's next sync check from treating its own output as an external edit.
+5. On a sync check, watch the relevant document id plus any relevant selection values. When they change, hash the current
+   document region and look it up in the memoized history.
+6. If the hash is found, restore the matching generator inputs so the GUI matches the document. If the hash is missing,
+   treat the script as out of sync with the document and disable or visually mark controls that would otherwise imply the
+   GUI state still describes the document.
+
+Keep the memoized history bounded when a script can generate many distinct states during a session. `PolyChain` uses this
+full pattern, including a bounded hash history and explicit synced / out-of-sync UI state. `BeatSpace` uses hash-based
+recognition for generated channel data and also embeds a human-readable `BeatSpace x;y` tag in each generated drum
+channel name as a legible anchor.
 
 For a continuous gesture such as a drag, call `saveUndo` once at the gesture's first document-changing update, not on
 every mouse move. If `collapse` is `true` and `label` is identical to the last element in the undo history, Microtonic
-will not create a new snapshot (use for repeated actions to avoid "spamming" the undo history). Notice that calling this
-function is rarely necessary for GUI-less scripts since they automatically save an undo snapshot when they detect a
-change of the Microtonic state.
+will not create a new snapshot (use for repeated actions to avoid "spamming" the undo history).
+
+GUI-less scripts are one-shot scripts without a running Cushy interface. They normally do not need to call `saveUndo`
+because Microtonic automatically adds an undo snapshot for a GUI-less script execution when that execution changes the
+Microtonic state. GUI scripts stay loaded and can perform multiple independent edits over time, so they should create
+their own undo snapshots before each user-visible document change.
 
 See also: [getElementId](#getelementid), [Cushy Interface](#cushy-interface), [translate](#translate)
 
