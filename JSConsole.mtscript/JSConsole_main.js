@@ -16,7 +16,7 @@ if (!this.jsConsole) {
 		opacity: 100,
 		globals: this,
 		knownGlobals: { },
-		bridge: { on: false, lastSeq: 0 }
+		bridge: { on: false, lastSeq: 0, base: '' }
 	}
 }
 
@@ -219,14 +219,15 @@ Object.assign(jsConsole, {
 		with the host by a monotonic `seq`; a request is evaluated only when its
 		seq advances past the last one handled.
 	*/
-	bridgeBase: function() {
+	bridgeDefaultBase: function() {
 		return (PLATFORM.OS == 'mac')
 			? '/Users/Shared/Sonic Charge/Microtonic/jsconsole-bridge/'
 			: 'C:/Users/Public/Sonic Charge/Microtonic/jsconsole-bridge/';
 	},
 	bridgeOn: function() {
 		var jc = this;
-		var base = jc.bridgeBase();
+		var base = jc.bridgeDefaultBase();
+		jc.bridge.base = base;
 		jc.bridge.lastSeq = 0;
 		try {
 			var req = JSON.parse(load(base + 'request.json'));
@@ -253,7 +254,7 @@ Object.assign(jsConsole, {
 	bridgeStatus: function() {
 		var jc = this;
 		print("Bridge is " + (jc.bridge.on ? "ON" : "OFF") + ".");
-		print("Base: " + jc.bridgeBase());
+		print("Base: " + (this.bridge.base || this.bridgeDefaultBase()));
 		if (jc.bridge.on) {
 			print("Last handled seq: " + jc.bridge.lastSeq);
 		}
@@ -278,18 +279,18 @@ Object.assign(jsConsole, {
 		var jc = this;
 		var captured = '';
 		var result = { ok: true, value: '', output: '', error: '' };
+		var savedPrint = print;
 		/*
 			Echo the incoming command into the console so the user sees what the
 			host is doing, then capture print() output while still showing it.
 		*/
-		jc.printNoLF("BRIDGE> " + code + '\n');
-		var savedPrint = print;
-		print = function(s) {
-			captured += s + '\n';
-			jc.printNoLF(s + '\n');
-			jc.realPrint(s);
-		};
 		try {
+			jc.printNoLF("BRIDGE> " + code + '\n');
+			print = function(s) {
+				captured += s + '\n';
+				jc.printNoLF(s + '\n');
+				jc.realPrint(s);
+			};
 			_ = eval.call(null, code);
 			result.value = jc.bridgeStringify(_);
 			jc.printNoLF("  = " + result.value + '\n');
@@ -305,40 +306,56 @@ Object.assign(jsConsole, {
 		return result;
 	},
 	bridgeTick: function() {
-		var jc = this;
-		if (!jc.bridge.on) {
-			return;
-		}
-		var base = jc.bridgeBase();
-		var text;
 		try {
-			text = load(base + 'request.json');
-		} catch (e) {
-			return;		// folder / file not present yet, keep waiting
-		}
-		var req;
-		try {
-			req = JSON.parse(text);
-		} catch (e) {
-			return;		// partial or invalid write, try again next tick
-		}
-		if (!req || typeof req.seq != 'number' || req.seq <= jc.bridge.lastSeq) {
-			return;
-		}
-		jc.bridge.lastSeq = req.seq;
-		var r = jc.bridgeEval('' + req.code);
-		var response = {
-			seq: req.seq,
-			ok: r.ok,
-			value: r.value,
-			output: r.output,
-			error: r.error
-		};
-		try {
-			save(base + 'response.json', JSON.stringify(response));
-		} catch (e) {
-			print("!!! bridge: failed to write response: " + e);
-		}
+			var jc = this;
+			if (!jc.bridge.on) {
+				return;
+			}
+			var base = jc.bridge.base;
+			if (!base) {
+				return;
+			}
+			var text;
+			try {
+				text = load(base + 'request.json');
+			} catch (e) {
+				return;		// folder / file not present yet, keep waiting
+			}
+			var req;
+			try {
+				req = JSON.parse(text);
+			} catch (e) {
+				return;		// partial or invalid write, try again next tick
+			}
+			if (!req || typeof req.seq != 'number' || req.seq <= jc.bridge.lastSeq) {
+				return;
+			}
+			jc.bridge.lastSeq = req.seq;
+			var response;
+			try {
+				var r = jc.bridgeEval('' + req.code);
+				response = {
+					seq: req.seq,
+					ok: r.ok,
+					value: r.value,
+					output: r.output,
+					error: r.error
+				};
+			} catch (e) {
+				response = {
+					seq: req.seq,
+					ok: false,
+					value: '',
+					output: '',
+					error: '' + e
+				};
+			}
+			try {
+				save(base + 'response.json', JSON.stringify(response));
+			} catch (e) {
+				print("!!! Failed to write bridge response: " + e);
+			}
+		} catch (e) { }
 	},
 	minimize: {
 		execute: function() { jsConsole.minimized = !jsConsole.minimized; },
