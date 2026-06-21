@@ -430,9 +430,6 @@ The repository documents environment constraints that should shape answers:
 - When using a standard moveable and closable window pattern, make sure the
   close control is actually wired to a working close action rather than only
   being visually present.
-- For generation tools that derive from the current pattern and then overwrite
-  patterns, capture a stable source-pattern snapshot when the script opens and
-  generate from that snapshot rather than from partially overwritten live data.
 
 ## Script Type Selection
 

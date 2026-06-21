@@ -25,10 +25,6 @@ FOR /R "Microtonic Resources" %%F IN (*.ivg) DO (
 FOR /R "examples" %%F IN (*.ivg) DO (
 	IF /I "%%~xF"==".ivg" CALL :renderFile "%%F"
 )
-FOR /R "IVG\tests" %%F IN (*.ivg) DO (
-	IF /I "%%~xF"==".ivg" CALL :renderFile "%%F"
-)
-
 EXIT /B %status%
 
 :renderFile

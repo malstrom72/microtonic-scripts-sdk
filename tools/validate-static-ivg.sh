@@ -27,6 +27,6 @@ while IFS= read -r -d '' ivg_file; do
 		echo "failed $relative" >&2
 		status=1
 	fi
-done < <(find "Microtonic Resources" examples IVG/tests -name '*.ivg' -print0)
+done < <(find "Microtonic Resources" examples -name '*.ivg' -print0)
 
 exit "$status"

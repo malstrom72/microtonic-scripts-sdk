@@ -859,20 +859,16 @@ contains two subdirectories:
 Scanning `DIRS.PRESETS + 'All/'` is the simplest way to access the full
 factory preset library from a script.
 
-### `dir()` extensionFilter excludes directories
+### `dir()` extension filters
 
-When an `extensionFilter` argument is passed to `dir()`, the JS Reference
-states that *"only files with the given extension(s) are returned"* — and in
-practice **directories are excluded** from the result. This silently breaks
-recursive scanning: the subdirectories are never seen, so recursion never
-happens and the file list stays empty.
-
-**Rule:** when a scan must recurse into subdirectories, always call `dir(path)`
-with **no filter**, then test the extension manually on non-directory entries:
+`dir(path, extensionFilter)` accepts an extension string without the leading
+dot. In Microtonic, the filter returns only files with that extension; it does
+not include subdirectories. When a scan must recurse, call `dir(path)` with no
+filter and test file extensions manually on non-directory entries:
 
 ```javascript
 function scanDir(path) {
-    var entries = dir(path);          // no filter — directories are included
+    var entries = dir(path);
     for (var i = 0; i < entries.length; ++i) {
         var e = entries[i];
         if (e.isDirectory) {
@@ -884,6 +880,5 @@ function scanDir(path) {
 }
 ```
 
-Using an extension filter — e.g. `dir(path, 'mtdrum')` — is safe only for
-known-flat directories (such as `DIRS.DRUM_PATCHES + 'All/'`) where no
-subdirectories need to be traversed.
+Use a filter such as `dir(path, 'mtdrum')` only for known-flat directories
+where subdirectories do not need to be traversed.
