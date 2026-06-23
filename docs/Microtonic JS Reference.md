@@ -83,6 +83,15 @@ The JavaScript engine in Microtonic is based on
 to be small, fast, and easy to integrate into existing products. It is fully ECMAScript 3 compliant with partial
 ECMAScript 5 support.
 
+**Known issue in currently shipped builds:** `Math.round()` does not coerce a string argument to a
+number before rounding. It evaluates `floor(x + 0.5)` without a `ToNumber` first, so a string makes
+the `+ 0.5` concatenate: `Math.round("7")` returns `70` (`"7" + 0.5` -> `"70.5"`), while
+`Math.round("7.5")` and `Math.round("-3.4")` return `NaN`. This matters because GUI-variable setters
+receive their value as a string, so any control value you round must be coerced first:
+`Math.round(+value)`. Only `Math.round` is affected; `Math.floor`, `Math.ceil`, `Math.abs`, and the
+other numeric `Math` functions coerce correctly. This is fixed in NuXJS and will be corrected in a
+future Microtonic build.
+
 ECMAScript 3 was chosen because it was the first widely adopted standardized version of JavaScript. It is a version many
 programmers are familiar with, and it has everything you need from a scripting language. Naturally, more recent
 versions of ECMAScript offer improvements but at the cost of larger standard libraries and more complex
@@ -1046,6 +1055,9 @@ variables:
   value.
 - Finally, if the variable name is not referring to an existing JS variable, Cushy will create a Cushy-only variable
   (not visible from Javascript). Never do this in a script, please!
+
+If a setter rounds the incoming value, coerce first with unary `+` (`Math.round(+value)`) to avoid the
+shipped-engine `Math.round` string bug described under [Engine](#engine).
 
 Here is an example of using a "setter" and "getter" function for a GUI variable that performs a transformation of the
 knob value to logarithmic scale:

@@ -267,6 +267,20 @@ href="https://github.com/malstrom72/NuXJS">NuXJS</a>, a sandboxed
 JavaScript engine written by Magnus Lidström. It was designed to be
 small, fast, and easy to integrate into existing products. It is fully
 ECMAScript 3 compliant with partial ECMAScript 5 support.</p>
+<p><strong>Known issue in currently shipped builds:</strong>
+<code>Math.round()</code> does not coerce a string argument to a number
+before rounding. It evaluates <code>floor(x + 0.5)</code> without a
+<code>ToNumber</code> first, so a string makes the <code>+ 0.5</code>
+concatenate: <code>Math.round("7")</code> returns <code>70</code>
+(<code>"7" + 0.5</code> -&gt; <code>"70.5"</code>), while
+<code>Math.round("7.5")</code> and <code>Math.round("-3.4")</code>
+return <code>NaN</code>. This matters because GUI-variable setters
+receive their value as a string, so any control value you round must be
+coerced first: <code>Math.round(+value)</code>. Only
+<code>Math.round</code> is affected; <code>Math.floor</code>,
+<code>Math.ceil</code>, <code>Math.abs</code>, and the other numeric
+<code>Math</code> functions coerce correctly. This is fixed in NuXJS and
+will be corrected in a future Microtonic build.</p>
 <p>ECMAScript 3 was chosen because it was the first widely adopted
 standardized version of JavaScript. It is a version many programmers are
 familiar with, and it has everything you need from a scripting language.
@@ -1222,6 +1236,10 @@ string value.</li>
 variable, Cushy will create a Cushy-only variable (not visible from
 Javascript). Never do this in a script, please!</li>
 </ul>
+<p>If a setter rounds the incoming value, coerce first with unary
+<code>+</code> (<code>Math.round(+value)</code>) to avoid the
+shipped-engine <code>Math.round</code> string bug described under <a
+href="#engine">Engine</a>.</p>
 <p>Here is an example of using a “setter” and “getter” function for a
 GUI variable that performs a transformation of the knob value to
 logarithmic scale:</p>
