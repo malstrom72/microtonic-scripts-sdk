@@ -873,7 +873,7 @@ Syntax:
 -   The `caps` option sets the shape at the end of open paths. The possible values are `butt`, `round`, and `square`.
     The initial value is `butt`.
 
--   The `joints` option sets the shape at the corners of paths. The possible values are `bevel`, `miter`, and `round`.
+-   The `joints` option sets the shape at the corners of paths. The possible values are `bevel`, `miter`, and `curve`.
     The initial value is `miter`.
 
 -   The `miter-limit` option controls the maximum ratio of the miter length to the stroke width. The initial value is 2,
