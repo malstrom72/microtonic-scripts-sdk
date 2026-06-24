@@ -42,8 +42,10 @@ Here is a brief list of the technologies used in Microtonic GUIs:
 - _ImpD_: a simple imperative computer language disguised as a data format, or the other way around.
 - _IVG_ (Imperative Vector Graphics): a compact 2D vector format and renderer written in standard C++, based on _ImpD_
   and the _NuXPixels_ rasterizer.
-- _Makaron_: a macro expansion syntax, used to make `.cushy` files easier to write.
-- _Numbstrict_: an object notation format similar to (but not compatible with) JSON.
+- _Makaron_: a macro expansion syntax, used to make `.cushy` files easier to write. Sourced from the
+  [Numbstrict repository](https://github.com/malstrom72/Numbstrict).
+- _Numbstrict_: an object notation format similar to (but not compatible with) JSON, from the
+  [Numbstrict repository](https://github.com/malstrom72/Numbstrict).
 - _NuXJScript_: our JavaScript engine, fully ECMAScript 3 compliant with features from ECMAScript 5.
 - _PikaScript_: our legacy script language used by older Microtonic scripts and offline tools.
 
@@ -69,7 +71,8 @@ Here is a brief list of the technologies used in Microtonic GUIs:
     - [Microtonic User Guide](docs/Microtonic%20User%20Guide.md)
 
 - `IVG`: curated vendored snapshot of the IVG source, renderer tools, IVGFiddle output, IVGFontConverter, dependencies,
-  and documentation used for the shipping Microtonic IVG implementation.
+  and documentation used for the shipping Microtonic IVG implementation. The IVG/ImpD/ivgfont docs are mirrored into
+  the top-level `docs/` by [`tools/sync-ivg-docs.sh`](tools/sync-ivg-docs.sh).
 
 - `JSConsole.mtscript`: an interactive Javascript console for Microtonic.
 
