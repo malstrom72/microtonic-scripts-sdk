@@ -267,6 +267,20 @@ href="https://github.com/malstrom72/NuXJS">NuXJS</a>, a sandboxed
 JavaScript engine written by Magnus Lidström. It was designed to be
 small, fast, and easy to integrate into existing products. It is fully
 ECMAScript 3 compliant with partial ECMAScript 5 support.</p>
+<p><strong>Known issue in currently shipped builds:</strong>
+<code>Math.round()</code> does not coerce a string argument to a number
+before rounding. It evaluates <code>floor(x + 0.5)</code> without a
+<code>ToNumber</code> first, so a string makes the <code>+ 0.5</code>
+concatenate: <code>Math.round("7")</code> returns <code>70</code>
+(<code>"7" + 0.5</code> -&gt; <code>"70.5"</code>), while
+<code>Math.round("7.5")</code> and <code>Math.round("-3.4")</code>
+return <code>NaN</code>. This matters because GUI-variable setters
+receive their value as a string, so any control value you round must be
+coerced first: <code>Math.round(+value)</code>. Only
+<code>Math.round</code> is affected; <code>Math.floor</code>,
+<code>Math.ceil</code>, <code>Math.abs</code>, and the other numeric
+<code>Math</code> functions coerce correctly. This is fixed in NuXJS and
+will be corrected in a future Microtonic build.</p>
 <p>ECMAScript 3 was chosen because it was the first widely adopted
 standardized version of JavaScript. It is a version many programmers are
 familiar with, and it has everything you need from a scripting language.
@@ -722,21 +736,66 @@ already-modified state and can make the undo step a no-op.</p>
 <p>The undo snapshot does not include a script’s own JavaScript state,
 such as global variables, GUI-local selection state, drag state, caches,
 or generated display buffers. Undo or redo can therefore rewind the
-document while a running GUI script’s derived state is left unchanged.
-GUI scripts that mirror or derive from document state should reconcile
-after external document changes, for example by watching
-<code>getElementId</code> for the relevant element and re-reading only
-when the id changes. If the script depends on the selected drum channel,
-also watch <code>selected('channel')</code>; channel selection is not
-part of the preset data.</p>
+document while a running GUI script’s JavaScript state is left
+unchanged. GUI scripts that keep their own state should reconcile it
+against the document after undo, redo, and other external document
+changes.</p>
+<h4 id="script-state-undo-and-reconciliation">Script state, undo and
+reconciliation</h4>
+<p>For simple state that is derived from the document, reconciliation
+can be as small as watching <code>getElementId</code> for the relevant
+element and rebuilding the cache when the id changes. If the script
+depends on selection, also watch the selection explicitly, for example
+<code>selected('channel')</code> or <code>selected('pattern')</code>;
+selection is not part of the preset data and does not by itself change
+the preset id.</p>
+<p>Generator scripts often need a stronger pattern. A generator may
+produce document state from inputs that cannot be read back from the
+document alone. For example, <code>examples/PolyChain.mtscript</code>
+generates chained patterns from a captured source pattern and
+per-channel loop windows, and <code>examples/BeatSpace.mtscript</code>
+generates drum patch and pattern data from latent points. The generated
+document data is not enough to recover those inputs later.</p>
+<p>A common reconciliation pattern is:</p>
+<ol type="1">
+<li>Call <code>saveUndo(label)</code> immediately before changing the
+document.</li>
+<li>Write the generated document state with <code>setElement</code> or
+parameter setters.</li>
+<li>Compute a content hash for the generated document region and memoize
+the generator inputs under that hash.</li>
+<li>Mark the write as your own by storing the new
+<code>getElementId</code> value immediately after the write. This
+prevents the script’s next sync check from treating its own output as an
+external edit.</li>
+<li>On a sync check, watch the relevant document id plus any relevant
+selection values. When they change, hash the current document region and
+look it up in the memoized history.</li>
+<li>If the hash is found, restore the matching generator inputs so the
+GUI matches the document. If the hash is missing, treat the script as
+out of sync with the document and disable or visually mark controls that
+would otherwise imply the GUI state still describes the document.</li>
+</ol>
+<p>Keep the memoized history bounded when a script can generate many
+distinct states during a session. <code>PolyChain</code> uses this full
+pattern, including a bounded hash history and explicit synced /
+out-of-sync UI state. <code>BeatSpace</code> uses hash-based recognition
+for generated channel data and also embeds a human-readable
+<code>BeatSpace x;y</code> tag in each generated drum channel name as a
+legible anchor.</p>
 <p>For a continuous gesture such as a drag, call <code>saveUndo</code>
 once at the gesture’s first document-changing update, not on every mouse
 move. If <code>collapse</code> is <code>true</code> and
 <code>label</code> is identical to the last element in the undo history,
 Microtonic will not create a new snapshot (use for repeated actions to
-avoid “spamming” the undo history). Notice that calling this function is
-rarely necessary for GUI-less scripts since they automatically save an
-undo snapshot when they detect a change of the Microtonic state.</p>
+avoid “spamming” the undo history).</p>
+<p>GUI-less scripts are one-shot scripts without a running Cushy
+interface. They normally do not need to call <code>saveUndo</code>
+because Microtonic automatically adds an undo snapshot for a GUI-less
+script execution when that execution changes the Microtonic state. GUI
+scripts stay loaded and can perform multiple independent edits over
+time, so they should create their own undo snapshots before each
+user-visible document change.</p>
 <p>See also: <a href="#getelementid">getElementId</a>, <a
 href="#cushy-interface">Cushy Interface</a>, <a
 href="#translate">translate</a></p>
@@ -1080,7 +1139,11 @@ script with JavaScript and “Cushy.”</p>
 full description of the Cushy system is beyond the scope of this
 document, but <code>.cushy</code> files define the layout of views and
 configure how the user can interact with the plug-in through “GUI
-variables” and “GUI actions.”</p>
+variables” and “GUI actions.” For an orientation to the Cushy system and
+a map of where each part is documented, see <a
+href="Cushy%20Documentation.md">Cushy Documentation</a>; for the
+exhaustive syntax reference, see
+<code>CushyLint/cushy.schema</code>.</p>
 <p>Note: Microtonic 3.x is still not fully ported to Cushy. Most of the
 standard knobs and buttons are legacy “hard-wired” GUI elements, but on
 top of this, there is a layer of Cushy.</p>
@@ -1173,6 +1236,10 @@ string value.</li>
 variable, Cushy will create a Cushy-only variable (not visible from
 Javascript). Never do this in a script, please!</li>
 </ul>
+<p>If a setter rounds the incoming value, coerce first with unary
+<code>+</code> (<code>Math.round(+value)</code>) to avoid the
+shipped-engine <code>Math.round</code> string bug described under <a
+href="#engine">Engine</a>.</p>
 <p>Here is an example of using a “setter” and “getter” function for a
 GUI variable that performs a transformation of the knob value to
 logarithmic scale:</p>

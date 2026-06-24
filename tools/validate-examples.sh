@@ -9,7 +9,7 @@
 #   - Cushy: every <Name>.mtscript package under examples/ plus JSConsole.mtscript
 #   - JS:    delegated to validate-js.sh (defaults to the same example scope)
 #   - IVG:   delegated to validate-static-ivg.sh (example .ivg plus the shared
-#            Microtonic Resources and IVG/tests the examples depend on)
+#            Microtonic Resources the examples depend on)
 #
 # Exits non-zero if any section fails, after running them all so you see every
 # problem in one run.

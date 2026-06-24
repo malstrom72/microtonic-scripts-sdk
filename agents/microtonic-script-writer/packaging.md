@@ -38,9 +38,3 @@ For GUI scripts, prefer rerun-safe startup code:
   see [`cushy-notes.md`](cushy-notes.md).
 - Include a package `.schema` file with the Microtonic schema include and
   resource roots; see [`validation.md`](validation.md).
-
-## Generated Pattern Tools
-
-For generators that derive from the current pattern and then overwrite pattern
-data, capture a stable source-pattern snapshot when the script opens. Generate
-from that snapshot, not from partially overwritten live pattern data.
