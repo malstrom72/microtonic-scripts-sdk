@@ -20,6 +20,10 @@ function writeText(file, text) {
   fs.writeFileSync(file, text, "utf8");
 }
 
+function writeJson(file, value) {
+  writeText(file, JSON.stringify(value, null, 2) + "\n");
+}
+
 function trim(text) {
   return text.replace(/^\s+/, "").replace(/\s+$/, "");
 }
@@ -82,6 +86,20 @@ function postprocessMarkdown(file) {
   writeText(file, text);
 }
 
+function stripInlinePageImages(file) {
+  const doc = JSON.parse(readText(file));
+
+  if (doc.pages && typeof doc.pages === "object") {
+    for (const page of Object.values(doc.pages)) {
+      if (page && typeof page === "object") {
+        delete page.image;
+      }
+    }
+  }
+
+  writeJson(file, doc);
+}
+
 if (process.argv.length !== 5) {
   usage();
 }
@@ -94,3 +112,4 @@ const guidePrefix = guideDir + path.sep;
 stripPrefixFromFile(markdownFile, guidePrefix);
 stripPrefixFromFile(jsonFile, guidePrefix);
 postprocessMarkdown(markdownFile);
+stripInlinePageImages(jsonFile);
