@@ -20,10 +20,6 @@ function writeText(file, text) {
   fs.writeFileSync(file, text, "utf8");
 }
 
-function writeJson(file, value) {
-  writeText(file, JSON.stringify(value, null, 2) + "\n");
-}
-
 function trim(text) {
   return text.replace(/^\s+/, "").replace(/\s+$/, "");
 }
@@ -86,18 +82,25 @@ function postprocessMarkdown(file) {
   writeText(file, text);
 }
 
-function stripInlinePageImages(file) {
-  const doc = JSON.parse(readText(file));
+function prunePageImages(guideDir, jsonFile) {
+  const data = JSON.parse(readText(jsonFile));
 
-  if (doc.pages && typeof doc.pages === "object") {
-    for (const page of Object.values(doc.pages)) {
-      if (page && typeof page === "object") {
-        delete page.image;
+  if (data.pages) {
+    for (const page of Object.values(data.pages)) {
+      delete page.image;
+    }
+  }
+
+  const artifactDir = path.join(guideDir, path.basename(jsonFile, ".docling.json") + "_artifacts");
+  if (fs.existsSync(artifactDir)) {
+    for (const name of fs.readdirSync(artifactDir)) {
+      if (/^page_\d+_.*\.png$/.test(name)) {
+        fs.unlinkSync(path.join(artifactDir, name));
       }
     }
   }
 
-  writeJson(file, doc);
+  writeText(jsonFile, JSON.stringify(data, null, 2) + "\n");
 }
 
 if (process.argv.length !== 5) {
@@ -112,4 +115,4 @@ const guidePrefix = guideDir + path.sep;
 stripPrefixFromFile(markdownFile, guidePrefix);
 stripPrefixFromFile(jsonFile, guidePrefix);
 postprocessMarkdown(markdownFile);
-stripInlinePageImages(jsonFile);
+prunePageImages(guideDir, jsonFile);
