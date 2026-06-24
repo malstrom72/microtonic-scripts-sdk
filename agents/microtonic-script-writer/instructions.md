@@ -205,8 +205,9 @@ copies Microtonic's entire current `Microtonic Scripts` folder into the project
 `scripts/` folder, moves the original scripts folder aside as a backup, and
 links Microtonic's scripts folder to the project `scripts/` folder. It changes
 the live Microtonic scripts installation and may require elevated permissions,
-so it needs explicit user approval. See the "Development Scripts Folder" section
-of `references/microtonic-scripts-sdk/README.md` for the macOS/Windows commands.
+so it needs explicit user approval. See
+`references/microtonic-scripts-sdk/docs/Development Scripts Folder.md` for the
+macOS/Windows commands.
 
 On macOS, if the assistant cannot modify the live scripts folder because it
 needs elevated permission, do not stop at printing `sudo` commands for the user
