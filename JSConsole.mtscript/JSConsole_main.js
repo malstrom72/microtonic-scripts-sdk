@@ -1,6 +1,8 @@
 if (!this.jsConsole) {
 	jsConsole = {
 		realPrint: print,
+		realSave: save,
+		realLoad: load,
 		lastCushyTracer: this.handleCushyTrace,
 		windowPosition: '',
 		windowZOrder: '',
@@ -230,7 +232,7 @@ Object.assign(jsConsole, {
 		jc.bridge.base = base;
 		jc.bridge.lastSeq = 0;
 		try {
-			var req = JSON.parse(load(base + 'request.json'));
+			var req = JSON.parse(jc.realLoad(base + 'request.json'));
 			if (req && typeof req.seq == 'number') {
 				jc.bridge.lastSeq = req.seq;	// skip any stale request from a previous session
 			}
@@ -242,7 +244,7 @@ Object.assign(jsConsole, {
 			at the user's explicit command, rather than mid-session on the first reply.
 		*/
 		try {
-			save(base + 'bridge.json', JSON.stringify({ ready: true, protocol: 1, time: Math.floor(Date.now()) }));
+			jc.realSave(base + 'bridge.json', JSON.stringify({ ready: true, protocol: 1, time: Math.floor(Date.now()) }));
 		} catch (e) { }
 		print("Bridge ON.");
 		print("Folder: " + base);
@@ -317,7 +319,7 @@ Object.assign(jsConsole, {
 			}
 			var text;
 			try {
-				text = load(base + 'request.json');
+				text = jc.realLoad(base + 'request.json');
 			} catch (e) {
 				return;		// folder / file not present yet, keep waiting
 			}
@@ -351,7 +353,7 @@ Object.assign(jsConsole, {
 				};
 			}
 			try {
-				save(base + 'response.json', JSON.stringify(response));
+				jc.realSave(base + 'response.json', JSON.stringify(response));
 			} catch (e) {
 				print("!!! Failed to write bridge response: " + e);
 			}

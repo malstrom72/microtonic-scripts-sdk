@@ -55,7 +55,9 @@ already handled.
 - **`mt_eval(code, [timeout_ms])`** — evaluate `code` against the live engine.
   Returns the value of the final expression plus any `print()` output. Keep
   snippets short: each eval freezes the UI and is subject to Microtonic's ~20s
-  per-call suspension limit. Default timeout `20000` ms.
+  per-call suspension limit. Wrap multi-statement snippets in an IIFE so local
+  `var`s do not leak into the shared global space or shadow host names like
+  `save`, `load`, or `print`. Default timeout `20000` ms.
 - **`mt_status()`** — report whether a bridge is attached (via `bridge.json`) and
   the last request/reply sequence numbers.
 

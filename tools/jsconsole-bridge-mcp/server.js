@@ -160,7 +160,9 @@ const TOOLS = [
 			+ 'file bridge and return the result. The JSConsole window must be open with the '
 			+ 'bridge enabled (type `bridge on` in it). Code runs in the shared JS global space, '
 			+ 'so it can read and drive a script running in the main GUI layer. Keep snippets '
-			+ 'short: each eval freezes the UI and is subject to Microtonic\'s ~20s suspension limit.',
+			+ 'short: each eval freezes the UI and is subject to Microtonic\'s ~20s suspension '
+			+ 'limit. Wrap multi-statement snippets in an IIFE to avoid leaking vars or '
+			+ 'shadowing host globals such as save, load, or print.',
 		inputSchema: {
 			type: 'object',
 			properties: {
