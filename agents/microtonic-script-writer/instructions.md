@@ -98,9 +98,14 @@ Recommended bootstrap phase order:
 
 1. Create `AGENTS.md`, `.mcp.json` for Claude Code compatibility, `scripts/`,
    and `references/microtonic-scripts-sdk/`.
-2. Resolve the current live scripts folder state, then ask the user whether to
-   link Microtonic's live scripts folder to project `scripts/`; do not proceed
-   with live scripts changes until this is answered.
+2. Identify the exact live scripts folder first: prefer `DIRS.SCRIPTS` via the
+   bridge, or have the user open *Open Scripts Folder*. On macOS the standard
+   path is `/Library/Application Support/Sonic Charge/Microtonic Scripts`, but
+   do not treat similarly named folders or symlinks as substitutes. If that
+   exact path does not exist and the bridge cannot confirm `DIRS.SCRIPTS`, stop
+   and ask the user instead of relinking anything. Then ask whether to link
+   Microtonic's live scripts folder to project `scripts/`; do not proceed with
+   live scripts changes until this is answered.
 3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
    If copied into project `scripts/`, rewrite the copied schema paths as
    described below.
@@ -191,14 +196,13 @@ an alternative to installing JSConsole; it only decides which folder Microtonic
 will read scripts from.
 
 Before treating project `scripts/` as the live folder or deploying anything
-there, check whether the existing live `Microtonic Scripts` folder is already a
-symlink or junction. On macOS, inspect
-`/Library/Application Support/Sonic Charge/Microtonic Scripts` with `ls -ld` and
-`readlink`. If it points somewhere outside the current project, do not write
-into that target and do not assume local edits are live. Ask the user how to
-proceed: relink with the documented `osascript ... with administrator
-privileges` flow, copy the package to the current live folder, or let the user
-deploy manually.
+there, check whether the exact live `Microtonic Scripts` folder identified via
+`DIRS.SCRIPTS` / *Open Scripts Folder* is already a symlink or junction. On
+macOS, inspect that exact folder with `ls -ld` and `readlink`. If it points
+somewhere outside the current project, do not write into that target and do not
+assume local edits are live. Ask the user how to proceed: relink with the
+documented `osascript ... with administrator privileges` flow, copy the package
+to the current live folder, or let the user deploy manually.
 
 Do not create the linked development folder automatically. The linked setup
 copies Microtonic's entire current `Microtonic Scripts` folder into the project
@@ -293,6 +297,13 @@ If `mt_status` reports `attached: no`, JSConsole either is not the SDK's bridged
 copy, does not have `bridge on` enabled, or the MCP client has not loaded the
 project server yet. Report that state plainly and ask the user to complete the
 missing setup step.
+
+`mt_eval` runs in the shared global JavaScript scope. Wrap multi-statement
+snippets in an IIFE so temporary `var`s do not leak or shadow host globals.
+Avoid evals that can open modal dialogs during reload/startup; a modal can
+block the bridge tick from writing replies until the dialog is dismissed. If
+`mt_status` shows `last request seq` advancing while `last reply seq` is frozen,
+dismiss any Microtonic dialog, then run `bridge off` / `bridge on`.
 
 To run a script over the bridge, evaluate Microtonic's `run()` function with
 the script's `.js` entry point path relative to the live `Microtonic Scripts`

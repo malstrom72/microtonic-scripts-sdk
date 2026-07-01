@@ -221,7 +221,8 @@ reset.
 
 For quicker round-trips during development, keep a project-local copy of the entire `Microtonic Scripts` folder and
 link Microtonic's scripts folder to it. See [Development Scripts Folder](docs/Development%20Scripts%20Folder.md) for
-macOS and Windows commands, including re-linking an existing symlink and agent-friendly macOS elevation.
+macOS and Windows commands, including re-linking an existing symlink and using macOS' administrator dialog for elevated
+link steps.
 
 ### Syntax Highlighting
 

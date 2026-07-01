@@ -52,10 +52,13 @@ When bootstrapping an empty project, keep the user-facing sequence clear:
 
 1. Create the project scaffold: `AGENTS.md`, `.mcp.json` for Claude Code
    compatibility, `scripts/`, and `references/microtonic-scripts-sdk/`.
-2. Ask whether to link Microtonic's live scripts folder to project `scripts/`.
-   First verify whether the existing live scripts folder is already a symlink or
-   junction to another workspace. Do not call bootstrap complete while this
-   decision is pending.
+2. Identify the exact live scripts folder first: prefer `DIRS.SCRIPTS` via the
+   bridge, or have the user open *Open Scripts Folder*. If the standard macOS
+   path is missing and `DIRS.SCRIPTS` cannot be confirmed, stop and ask before
+   relinking anything. Then ask whether to link Microtonic's live scripts folder
+   to project `scripts/`. First verify whether that exact live folder is already
+   a symlink or junction to another workspace. Do not call bootstrap complete
+   while this decision is pending.
 3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
    If it is copied into project `scripts/`, fix the copied schema paths.
 4. Register the bridge MCP server for the active assistant.
@@ -92,6 +95,11 @@ Microtonic Scripts/
 
 Inside Microtonic, `DIRS.SCRIPTS` is the absolute path to this folder and is the
 default directory used by relative script file operations.
+`DIRS.SCRIPTS` / *Open Scripts Folder* is authoritative. If a filesystem search
+finds a different similarly named folder under Sonic Charge's Application
+Support directory, ignore it unless it is exactly the folder Microtonic
+reported. Do not relink a similarly named folder or local artifact just because
+the standard folder is missing.
 
 ## Link A Working Scripts Folder During Development
 
@@ -107,9 +115,8 @@ alternative to installing the SDK `JSConsole.mtscript`; it only decides whether
 JSConsole should be copied into the live `Microtonic Scripts` folder directly or
 into project `scripts/` after Microtonic's scripts folder has been linked there.
 
-Before treating project `scripts/` as live, verify the current live scripts
-folder target. On macOS, inspect
-`/Library/Application Support/Sonic Charge/Microtonic Scripts` with `ls -ld` and
+Before treating project `scripts/` as live, verify the exact current live
+scripts folder target. On macOS, inspect that exact folder with `ls -ld` and
 `readlink`. If it already links to a different workspace, do not write through
 that link. Ask whether to relink it to this project, copy the package to the
 current live folder, or let the user deploy manually.
