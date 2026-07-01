@@ -47,6 +47,13 @@ Use this repository as the source of truth for SDK grounding.
 
 See [`source-map.md`](source-map.md) for where to look.
 
+Before writing new script files, confirm that the current working directory is a
+user script project, not this SDK checkout itself. User scripts should live
+under a project `scripts/` folder with this SDK as a reference checkout, unless
+the user is deliberately contributing SDK examples. If the session is running
+from the SDK checkout, point the user to [`vibe-coding.md`](vibe-coding.md)'s
+recommended layout and ask how they want to proceed before creating files.
+
 ## Project Bootstrap
 
 When starting a new user project from a fresh prompt, set up the SDK as a
