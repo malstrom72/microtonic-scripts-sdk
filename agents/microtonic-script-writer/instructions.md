@@ -107,10 +107,13 @@ Recommended bootstrap phase order:
    and `references/microtonic-scripts-sdk/`.
 2. Identify the exact live scripts folder first: prefer `DIRS.SCRIPTS` via the
    bridge, or have the user open *Open Scripts Folder*. On macOS the standard
-   path is `/Library/Application Support/Sonic Charge/Microtonic Scripts`, but
-   do not treat similarly named folders or symlinks as substitutes. If that
-   exact path does not exist and the bridge cannot confirm `DIRS.SCRIPTS`, stop
-   and ask the user instead of relinking anything. Then ask whether to link
+   path is `/Library/Application Support/Sonic Charge/Microtonic Scripts`; on
+   Windows it is normally under `C:\Program Files\Sonic Charge\Microtonic
+   Scripts`, and `tools/locate-scripts-folder.ps1 -Verify` can provide a
+   candidate before the bridge exists. Do not treat similarly named folders,
+   locator guesses, or symlinks as substitutes for the exact live folder. If
+   that exact path does not exist and the bridge cannot confirm `DIRS.SCRIPTS`,
+   stop and ask the user instead of relinking anything. Then ask whether to link
    Microtonic's live scripts folder to project `scripts/`; do not proceed with
    live scripts changes until this is answered.
 3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.

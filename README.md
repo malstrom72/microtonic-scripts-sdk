@@ -218,6 +218,10 @@ node tools/install-jsconsole.js "/path/to/Microtonic Scripts"
 With no argument, the helper prints the SDK source path and platform-specific target hints. The helper refuses to run
 unless the source console contains the bridge commands, which avoids accidentally installing a plain JSConsole copy.
 
+On Windows, before the bridge is installed, you can usually locate the same folder with
+`tools\locate-scripts-folder.ps1 -Verify`; it mirrors Microtonic's registry lookup. Confirm the result against
+`Open Scripts Folder` before writing.
+
 Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
 editing a GUI script, use the reload button at the top of the JSConsole window to flush cached resources and rebuild the
 open GUI, or type `reload` in JSConsole. A normal reload reruns JavaScript files but keeps the current JavaScript engine
@@ -233,8 +237,10 @@ link Microtonic's scripts folder to it. See [Development Scripts Folder](docs/De
 macOS and Windows commands, including re-linking an existing symlink and using macOS' administrator dialog for elevated
 link steps.
 
-On Windows the live folder may require elevation for every copy. In that case, consider the development-link workflow
-before the first manual install so later edits are elevation-free.
+On Windows the live folder is normally under `C:\Program Files\Sonic Charge\Microtonic Scripts`, which usually
+requires elevation for every copy. Before the bridge is installed you can locate it with
+`tools\locate-scripts-folder.ps1 -Verify`. In that case, consider the development-link workflow before the first manual
+install so later edits are elevation-free.
 
 ### Syntax Highlighting
 

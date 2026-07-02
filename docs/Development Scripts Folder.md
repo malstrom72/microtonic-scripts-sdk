@@ -44,6 +44,16 @@ On Windows, use `Open Scripts Folder` in Microtonic to confirm the exact folder.
 %PROGRAMFILES%\Sonic Charge\Microtonic Scripts
 ```
 
+Before the bridge is installed, the SDK helper can usually locate the same folder from the Sonic Charge registry keys
+(it reads `SetupPath` from `HKLM\SOFTWARE\Sonic Charge\Microtonic` and appends `Microtonic Scripts`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\locate-scripts-folder.ps1 -Verify
+```
+
+Treat that output as a candidate to confirm, not as a substitute for the exact folder opened by Microtonic. If the
+registry read fails, the engine may fall back to the plugin binary directory, which the helper cannot know.
+
 The live folder may require elevation to modify; a one-time junction avoids repeated elevated copies while iterating.
 Copy it into your project, move the original aside, then create a directory junction:
 

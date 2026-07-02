@@ -45,7 +45,7 @@ function usage() {
 	const platformDefault = process.platform === 'darwin'
 		? '/Library/Application Support/Sonic Charge/Microtonic Scripts'
 		: process.platform === 'win32'
-			? 'Use Microtonic > Open Scripts Folder'
+			? 'Use tools\\locate-scripts-folder.ps1 -Verify or Microtonic > Open Scripts Folder'
 			: 'Use Microtonic > Open Scripts Folder';
 
 	console.log('Install this SDK\'s bridged JSConsole.mtscript into Microtonic Scripts.');
@@ -56,7 +56,8 @@ function usage() {
 	console.log('Usage:');
 	console.log('  node tools/install-jsconsole.js "<Microtonic Scripts folder>"');
 	console.log('');
-	console.log('Find the target with Microtonic > Open Scripts Folder, or DIRS.SCRIPTS over an existing bridge.');
+	console.log('Find the target with Microtonic > Open Scripts Folder, DIRS.SCRIPTS over an existing bridge,');
+	console.log('or on Windows: powershell -ExecutionPolicy Bypass -File tools\\locate-scripts-folder.ps1 -Verify');
 }
 
 verifySource();

@@ -101,6 +101,20 @@ Support directory, ignore it unless it is exactly the folder Microtonic
 reported. Do not relink a similarly named folder or local artifact just because
 the standard folder is missing.
 
+On Windows, before the bridge is installed, the SDK helper can usually locate the
+same folder from the Sonic Charge registry keys (it reads `SetupPath` from
+`HKLM\SOFTWARE\Sonic Charge\Microtonic` and appends `Microtonic Scripts`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File references/microtonic-scripts-sdk/tools/locate-scripts-folder.ps1 -Verify
+```
+
+Treat that output as a high-confidence candidate to confirm with the user, not as
+a replacement for `DIRS.SCRIPTS` / *Open Scripts Folder*. The folder is normally
+under `C:\Program Files\Sonic Charge\`, which usually requires elevation to write.
+If the registry read fails, the engine may fall back to the plugin binary
+directory, which the helper cannot know.
+
 ## Link A Working Scripts Folder During Development
 
 For quicker round-trips, keep a project-local copy of the entire `Microtonic
@@ -146,7 +160,9 @@ update the schema paths instead.
 
 If the live scripts folder target has been confirmed and you are not copying
 through a linked project `scripts/` folder, the SDK helper can install the
-bridged console directly:
+bridged console directly. Get the exact target from `DIRS.SCRIPTS` over a working
+bridge, from *Open Scripts Folder*, or on Windows from the locator above, and
+confirm it with the user first:
 
 ```sh
 node references/microtonic-scripts-sdk/tools/install-jsconsole.js "/ABS/PATH/TO/Microtonic Scripts"
