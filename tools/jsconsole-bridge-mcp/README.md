@@ -88,12 +88,22 @@ the file protocol described above.
 
 ## Usage
 
-1. Open Microtonic, open `JSConsole.mtscript`, type `bridge on`. Grant the
-   folder write-permission prompt when it appears.
+1. Install this SDK's bridged `JSConsole.mtscript` into Microtonic's scripts folder, then open Microtonic, open
+   `JSConsole.mtscript`, and type `bridge on`. Grant the folder write-permission prompt when it appears.
 2. From the MCP client, call `mt_status` to confirm `attached: yes`, then
    `mt_eval` with a snippet, e.g. `getElement('pattern').steps`.
 
 You'll see each command echo as `BRIDGE> …` in the JSConsole window.
+
+The quickest way to find the scripts folder is the script menu in Microtonic →
+**Open Scripts Folder** (it is `DIRS.SCRIPTS`). On Windows, copying the console may need elevation; for repeated
+development, consider linking the live scripts folder to a project `scripts` folder first.
+
+Once the target is confirmed, copy the SDK's bridged console with:
+
+```sh
+node tools/install-jsconsole.js "<Microtonic Scripts folder>"
+```
 
 ## Running or toggling a script over the bridge
 

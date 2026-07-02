@@ -44,6 +44,7 @@ On Windows, use `Open Scripts Folder` in Microtonic to confirm the exact folder.
 %PROGRAMFILES%\Sonic Charge\Microtonic Scripts
 ```
 
+The live folder may require elevation to modify; a one-time junction avoids repeated elevated copies while iterating.
 Copy it into your project, move the original aside, then create a directory junction:
 
 ```bat

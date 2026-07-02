@@ -125,6 +125,11 @@ On macOS, if elevated permission blocks the link step, the assistant should ask
 for approval and use `osascript` with administrator privileges to complete the
 operation instead of only printing `sudo` commands for the user to run.
 
+If the live scripts folder is in a location that needs elevation to write,
+proactively offer the development-link workflow before the first copy. A
+one-time elevated junction/symlink avoids repeated elevated installs while
+iterating.
+
 When copying this SDK's `JSConsole.mtscript` into project `scripts/`, also fix
 the copied `scripts/JSConsole.mtscript/JSConsole_main.schema` paths so they
 point back to the SDK checkout:
@@ -138,6 +143,14 @@ resources: ../../references/microtonic-scripts-sdk/Microtonic Resources
 Never copy `Microtonic Resources/` into `scripts/`. If CushyLint or an editor is
 looking for `scripts/Microtonic Resources/`, the copied package schema is wrong;
 update the schema paths instead.
+
+If the live scripts folder target has been confirmed and you are not copying
+through a linked project `scripts/` folder, the SDK helper can install the
+bridged console directly:
+
+```sh
+node references/microtonic-scripts-sdk/tools/install-jsconsole.js "/ABS/PATH/TO/Microtonic Scripts"
+```
 
 ## Minimal Project `AGENTS.md`
 

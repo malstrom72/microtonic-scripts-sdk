@@ -209,6 +209,15 @@ alert and pauses script flow until the user dismisses it.
 Install it by copying `JSConsole.mtscript` to the `Microtonic Scripts` folder. (You can easily find this folder by
 choosing `Open Scripts Folder` from the "puzzle menu" in Microtonic.)
 
+To copy this SDK's bridged JSConsole into a confirmed scripts folder:
+
+```sh
+node tools/install-jsconsole.js "/path/to/Microtonic Scripts"
+```
+
+With no argument, the helper prints the SDK source path and platform-specific target hints. The helper refuses to run
+unless the source console contains the bridge commands, which avoids accidentally installing a plain JSConsole copy.
+
 Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
 editing a GUI script, use the reload button at the top of the JSConsole window to flush cached resources and rebuild the
 open GUI, or type `reload` in JSConsole. A normal reload reruns JavaScript files but keeps the current JavaScript engine
@@ -223,6 +232,9 @@ For quicker round-trips during development, keep a project-local copy of the ent
 link Microtonic's scripts folder to it. See [Development Scripts Folder](docs/Development%20Scripts%20Folder.md) for
 macOS and Windows commands, including re-linking an existing symlink and using macOS' administrator dialog for elevated
 link steps.
+
+On Windows the live folder may require elevation for every copy. In that case, consider the development-link workflow
+before the first manual install so later edits are elevation-free.
 
 ### Syntax Highlighting
 

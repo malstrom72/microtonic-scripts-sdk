@@ -237,7 +237,13 @@ the folder Microtonic will actually read:
 - If the user did not choose linked-folder development, copy
   `references/microtonic-scripts-sdk/JSConsole.mtscript` into the live
   `Microtonic Scripts` folder (find it via *Open Scripts Folder* in Microtonic's
-  puzzle menu), replacing any existing `JSConsole.mtscript`.
+  puzzle menu), replacing any existing `JSConsole.mtscript`. Once the target is
+  confirmed, the SDK helper can do the copy:
+
+  ```sh
+  node references/microtonic-scripts-sdk/tools/install-jsconsole.js "/ABS/PATH/TO/Microtonic Scripts"
+  ```
+
 - If the user chose linked-folder development, copy
   `references/microtonic-scripts-sdk/JSConsole.mtscript` into the project as
   `scripts/JSConsole.mtscript`; because the live Microtonic scripts folder is
