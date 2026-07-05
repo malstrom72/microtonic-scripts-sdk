@@ -1291,12 +1291,13 @@
 }
 
 <buttonStyle> = {
-    [ image: <image> ]
-    [ fill: <color> ]
-    [ frame: <penStyle> ]
-    [ font: <font> ]
-    [ icon: <image> ]
-    [ rect: <floatRect> ]
+    [ image: <image> ]                              // background image (drawn at 0,0, but can be offsetted)
+    [ fill: <color> ]                               // fill color (inside button frame)
+    [ frame: <penStyle> ]                           // frame (defaults to invisible)
+    [ font: <font> ]                                // font for caption text (drawn centered, but can be offsetted)
+    [ icon: <image> ]                               // icon image (drawn centered, but can be offsetted)
+    [ rect: <floatRect> ]                           // floating point rect defines outline, clipping and click area
+                                                    // (default is view bounds with 0,0 origin)
 }
 
 /**
