@@ -345,6 +345,11 @@ JS memory on the next tick and tears down the bridge, which then has to be
 re-enabled with `bridge on` in the JSConsole window. See
 `references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/README.md`.
 
+The reload takes effect on the next tick, not within the current `mt_eval`, so
+do not reload and then read the reloaded state in the same call — you get the
+old module (stale values, or a `TypeError` for a method that only exists in the
+new code). Split it: reload in one `mt_eval`, verify in the next.
+
 **One Microtonic instance only.** The bridge uses a single fixed machine-global
 folder, so it assumes exactly one live bridge per machine — one running
 Microtonic with one JSConsole and `bridge on`. This is the normal case. Running

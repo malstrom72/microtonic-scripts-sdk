@@ -273,6 +273,12 @@ occasional averages rather than tracing every tick.
   code needs the same behavior directly, call the relevant function explicitly,
   such as `script.selectChannel.execute(channel)` or
   `script.selectChannel.checked(channel)`.
+- When an action descriptor defines `enabled`, Cushy uses it to gate the control
+  automatically: if `enabled` returns false the button cannot be clicked and
+  Cushy applies its `disabled:` button style, so no `switch`/`nop` wrapper or
+  in-`execute` guard is needed to block the action. To reflect the same
+  availability elsewhere in the layout (for example to dim a separate label),
+  read it in Cushy with the `can:<action>[,<params>]` meta variable.
 - For dynamic IVG data, compact list strings are usually fine for payloads of a
   few hundred characters, or even around a thousand characters. If the IVG only
   needs a tiny part of a very large structure, do not serialize the whole thing
