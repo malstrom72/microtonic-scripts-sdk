@@ -52,13 +52,28 @@ When bootstrapping an empty project, keep the user-facing sequence clear:
 
 1. Create the project scaffold: `AGENTS.md`, `.mcp.json` for Claude Code
    compatibility, `scripts/`, and `references/microtonic-scripts-sdk/`.
-2. Identify the exact live scripts folder first: prefer `DIRS.SCRIPTS` via the
-   bridge, or have the user open *Open Scripts Folder*. If the standard macOS
-   path is missing and `DIRS.SCRIPTS` cannot be confirmed, stop and ask before
-   relinking anything. Then ask whether to link Microtonic's live scripts folder
-   to project `scripts/`. First verify whether that exact live folder is already
-   a symlink or junction to another workspace. Do not call bootstrap complete
-   while this decision is pending.
+2. Identify the exact live scripts folder. **Check the standard path on disk
+   first** (macOS `/Library/Application Support/Sonic Charge/Microtonic Scripts`;
+   Windows via the locator). Do not lead with `DIRS.SCRIPTS` or *Open Scripts
+   Folder* on a cold bootstrap: there is no bridge yet, so `DIRS.SCRIPTS` is
+   unavailable, and Microtonic greys out the puzzle menu — including *Open Scripts
+   Folder* — until the folder exists, so neither can identify a folder that isn't
+   there.
+   - **Standard path missing** → this is a fresh install with no `Microtonic
+     Scripts` folder yet. Treat it as the
+     [first-ever install](#first-ever-install-no-scripts-folder-yet) case and offer
+     to create or link the folder. Do **not** treat it as "Microtonic not
+     installed" or as a blocker, and do not relink a similarly named folder just
+     because the standard folder is missing.
+   - **Standard path exists** → confirm it is the folder Microtonic actually reads
+     (`DIRS.SCRIPTS` over a working bridge, or *Open Scripts Folder*, are now
+     available), then ask whether to link Microtonic's live scripts folder to
+     project `scripts/`. First verify whether that exact live folder is already a
+     symlink or junction to another workspace.
+
+   Only stop and ask if you genuinely cannot tell whether Microtonic is installed
+   at all, or the standard path resolves to an existing but unexpected target. Do
+   not call bootstrap complete while this decision is pending.
 3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
    If it is copied into project `scripts/`, fix the copied schema paths.
 4. Register the bridge MCP server for the active assistant.
