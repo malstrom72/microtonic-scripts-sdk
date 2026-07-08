@@ -162,14 +162,8 @@ async function mtStatus() {
 	if (live) {
 		lines.push('bridge: LIVE — responded to a probe.');
 	} else if (presence && presence.ready) {
-		// Use the presence file's mtime (OS wall clock) for "announced ago" — the
-		// bridge measures time with getMonotonicTime(), not a wall clock, so it does
-		// not write a comparable epoch timestamp.
-		let announced = '';
-		try {
-			const ageMs = Date.now() - fs.statSync(PRESENCE_PATH).mtimeMs;
-			announced = ' (bridge.json announced ' + Math.round(ageMs / 1000) + 's ago)';
-		} catch (e) { /* mtime unavailable, omit */ }
+		const ageMs = Date.now() - (presence.time || 0);
+		const announced = ' (bridge.json announced ' + Math.round(ageMs / 1000) + 's ago)';
 		lines.push('bridge: NOT RESPONDING' + announced + '.');
 		lines.push('  A presence file exists but no reply came back. Most likely, in order: '
 			+ '1) the JSConsole window is not open; 2) `bridge on` was not typed in it this session; '

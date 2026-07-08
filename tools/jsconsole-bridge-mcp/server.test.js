@@ -168,7 +168,8 @@ test('mt_status probes liveness, not just the presence file', async function (t)
 
 	// A stale presence file with nothing answering → still NOT RESPONDING. (The old
 	// code wrongly reported "attached: yes" here — exactly the bug that misled us.)
-	fs.writeFileSync(path.join(base, 'bridge.json'), JSON.stringify({ ready: true, protocol: 1 }));
+	fs.writeFileSync(path.join(base, 'bridge.json'),
+		JSON.stringify({ ready: true, protocol: 1, time: Date.now() }));
 	const stale = await s.request('tools/call', { name: 'mt_status' }, 4000);
 	assert.match(stale.result.content[0].text, /NOT RESPONDING/);
 	assert.doesNotMatch(stale.result.content[0].text, /LIVE/);
