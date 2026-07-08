@@ -168,6 +168,61 @@ confirm it with the user first:
 node references/microtonic-scripts-sdk/tools/install-jsconsole.js "/ABS/PATH/TO/Microtonic Scripts"
 ```
 
+## First-Ever Install (No Scripts Folder Yet)
+
+On a never-used Microtonic install the `Microtonic Scripts` folder does not exist
+yet. Microtonic still shows the puzzle (script) menu, but it stays greyed out and
+inactive — including *Open Scripts Folder* — until the folder exists, so there is
+nothing you can click to reach it. The standard macOS location is
+`/Library/Application Support/Sonic Charge/Microtonic Scripts` (on Windows, use the
+[locator](#installing-scripts-in-microtonic)). It is protected (root-owned
+`/Library`), so first-time creation needs one elevated step either way. **Offer the
+user a choice** rather than deciding for them:
+
+- **A — Create the folder at the standard location (stays stock).** Best when they
+  just want the bridge working with minimal change to their install. Stage through
+  `/tmp` so the elevated copy never reads the SDK checkout (macOS TCC blocks that
+  when the checkout is under `~/Documents`, Desktop, or Downloads):
+
+  ```sh
+  rm -rf "/tmp/JSConsole.mtscript"
+  cp -R "references/microtonic-scripts-sdk/JSConsole.mtscript" /tmp/
+  osascript -e 'do shell script "mkdir -p \"/Library/Application Support/Sonic Charge/Microtonic Scripts\" && cp -R \"/tmp/JSConsole.mtscript\" \"/Library/Application Support/Sonic Charge/Microtonic Scripts/\"" with administrator privileges'
+  ```
+
+  The folder stays root-owned; later installs need elevation, but iteration rides
+  the bridge.
+
+- **B — Link the standard location to your project's `scripts/` folder**
+  ([development scripts folder](../../README.md#development-scripts-folder)). Best
+  when they want to edit installed scripts in place without elevation afterwards.
+  This is the `scripts/` folder from the [recommended layout](#recommended-project-layout)
+  above — the same directory your project scripts live in — so linking it makes
+  every project script Microtonic's live installation. Because the standard location
+  does not exist yet there is nothing to back up: put the console in `scripts/`, then
+  point the standard path at it with one elevated `ln -s` (creating a link does not
+  read the target, so no TCC block):
+
+  ```sh
+  mkdir -p scripts
+  cp -R "references/microtonic-scripts-sdk/JSConsole.mtscript" scripts/
+  osascript -e "do shell script \"ln -s '$PWD/scripts' '/Library/Application Support/Sonic Charge/Microtonic Scripts'\" with administrator privileges"
+  ```
+
+  Run this from the project root so `$PWD/scripts` resolves to the linked folder. The
+  `-e` argument is double-quoted so your shell expands `$PWD` before `osascript` sees
+  it (a single-quoted `-e` would pass `$PWD` literally and the root shell would not
+  resolve it); the inner paths use single quotes so the spaces survive. Afterwards
+  `install-jsconsole.js` and edits run as the normal user with no elevation. Copying
+  the console into `scripts/` means its `JSConsole_main.schema` needs the
+  project-relative paths shown above — rewrite them for CushyLint/editor tooling.
+  Prefer a project **outside** `~/Documents`/Desktop/Downloads to avoid a one-time
+  Microtonic "wants to access Documents" prompt when it reads through the link.
+
+Either way this is a one-time setup. Once the folder exists, `install-jsconsole.js`
+(above) is the way to refresh the console; it also prints option A's command if
+pointed at a folder that does not exist yet.
+
 ## Minimal Project `AGENTS.md`
 
 In your project root, add an `AGENTS.md` like this:
