@@ -114,8 +114,14 @@ async function mtEval(args) {
 		}
 		await sleep(POLL_INTERVAL_MS);
 	}
-	throw new Error('timed out after ' + timeout + 'ms waiting for a reply. '
-		+ 'Is JSConsole open in Microtonic with the bridge on (type `bridge on`)?');
+	throw new Error('timed out after ' + timeout + 'ms with no reply — the bridge is not '
+		+ 'responding. Check, in order of likelihood: '
+		+ '1) the JSConsole window is open in Microtonic; '
+		+ '2) you typed `bridge on` in it this session (a leftover bridge.json does not mean it is live); '
+		+ '3) Microtonic is running. '
+		+ 'Only if it was working and just stopped: a modal dialog may be blocking the bridge tick — '
+		+ 'dismiss it in Microtonic, then `bridge off` / `bridge on`. '
+		+ 'Run mt_status to probe the connection.');
 }
 
 function formatEval(resp) {
@@ -130,21 +136,48 @@ function formatEval(resp) {
 }
 
 //
-// Tool: mt_status — report whether a bridge is attached and the current seqs.
+// Tool: mt_status — report whether the bridge is actually responding.
 //
-function mtStatus() {
+// The bridge.json presence file only proves the bridge was enabled at *some* point:
+// it is written once on `bridge on` and never updated, so it lingers after JSConsole
+// is closed or Microtonic quits. Presence is therefore NOT liveness. To report the
+// truth we actively probe — send a trivial eval and see if a reply comes back.
+//
+const PROBE_TIMEOUT_MS = 1500;
+
+async function mtStatus() {
 	const lines = ['base: ' + BASE];
 	if (!fs.existsSync(BASE)) {
 		lines.push('folder: missing (will be created on first mt_eval)');
 		return { text: lines.join('\n'), isError: false };
 	}
 	const presence = readJson(PRESENCE_PATH);
-	if (presence && presence.ready) {
-		const ageMs = Date.now() - (presence.time || 0);
-		lines.push('attached: yes (protocol ' + presence.protocol
-			+ ', announced ' + Math.round(ageMs / 1000) + 's ago)');
+
+	let live = false;
+	try {
+		await mtEval({ code: '1', timeout_ms: PROBE_TIMEOUT_MS });
+		live = true;
+	} catch (e) { /* no reply within the probe window */ }
+
+	if (live) {
+		lines.push('bridge: LIVE — responded to a probe.');
+	} else if (presence && presence.ready) {
+		// Use the presence file's mtime (OS wall clock) for "announced ago" — the
+		// bridge measures time with getMonotonicTime(), not a wall clock, so it does
+		// not write a comparable epoch timestamp.
+		let announced = '';
+		try {
+			const ageMs = Date.now() - fs.statSync(PRESENCE_PATH).mtimeMs;
+			announced = ' (bridge.json announced ' + Math.round(ageMs / 1000) + 's ago)';
+		} catch (e) { /* mtime unavailable, omit */ }
+		lines.push('bridge: NOT RESPONDING' + announced + '.');
+		lines.push('  A presence file exists but no reply came back. Most likely, in order: '
+			+ '1) the JSConsole window is not open; 2) `bridge on` was not typed in it this session; '
+			+ '3) Microtonic is not running; 4) a modal dialog is blocking the bridge tick (dismiss it, '
+			+ 'then `bridge off` / `bridge on`).');
 	} else {
-		lines.push('attached: no (open JSConsole in Microtonic and type `bridge on`)');
+		lines.push('bridge: NOT RESPONDING and no presence file — open JSConsole in Microtonic '
+			+ 'and type `bridge on`.');
 	}
 	const req = readJson(REQUEST_PATH);
 	const resp = readJson(RESPONSE_PATH);
@@ -181,9 +214,12 @@ const TOOLS = [
 	},
 	{
 		name: 'mt_status',
-		description: 'Report whether a JSConsole bridge is currently attached (via bridge.json) '
-			+ 'and the last request/reply sequence numbers. Use this to check the connection '
-			+ 'before evaluating.',
+		description: 'Check whether the JSConsole bridge is actually responding. It probes live '
+			+ '(sends a trivial eval and waits briefly), reporting LIVE or NOT RESPONDING rather '
+			+ 'than trusting the bridge.json presence file, which lingers after the console is '
+			+ 'closed. Use it before evaluating, and when an mt_eval times out: NOT RESPONDING '
+			+ 'almost always means JSConsole is closed or `bridge on` was not typed this '
+			+ 'session, not a modal dialog.',
 		inputSchema: { type: 'object', properties: {} }
 	}
 ];
@@ -194,7 +230,7 @@ async function handleToolCall(name, args) {
 		return formatEval(resp);
 	}
 	if (name === 'mt_status') {
-		return mtStatus();
+		return await mtStatus();
 	}
 	throw new Error('unknown tool: ' + name);
 }

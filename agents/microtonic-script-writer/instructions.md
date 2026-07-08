@@ -305,21 +305,27 @@ and the SDK's JSConsole is installed, make the remaining setup explicit:
      `Run the Microtonic bridge smoke test now. Check mt_status, then evaluate 1 + 1 over the bridge.`
 3. In the resumed session, after the bridge tools are actually available,
    perform a small bridge test before relying on live debugging:
-   - Call `mt_status`; it should report `attached: yes`.
+   - Call `mt_status`; it probes the bridge and should report `bridge: LIVE`.
    - Call `mt_eval` with a harmless expression such as `1 + 1`; it should return
      `2`.
 
-If `mt_status` reports `attached: no`, JSConsole either is not the SDK's bridged
-copy, does not have `bridge on` enabled, or the MCP client has not loaded the
-project server yet. Report that state plainly and ask the user to complete the
-missing setup step.
+If `mt_status` reports `bridge: NOT RESPONDING`, the bridge is not answering. This
+almost always means JSConsole is not open, or `bridge on` was not typed **this
+session** — a leftover `bridge.json` presence file does not mean the bridge is live.
+It can also mean JSConsole is not the SDK's bridged copy or the MCP client has not
+loaded the project server yet. Report that state plainly and ask the user to
+complete the missing setup step before suspecting anything more exotic.
 
 `mt_eval` runs in the shared global JavaScript scope. Wrap multi-statement
 snippets in an IIFE so temporary `var`s do not leak or shadow host globals.
 Avoid evals that can open modal dialogs during reload/startup; a modal can
-block the bridge tick from writing replies until the dialog is dismissed. If
-`mt_status` shows `last request seq` advancing while `last reply seq` is frozen,
-dismiss any Microtonic dialog, then run `bridge off` / `bridge on`.
+block the bridge tick from writing replies until the dialog is dismissed. When an
+eval times out or `last reply seq` is frozen, **do not assume a modal — that is the
+least common cause.** Diagnose in order of likelihood: 1) is the JSConsole window
+open? 2) was `bridge on` typed **this session** (a stale `bridge.json` does not
+count)? 3) is Microtonic running? Only if the bridge *was* working and just stopped
+is a modal likely — then dismiss any Microtonic dialog and run `bridge off` /
+`bridge on`. `mt_status` distinguishes these by probing (LIVE vs NOT RESPONDING).
 
 To run a script over the bridge, evaluate Microtonic's `run()` function with
 the script's `.js` entry point path relative to the live `Microtonic Scripts`
@@ -350,12 +356,16 @@ do not reload and then read the reloaded state in the same call — you get the
 old module (stale values, or a `TypeError` for a method that only exists in the
 new code). Split it: reload in one `mt_eval`, verify in the next.
 
-**One Microtonic instance only.** The bridge uses a single fixed machine-global
-folder, so it assumes exactly one live bridge per machine — one running
-Microtonic with one JSConsole and `bridge on`. This is the normal case. Running
-two Microtonic instances that both have the bridge enabled would make them race
-over the same `request.json`/`response.json` and is unsupported; enable
-`bridge on` in only one instance at a time.
+**One active bridge at a time (single owner).** The bridge uses a single fixed
+machine-global folder, so only one Microtonic instance can serve it at a time.
+`bridge on` records an `owner` token in `bridge.json`; if another instance already
+owns it, `bridge on` pops an OK/Cancel dialog in that window asking whether to take
+over. Taking over writes the new owner, and the previous owner detects the change
+on its next tick and stands down — so requests are never handled by two engines at
+once. `mt_status`/`mt_eval` always talk to whichever instance currently owns the
+folder. If you have several Microtonic instances open, make sure the one you intend
+to drive is the current owner by running `bridge on` (and clicking OK) in its
+JSConsole window; that hand-off is a GUI action you cannot perform over the bridge.
 
 Bootstrap reporting should match the actual state:
 

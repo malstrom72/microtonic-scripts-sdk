@@ -38,17 +38,21 @@ Files (all JSON):
 
 - `request.json` — `{ seq, code }`, written by this server (temp file + atomic rename).
 - `response.json` — `{ seq, ok, value, output, error }`, written by the bridge.
-- `bridge.json` — `{ ready, protocol, time }`, written by the bridge on `bridge on`.
+- `bridge.json` — `{ ready, protocol, time, owner }`, written by the bridge on `bridge on`
+  (`owner` is a token identifying the instance that currently holds the bridge).
 
 Requests and replies are paired by a strictly increasing `seq` (epoch-ms based,
 so it keeps climbing across restarts). The bridge ignores any `seq` it has
 already handled.
 
-> **One Microtonic instance only.** The folder is a single fixed machine-global
-> path, so the bridge assumes exactly one live bridge per machine: one running
-> Microtonic, one JSConsole, `bridge on`. That's the normal case. Two instances
-> with the bridge enabled would race over the same files — enable `bridge on` in
-> only one at a time.
+> **One active bridge at a time (single owner).** The folder is a single fixed
+> machine-global path, so only one Microtonic instance can serve the bridge at a
+> time. `bridge on` records an `owner` token in `bridge.json`. If another instance
+> already owns it, `bridge on` pops an OK/Cancel dialog offering to take over;
+> taking over writes the new owner, and the previous owner sees the changed token
+> on its next tick and stands down — so two engines never handle the same request.
+> To move the bridge to a different instance, run `bridge on` (and click OK) in that
+> instance's JSConsole window.
 
 ## Tools
 
@@ -58,8 +62,10 @@ already handled.
   per-call suspension limit. Wrap multi-statement snippets in an IIFE so local
   `var`s do not leak into the shared global space or shadow host names like
   `save`, `load`, or `print`. Default timeout `20000` ms.
-- **`mt_status()`** — report whether a bridge is attached (via `bridge.json`) and
-  the last request/reply sequence numbers.
+- **`mt_status()`** — check whether the bridge is actually **responding**. It probes
+  (a trivial eval with a short timeout) and reports `bridge: LIVE` or `bridge: NOT
+  RESPONDING`, rather than trusting the `bridge.json` presence file, which lingers
+  after the console is closed. See [When the bridge doesn't respond](#when-the-bridge-doesnt-respond).
 
 ## Install
 
@@ -90,7 +96,7 @@ the file protocol described above.
 
 1. Install this SDK's bridged `JSConsole.mtscript` into Microtonic's scripts folder, then open Microtonic, open
    `JSConsole.mtscript`, and type `bridge on`. Grant the folder write-permission prompt when it appears.
-2. From the MCP client, call `mt_status` to confirm `attached: yes`, then
+2. From the MCP client, call `mt_status` to confirm `bridge: LIVE`, then
    `mt_eval` with a snippet, e.g. `getElement('pattern').steps`.
 
 You'll see each command echo as `BRIDGE> …` in the JSConsole window.
@@ -172,3 +178,27 @@ bridge. It is deferred to the next tick, so your current call still gets a reply
 but the reset then wipes JS memory — tearing down JSConsole and the bridge. After
 that you must re-enable `bridge on` from the JSConsole window. Do resets from the
 GUI.
+
+## When the bridge doesn't respond
+
+`mt_eval` timing out, or `mt_status` reporting `bridge: NOT RESPONDING`, means the
+bridge isn't answering. **Diagnose in order of likelihood — a modal dialog is the
+*least* common cause, not the first thing to check:**
+
+1. **Is the JSConsole window open in Microtonic?** If it was closed, reopen it.
+2. **Was `bridge on` typed in it _this session_?** A `bridge.json` presence file is
+   written once on `bridge on` and lingers afterward, so it does **not** prove the
+   bridge is live — that is exactly why `mt_status` probes instead of trusting it.
+   Re-type `bridge on`.
+3. **Is Microtonic running at all?**
+4. **Only if the bridge _was_ working and just stopped** is a modal dialog the likely
+   cause. The bridge tick runs on Microtonic's UI thread, so a synchronous modal
+   (`displayCushy(...)` from a startup/reload path, or a Cushy/IVG load-error dialog
+   such as an invalid pre-multiplied `#AARRGGBB` color) freezes the tick until
+   dismissed. The tell is `last reply seq` frozen *below* `last request seq` after it
+   had been advancing. Dismiss the dialog in Microtonic, then run `bridge off` /
+   `bridge on`.
+
+`mt_status` distinguishes these cases: it probes the bridge (a trivial eval with a
+short timeout) and reports `LIVE` or `NOT RESPONDING` rather than trusting the
+presence file. Re-run it before sending another eval.

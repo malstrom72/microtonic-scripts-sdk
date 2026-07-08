@@ -155,21 +155,29 @@ test('mt_eval times out when no bridge replies', async function (t) {
 	assert.match(r.result.content[0].text, /timed out/);
 });
 
-test('mt_status reflects bridge.json presence', async function (t) {
+test('mt_status probes liveness, not just the presence file', async function (t) {
 	const base = freshBase();
 	const s = startServer(base);
 	t.after(function () { s.kill(); cleanup(base); });
 
 	await s.request('initialize', { capabilities: {} });
 
-	const before = await s.request('tools/call', { name: 'mt_status' });
-	assert.match(before.result.content[0].text, /attached: no/);
+	// Nothing answering and no presence file → NOT RESPONDING, no presence.
+	const none = await s.request('tools/call', { name: 'mt_status' }, 4000);
+	assert.match(none.result.content[0].text, /NOT RESPONDING and no presence file/);
 
-	fs.writeFileSync(path.join(base, 'bridge.json'),
-		JSON.stringify({ ready: true, protocol: 1, time: Date.now() }));
+	// A stale presence file with nothing answering → still NOT RESPONDING. (The old
+	// code wrongly reported "attached: yes" here — exactly the bug that misled us.)
+	fs.writeFileSync(path.join(base, 'bridge.json'), JSON.stringify({ ready: true, protocol: 1 }));
+	const stale = await s.request('tools/call', { name: 'mt_status' }, 4000);
+	assert.match(stale.result.content[0].text, /NOT RESPONDING/);
+	assert.doesNotMatch(stale.result.content[0].text, /LIVE/);
 
-	const after = await s.request('tools/call', { name: 'mt_status' });
-	assert.match(after.result.content[0].text, /attached: yes/);
+	// A live bridge answering the probe → LIVE.
+	const fb = startFakeBridge(base, function (req) { return { value: '' + req.code }; });
+	t.after(function () { fb.stop(); });
+	const live = await s.request('tools/call', { name: 'mt_status' }, 4000);
+	assert.match(live.result.content[0].text, /LIVE/);
 });
 
 test('seq strictly increases across calls', async function (t) {

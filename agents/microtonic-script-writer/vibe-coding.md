@@ -299,9 +299,9 @@ Run the Microtonic bridge smoke test now. Check mt_status, then evaluate 1 + 1 o
 ```
 
 In the resumed session, once the client exposes the bridge tools, call
-`mt_status`; it should report `attached: yes`. Finally call `mt_eval` with a
-harmless expression such as `1 + 1` and confirm it returns `2` before relying on
-the bridge for live debugging.
+`mt_status`; it probes the bridge and should report `bridge: LIVE`. Finally call
+`mt_eval` with a harmless expression such as `1 + 1` and confirm it returns `2`
+before relying on the bridge for live debugging.
 
 ## Reloading While Iterating
 
