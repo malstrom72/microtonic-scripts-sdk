@@ -22,18 +22,18 @@ The documentation in this repository was written for Microtonic version 3.3.4 (b
 
 ## Prerequisites
 
-For everyday scripting work — writing `.cushy` files, running CushyLint, and validating JavaScript — no extra tools are required beyond what is bundled in this repository. The CushyLint binaries (`PikaCmd`, `MakaronCmd`) are prebuilt for both macOS and Windows and will be used as-is.
+For everyday scripting work (writing `.cushy` files, running CushyLint, and validating JavaScript), no extra tools are required beyond what is bundled in this repository. The CushyLint binaries (`PikaCmd`, `MakaronCmd`) are prebuilt for both macOS and Windows and will be used as-is.
 
 **[Node.js](https://nodejs.org/)** is the only tool you may need to install, and only for two tasks:
 
-- **JavaScript validation** (`tools/validate-js.sh`) — runs ESLint via `npx` to catch syntax and style errors in `.js` and `.mtscript` files. ESLint understands the ECMAScript 3 subset used by Microtonic's scripting engine, so it catches mistakes that would only surface at runtime inside the plugin.
-- **IVGFontConverter** — converts TrueType/OpenType fonts to the `.ivgfont` format used by Cushy and IVG. Requires Node.js to run `IVGFontConverter.node.js`.
+- **JavaScript validation** (`tools/validate-js.sh`): runs ESLint via `npx` to catch syntax and style errors in `.js` and `.mtscript` files. ESLint understands the ECMAScript 3 subset used by Microtonic's scripting engine, so it catches mistakes that would only surface at runtime inside the plugin.
+- **IVGFontConverter**: converts TrueType/OpenType fonts to the `.ivgfont` format used by Cushy and IVG. Requires Node.js to run `IVGFontConverter.node.js`.
 
 The following tools are only needed for **SDK maintenance** tasks, not for everyday scripting:
 
-- **C++ compiler** (Xcode/`g++` on macOS, MSVC on Windows) — only needed if the prebuilt `IVG2PNG` binary in `tools/IVG2PNG/` cannot run on your platform (e.g. a Linux machine, or after an upstream update). The validation scripts auto-build from source in that case. `IVG2PNG` renders `.ivg` files to PNG for visual validation and is sourced from the upstream [IVG repository](https://github.com/malstrom72/IVG).
-- **Python 3** — required to run `tools/bootstrap-docling.sh`, which installs [Docling](https://github.com/DS4SD/docling) into a local virtual environment. Docling is used for the one-off task of converting the Microtonic PDF user guide to Markdown (`tools/convert-user-guide.sh`).
-- **Pandoc** — required to regenerate the checked-in HTML copies of Markdown reference docs.
+- **C++ compiler** (Xcode/`g++` on macOS, MSVC on Windows): only needed if the prebuilt `IVG2PNG` binary in `tools/IVG2PNG/` cannot run on your platform (e.g. a Linux machine, or after an upstream update). The validation scripts auto-build from source in that case. `IVG2PNG` renders `.ivg` files to PNG for visual validation and is sourced from the upstream [IVG repository](https://github.com/malstrom72/IVG).
+- **Python 3**: required to run `tools/bootstrap-docling.sh`, which installs [Docling](https://github.com/DS4SD/docling) into a local virtual environment. Docling is used for the one-off task of converting the Microtonic PDF user guide to Markdown (`tools/convert-user-guide.sh`).
+- **Pandoc**: required to regenerate the checked-in HTML copies of Markdown reference docs.
 
 ## Technology Overview
 
@@ -148,8 +148,8 @@ Furthermore, you can use macros when writing `.cushy` files for easier developme
 [Makaron Documentation](docs/Makaron%20Documentation.md) for documentation on the macro expansion language we use. Macros
 you write are expanded when `.cushy` files are loaded inside the plugin, before they are parsed.
 
-For an orientation to the Cushy system — the mental model, coordinates and scaling, what is static versus dynamic, and a
-map of where each part is documented — see [Cushy Documentation](docs/Cushy%20Documentation.md). See also
+For an orientation to the Cushy system (the mental model, coordinates and scaling, what is static versus dynamic, and a
+map of where each part is documented), see [Cushy Documentation](docs/Cushy%20Documentation.md). See also
 [`cushy.schema`](CushyLint/cushy.schema) and [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md) for more
 information on how to write Cushy.
 
