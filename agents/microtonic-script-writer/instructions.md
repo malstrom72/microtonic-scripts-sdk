@@ -105,17 +105,31 @@ Recommended bootstrap phase order:
 
 1. Create `AGENTS.md`, `.mcp.json` for Claude Code compatibility, `scripts/`,
    and `references/microtonic-scripts-sdk/`.
-2. Identify the exact live scripts folder first: prefer `DIRS.SCRIPTS` via the
-   bridge, or have the user open *Open Scripts Folder*. On macOS the standard
-   path is `/Library/Application Support/Sonic Charge/Microtonic Scripts`; on
-   Windows it is normally under `C:\Program Files\Sonic Charge\Microtonic
-   Scripts`, and `tools/locate-scripts-folder.ps1 -Verify` can provide a
-   candidate before the bridge exists. Do not treat similarly named folders,
-   locator guesses, or symlinks as substitutes for the exact live folder. If
-   that exact path does not exist and the bridge cannot confirm `DIRS.SCRIPTS`,
-   stop and ask the user instead of relinking anything. Then ask whether to link
-   Microtonic's live scripts folder to project `scripts/`; do not proceed with
-   live scripts changes until this is answered.
+2. Identify the exact live scripts folder. **Check the standard path on disk
+   first** — do not lead with `DIRS.SCRIPTS` or *Open Scripts Folder* on a cold
+   bootstrap. There is no bridge yet, so `DIRS.SCRIPTS` is unavailable, and
+   Microtonic greys out the puzzle menu — including *Open Scripts Folder* — until
+   the folder exists, so neither can point at a folder that isn't there. On macOS
+   the standard path is `/Library/Application Support/Sonic Charge/Microtonic
+   Scripts`; on Windows it is normally under `C:\Program Files\Sonic Charge\
+   Microtonic Scripts`, and `tools/locate-scripts-folder.ps1 -Verify` can provide
+   a candidate before the bridge exists.
+   - **Standard path missing** → this is a fresh install with no `Microtonic
+     Scripts` folder yet (the greyed-out puzzle menu confirms it). This is
+     expected, **not** a blocker and **not** "Microtonic not installed." Go
+     straight to the cold-start flow below: offer the user the choice of creating
+     the folder at the standard location or linking it to project `scripts/`. Do
+     not scan the disk for similarly named folders and do not relink one just
+     because the standard folder is missing.
+   - **Standard path exists** → confirm it is the exact folder Microtonic reads
+     (`DIRS.SCRIPTS` over a working bridge, or *Open Scripts Folder*, are usable
+     now). Do not treat similarly named folders, locator guesses, or symlinks as
+     substitutes for the exact live folder.
+
+   Then ask whether to link Microtonic's live scripts folder to project
+   `scripts/`; do not proceed with live scripts changes until this is answered.
+   Only stop and ask if you genuinely cannot tell whether Microtonic is installed
+   at all, or the standard path resolves to an existing but unexpected target.
 3. Install the SDK `JSConsole.mtscript` into the folder Microtonic will read.
    If copied into project `scripts/`, rewrite the copied schema paths as
    described below.
@@ -251,6 +265,51 @@ the folder Microtonic will actually read:
   `references/microtonic-scripts-sdk/JSConsole.mtscript` into the project as
   `scripts/JSConsole.mtscript`; because the live Microtonic scripts folder is
   linked to project `scripts/`, Microtonic will see that copied package there.
+
+**First-ever install (no `Microtonic Scripts` folder yet).** On a virgin install
+the standard folder does not exist and Microtonic keeps its puzzle menu greyed
+out until it does, so *Open Scripts Folder* is unreachable and there is nothing
+to copy over or back up. `install-jsconsole.js` prints these same commands if
+pointed at a folder that does not exist yet. On macOS the standard location is
+protected (root-owned `/Library`), so first-time creation needs one elevated
+step. **Offer the user a choice** rather than deciding for them:
+
+- **A — Create the folder at the standard location (stays stock).** Stage through
+  `/tmp` so the elevated copy never reads the SDK checkout (macOS TCC blocks that
+  when the checkout is under `~/Documents`, Desktop, or Downloads):
+
+  ```sh
+  rm -rf "/tmp/JSConsole.mtscript"
+  cp -R "references/microtonic-scripts-sdk/JSConsole.mtscript" /tmp/
+  osascript -e 'do shell script "mkdir -p \"/Library/Application Support/Sonic Charge/Microtonic Scripts\" && cp -R \"/tmp/JSConsole.mtscript\" \"/Library/Application Support/Sonic Charge/Microtonic Scripts/\"" with administrator privileges'
+  ```
+
+  The folder stays root-owned; later installs need elevation, but iteration rides
+  the bridge.
+
+- **B — Link the standard location to project `scripts/`.** There is nothing to
+  back up since the standard location does not exist yet. Put the console in
+  `scripts/`, then point the standard path at it with one elevated `ln -s`
+  (creating a link does not read the target, so no TCC block):
+
+  ```sh
+  mkdir -p scripts
+  cp -R "references/microtonic-scripts-sdk/JSConsole.mtscript" scripts/
+  osascript -e "do shell script \"ln -s '$PWD/scripts' '/Library/Application Support/Sonic Charge/Microtonic Scripts'\" with administrator privileges"
+  ```
+
+  Run from the project root so `$PWD/scripts` resolves to the linked folder. The
+  `-e` argument is double-quoted so the shell expands `$PWD` before `osascript`
+  sees it; the inner paths use single quotes so their spaces survive. Afterwards
+  installs and edits run as the normal user with no elevation, and the copied
+  `scripts/JSConsole.mtscript/JSConsole_main.schema` needs the SDK-relative paths
+  described below. Prefer a project **outside** `~/Documents`/Desktop/Downloads to
+  avoid a one-time Microtonic "wants to access Documents" prompt when it reads
+  through the link.
+
+On Windows the standard folder is under `C:\Program Files\Sonic Charge\`, which
+also needs elevation; create it (or the junction) with an elevated shell, then
+run `install-jsconsole.js` against it.
 
 If `JSConsole.mtscript` is copied from the SDK checkout into project
 `scripts/`, update the copied package's `.schema` file to point back to the SDK
