@@ -30,9 +30,9 @@ IF "%~1"=="x86" (
 )
 
 IF "%CPP_TARGET%"=="debug" (
-	SET CPP_OPTIONS=/Od /MTd /GS /Zi /D DEBUG %CPP_OPTIONS%
+	SET CPP_OPTIONS=/Od /MTd /GS /Z7 /D DEBUG %CPP_OPTIONS%
 ) ELSE IF "%CPP_TARGET%"=="beta" (
-	SET CPP_OPTIONS=/O2 /GL /MTd /GS /Zi /D DEBUG %CPP_OPTIONS%
+	SET CPP_OPTIONS=/O2 /GL /MTd /GS /Z7 /D DEBUG %CPP_OPTIONS%
 ) ELSE IF "%CPP_TARGET%"=="release" (
 	SET CPP_OPTIONS=/O2 /GL /MT /GS- /D NDEBUG %CPP_OPTIONS%
 ) ELSE (
@@ -98,10 +98,12 @@ IF NOT DEFINED VCINSTALLDIR (
 		)
 		for /f "usebackq tokens=*" %%a in (`"%pfpath%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -legacy !range! -products * -property installationPath`) do set vsInstallPath=%%a
 		IF EXIST "!vsInstallPath!\VC\Auxiliary\Build\vcvarsall.bat" (
+			ECHO setting up: %vcvarsConfig%
 			CALL "!vsInstallPath!\VC\Auxiliary\Build\vcvarsall.bat" %vcvarsConfig% >NUL
 			GOTO foundTools
 		)
 		IF EXIST "!vsInstallPath!\VC\vcvarsall.bat" (
+			ECHO setting up: %vcvarsConfig%
 			CALL "!vsInstallPath!\VC\vcvarsall.bat" %vcvarsConfig% >NUL
 			GOTO foundTools
 		)
@@ -111,6 +113,7 @@ IF NOT DEFINED VCINSTALLDIR (
 			FOR /L %%v IN (14,-1,9) DO (
 				IF EXIST "%pfpath%\Microsoft Visual Studio %%v.0\VC\vcvarsall.bat" (
 					SET CPP_MSVC_VERSION=%%v
+					ECHO setting up: %vcvarsConfig%
 					CALL "%pfpath%\Microsoft Visual Studio %%v.0\VC\vcvarsall.bat" %vcvarsConfig% >NUL
 					GOTO foundTools
 				)
@@ -118,6 +121,7 @@ IF NOT DEFINED VCINSTALLDIR (
 			ECHO Could not find Visual C++ in one of the standard paths.
 		) ELSE (
 			IF EXIST "%pfpath%\Microsoft Visual Studio %CPP_MSVC_VERSION%.0\VC\vcvarsall.bat" (
+				ECHO setting up: %vcvarsConfig%
 				CALL "%pfpath%\Microsoft Visual Studio %CPP_MSVC_VERSION%.0\VC\vcvarsall.bat" %vcvarsConfig% >NUL
 				GOTO foundTools
 			)
