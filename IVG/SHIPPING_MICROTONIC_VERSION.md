@@ -23,13 +23,16 @@ only the pieces needed to document and verify the shipped IVG implementation:
 - The `IVG2PNG` source and build helper in `tools/`.
 - The generated standalone IVGFiddle output in `tools/ivgfiddle/output/`.
 - The bundled IVGFontConverter command-line tool in `tools/IVGFontConverter/`.
+- The `svg2ivg` converter in `tools/svg2ivg.js` and its supported-feature
+  reference in `docs/SVG Support.md`.
 - Core documentation and generated example images in `docs/`.
 - Upstream license and README.
 
 Upstream CI files, IDE projects, fuzzing artifacts, full test corpora,
-IVGFiddle source/build scaffolding, SVG conversion tools, font bundles, and
-unrelated helper projects were omitted to keep this SDK snapshot small and
-focused.
+IVGFiddle source/build scaffolding, font bundles, and unrelated helper projects
+were omitted to keep this SDK snapshot small and focused. The upstream
+`tests/svg/` corpus remains omitted; the converter and its feature reference are
+included.
 
 ## Local Patches
 
@@ -38,3 +41,4 @@ focused.
   calling `runIVG()` while the global `Module` value still points at the
   generated factory function, which can otherwise fail with
   `Module.lengthBytesUTF8 is not a function`.
+- `README.md` does not link to the omitted `tests/svg/` sample corpus.

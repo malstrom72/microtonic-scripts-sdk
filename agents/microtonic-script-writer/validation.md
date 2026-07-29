@@ -177,6 +177,14 @@ example above also lints cleanly without the second CLI resource argument.
 - Inline Cushy vector snippets still need separate review or extraction before
   `IVG2PNG` can render them.
 
+## Static IVG Validation
+
+**Use IVG2PNG throughout icon and vector authoring, not only before shipping.**
+Render the actual `.ivg` after each meaningful design change so proportions,
+strokes, and transparency are visible. Do not build an SVG approximation just
+to preview an IVG or rely on generic image tools: ImageMagick installations
+without a reliable SVG delegate can silently drop stroked paths.
+
 ## Testing Dynamic IVG Designs
 
 Dynamic IVG files (those that use `$variable` references bound from Cushy) are
@@ -220,6 +228,26 @@ see the result, open or share the rendered PNG explicitly.
 
 Keep `_test.ivg` files out of the shipped package (`.gitignore` or delete after
 verification).
+
+### Starting From SVG
+
+The pinned IVG snapshot includes `IVG/tools/svg2ivg.js` and its
+supported-feature reference at
+[`IVG/docs/SVG Support.md`](../../IVG/docs/SVG%20Support.md). Run the converter
+with Node.js:
+
+```sh
+node IVG/tools/svg2ivg.js input.svg output.ivg
+```
+
+Treat the result as a draft. The converter emits an IVG-1 header and
+deliberately explicit, frequently nested `context` blocks with repeated paint
+settings; SDK-authored icons commonly use a shorter IVG-2 form. Tidy the
+generated source by hand, preserve its meaning, and render the result with
+IVG2PNG. For a simple glyph, IVG's `path svg:[...]` accepts SVG path data
+verbatim, so copying the path data into a small hand-written IVG wrapper may be
+clearer. The converter is most useful for SVG transforms, gradients, and
+groups.
 
 IVG text rendering always requires an explicit font face before drawing text.
 For local render tests, pass `--fonts IVG/fonts` when using one of the bundled

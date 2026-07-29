@@ -548,7 +548,7 @@ Do not assume `.mtscript` packaging by default.
 
 See [`packaging.md`](packaging.md).
 
-## Cushy And Validation
+## Cushy, IVG, And Validation
 
 For `.mtscript` packages that include `.cushy` files, treat a successful
 CushyLint run as required whenever the workspace can run it.
@@ -572,6 +572,13 @@ CushyLint run as required whenever the workspace can run it.
   `docs/IVG Documentation.md` for every IVG instruction used unless that exact
   instruction is already present in known-working SDK IVG examples/resources.
   CushyLint does not validate IVG.
+- When authoring a `.ivg` icon or vector asset, render the IVG repeatedly with
+  `tools/IVG2PNG/IVG2PNG`; this is an authoring preview, not merely a pre-ship
+  check. Do not make an SVG approximation or rely on generic image tools, which
+  may silently omit stroked paths. For an SVG source,
+  `IVG/tools/svg2ivg.js` can generate a draft, but tidy its verbose IVG-1 output
+  by hand and verify the result with IVG2PNG. See
+  [`validation.md`](validation.md#static-ivg-validation).
 
 See [`validation.md`](validation.md).
 

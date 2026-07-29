@@ -22,12 +22,16 @@ The documentation in this repository was written for Microtonic version 3.3.4 (b
 
 ## Prerequisites
 
-For everyday scripting work (writing `.cushy` files, running CushyLint, and validating JavaScript), no extra tools are required beyond what is bundled in this repository. The CushyLint binaries (`PikaCmd`, `MakaronCmd`) are prebuilt for both macOS and Windows and will be used as-is.
+For everyday scripting work (writing `.cushy` files, running CushyLint, validating JavaScript, and
+authoring IVG icons), no extra tools are required beyond what is bundled in this repository. The
+CushyLint and IVG2PNG binaries are prebuilt for both macOS and Windows and will be used as-is.
 
-**[Node.js](https://nodejs.org/)** is the only tool you may need to install, and only for two tasks:
+**[Node.js](https://nodejs.org/)** is the only tool you may need to install, and only for three tasks:
 
 - **JavaScript validation** (`tools/validate-js.sh`): runs ESLint via `npx` to catch syntax and style errors in `.js` and `.mtscript` files. ESLint understands the ECMAScript 3 subset used by Microtonic's scripting engine, so it catches mistakes that would only surface at runtime inside the plugin.
 - **IVGFontConverter**: converts TrueType/OpenType fonts to the `.ivgfont` format used by Cushy and IVG. Requires Node.js to run `IVGFontConverter.node.js`.
+- **svg2ivg**: converts SVG drafts into IVG with the pinned
+  `IVG/tools/svg2ivg.js` converter.
 
 The following tools are only needed for **SDK maintenance** tasks, not for everyday scripting:
 
@@ -166,6 +170,13 @@ See [IVG Documentation](docs/IVG%20Documentation.md) for more information on IVG
 
 The `IVG` directory is a curated vendored snapshot of the upstream [IVG repository](https://github.com/malstrom72/IVG). A prebuilt `IVG2PNG` binary for macOS and Windows is included in `tools/IVG2PNG/` so no compiler is needed for normal use.
 
+Use IVG2PNG as the preview loop while authoring a single icon or vector asset,
+not only as a bulk validator. Render the actual `.ivg` after each meaningful
+change; do not substitute an SVG approximation or a generic image renderer that
+may silently omit stroked paths. The
+[single-file recipe](agents/microtonic-script-writer/validation.md#static-ivg-validation)
+covers background colors, scaled glyph previews, and comparison strips.
+
 To render all static `.ivg` resources in this SDK:
 
 ```sh
@@ -176,6 +187,21 @@ tools\validate-static-ivg.cmd       # Windows
 The rendered PNGs are written to a temp directory by default (`/tmp/microtonic-static-ivg-validation` on macOS/Linux, `%TEMP%\microtonic-static-ivg-validation` on Windows). IVG files that depend on Cushy or GUI variables are reported as dynamic and skipped by this static renderer pass.
 
 If the prebuilt binary cannot run on your platform, the scripts automatically rebuild `IVG2PNG` from source using `tools/build-ivg2png.sh` (macOS/Linux) or `tools\build-ivg2png.cmd` (Windows, requires MSVC).
+
+### svg2ivg
+
+The curated IVG snapshot also includes the pinned upstream SVG converter:
+
+```sh
+node IVG/tools/svg2ivg.js input.svg output.ivg
+```
+
+See [SVG Support](IVG/docs/SVG%20Support.md) for the supported subset. Treat
+converted output as a draft: `svg2ivg` emits a verbose IVG-1 representation,
+while hand-written SDK icons commonly use a compact IVG-2 form. Tidy the result
+and verify it with IVG2PNG. For simple shapes, SVG path data can be copied
+verbatim into IVG's `path svg:[...]`; the converter earns its keep on
+transforms, gradients, and groups.
 
 ### IVGFontConverter
 

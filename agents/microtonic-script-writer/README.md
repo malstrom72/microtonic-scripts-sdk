@@ -6,6 +6,9 @@ debugging Microtonic scripts with this SDK as the source of truth.
 For a practical workflow guide, see [`vibe-coding.md`](vibe-coding.md).
 For accumulated Cushy GUI details, gotchas, and implementation tips, see
 [`cushy-notes.md`](cushy-notes.md).
+For CushyLint, live-bridge verification, and the native IVG2PNG
+authoring/validation loop for icons and vector assets, see
+[`validation.md`](validation.md).
 
 Use [`instructions.md`](instructions.md) as the canonical instruction file.
 The platform-specific files are thin wrappers for tools that expect a particular
