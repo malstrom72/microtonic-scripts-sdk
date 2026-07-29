@@ -32,6 +32,8 @@ const SERVER_VERSION = '1.0.0';
 const DEFAULT_PROTOCOL = '2024-11-05';
 const DEFAULT_TIMEOUT_MS = 20000; // a single eval may run up to ~20s in Microtonic
 const POLL_INTERVAL_MS = 50;
+const RELOAD_POLL_MS = 150;
+const RELOAD_DEFAULT_TIMEOUT_MS = 10000;
 
 function log() {
 	console.error('[' + SERVER_NAME + ']', ...arguments);
@@ -136,6 +138,59 @@ function formatEval(resp) {
 }
 
 //
+// Tool: mt_reload — invoke the asynchronous reload action, then poll an observable
+// effect until the edited scripts are actually live.
+//
+// performCushyAction itself is synchronous; `reload` is the asynchronous part. Its
+// boolean result is only an invocation result (and reload always succeeds), so it
+// cannot tell callers when the script rerun has finished.
+//
+async function mtReload(args) {
+	const until = args && typeof args.until === 'string' && args.until !== '' ? args.until : null;
+	const timeout = args && typeof args.timeout_ms === 'number'
+		? args.timeout_ms
+		: RELOAD_DEFAULT_TIMEOUT_MS;
+
+	const issued = await mtEval({ code: "performCushyAction('reload')" });
+	if (!issued.ok) {
+		throw new Error('reload could not be invoked: ' + issued.error);
+	}
+	if (until === null) {
+		return {
+			text: 'reload invoked. WARNING: the reload action is asynchronous and no `until` '
+				+ 'predicate was supplied, so the new code may not be live yet. Pass `until` '
+				+ '(e.g. "typeof myScript.newAction !== \'undefined\'") to wait for it properly.',
+			isError: false
+		};
+	}
+
+	// A predicate that touches a not-yet-defined global may throw. Treat that as
+	// "not ready" so callers do not have to make every natural probe defensive.
+	const probe = '(function(){try{return (' + until + ') ? "MT_READY" : "MT_WAIT";}'
+		+ 'catch(e){return "MT_WAIT";}})()';
+	const started = Date.now();
+	const deadline = started + timeout;
+	while (Date.now() < deadline) {
+		await sleep(RELOAD_POLL_MS);
+		const remaining = deadline - Date.now();
+		if (remaining <= 0) {
+			break;
+		}
+		const r = await mtEval({ code: probe, timeout_ms: Math.min(5000, remaining) });
+		if (r.ok && String(r.value).indexOf('MT_READY') >= 0) {
+			return {
+				text: 'reload complete after ' + (Date.now() - started)
+					+ 'ms (predicate satisfied).',
+				isError: false
+			};
+		}
+	}
+	throw new Error('reload was invoked but the `until` predicate did not become true within '
+		+ timeout + 'ms. The predicate may be wrong, or the script may have failed to parse — '
+		+ 'check JSConsole output before assuming the reload did not happen.');
+}
+
+//
 // Tool: mt_status — report whether the bridge is actually responding.
 //
 // The bridge.json presence file only proves the bridge was enabled at *some* point:
@@ -215,6 +270,30 @@ const TOOLS = [
 			+ 'almost always means JSConsole is closed or `bridge on` was not typed this '
 			+ 'session, not a modal dialog.',
 		inputSchema: { type: 'object', properties: {} }
+	},
+	{
+		name: 'mt_reload',
+		description: 'Re-run edited script files in the live Microtonic engine and wait until the '
+			+ 'new code is actually live. Use this after editing a .mtscript instead of evaluating '
+			+ 'performCushyAction(\'reload\') yourself: the reload action is asynchronous, so an '
+			+ 'eval sent straight after a bare reload can still see the old code. Pass `until` with '
+			+ 'a JavaScript expression that becomes true once your change is loaded. A normal reload '
+			+ 'keeps the engine, globals, and this bridge alive.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				until: {
+					type: 'string',
+					description: 'JavaScript expression polled until truthy, e.g. '
+						+ '"typeof polyrhythmChain.newAction !== \'undefined\'". Strongly recommended; '
+						+ 'without it the tool cannot tell when the reload finished.'
+				},
+				timeout_ms: {
+					type: 'number',
+					description: 'How long to poll. Default ' + RELOAD_DEFAULT_TIMEOUT_MS + '.'
+				}
+			}
+		}
 	}
 ];
 
@@ -225,6 +304,9 @@ async function handleToolCall(name, args) {
 	}
 	if (name === 'mt_status') {
 		return await mtStatus();
+	}
+	if (name === 'mt_reload') {
+		return await mtReload(args || {});
 	}
 	throw new Error('unknown tool: ' + name);
 }

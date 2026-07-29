@@ -249,12 +249,13 @@ On Windows, before the bridge is installed, you can usually locate the same fold
 `Open Scripts Folder` before writing.
 
 Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
-editing a GUI script, use the reload button at the top of the JSConsole window to flush cached resources and rebuild the
-open GUI, or type `reload` in JSConsole. A normal reload reruns JavaScript files but keeps the current JavaScript engine
-and existing globals alive. Shift-clicking the JSConsole reload button, or typing `reset`, performs a full JavaScript
-engine reset, which clears memory and starts from a clean scripting environment. Closing the Microtonic GUI window also
-destroys the entire JavaScript environment, so reopening the GUI starts with no previous script globals, like a full
-reset.
+editing a GUI script over the bridge, use `mt_reload` with an `until` expression that observes the change; reload is
+asynchronous, so a bare `mt_eval("performCushyAction('reload')")` returning does not mean the new code is live. In the
+JSConsole window, use the reload button or type `reload` to flush cached resources and rebuild the open GUI. A normal
+reload reruns JavaScript files but keeps the current JavaScript engine and existing globals alive. Shift-clicking the
+JSConsole reload button, or typing `reset`, performs a full JavaScript engine reset, which clears memory and starts from
+a clean scripting environment. Closing the Microtonic GUI window also destroys the entire JavaScript environment, so
+reopening the GUI starts with no previous script globals, like a full reset.
 
 ### Development Scripts Folder
 

@@ -151,8 +151,11 @@ cell.
   flush cached resources, rebuild the open GUI, and rerun JavaScript without
   replacing the JavaScript engine. Normal reload does not unload or close the
   current script window.
-- Over the JSConsole MCP bridge, normal reload is
-  `mt_eval("performCushyAction('reload')")`.
+- Over the JSConsole MCP bridge, use `mt_reload` with an `until` expression that
+  observes the edited code. The reload action is asynchronous: the rerun is not
+  finished when `performCushyAction('reload')` returns, its always-true boolean is
+  not a completion signal, and an immediate follow-up eval may still see the old
+  code.
 - If object instances are kept across reloads, they may retain old methods and
   old action closures.
 - For development, recreate interaction objects on each reload and copy over

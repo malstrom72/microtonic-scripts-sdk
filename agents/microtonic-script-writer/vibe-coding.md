@@ -380,6 +380,10 @@ source files loaded by scripts.
 
 When editing GUI scripts:
 
+- Over the bridge, use `mt_reload` with an `until` expression that observes the
+  change. The reload action is asynchronous, so a bare
+  `mt_eval("performCushyAction('reload')")` returning does not mean the new code
+  is live. A normal reload keeps the engine, globals, and bridge alive.
 - Click the reload button at the top of JSConsole, or type `reload`, to flush
   cached resources, rebuild the open GUI, rerun JavaScript, and keep existing
   globals.

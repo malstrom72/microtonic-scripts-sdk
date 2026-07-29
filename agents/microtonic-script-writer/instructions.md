@@ -401,19 +401,17 @@ the same prefix test as the built-in script popup:
 `getCushyVariable('modal.current').substring(0, 'MyScript.mtscript/'.length) === 'MyScript.mtscript/'`.
 
 To rerun the user's edited script files and rebuild the GUI without leaving the
-bridge, evaluate the reload action over the bridge:
-`mt_eval("performCushyAction('reload')")`. A normal reload keeps the engine and
-globals alive and does not unload or close the current script window, so the
-bridge survives it — this is the edit → reload → re-test loop. Do not drive a
-full reset (`performCushyAction('reload', 'reset')`) over the bridge: it wipes
-JS memory on the next tick and tears down the bridge, which then has to be
-re-enabled with `bridge on` in the JSConsole window. See
+bridge, use `mt_reload`, passing an `until` expression that becomes true once
+the change is loaded. The reload action is asynchronous, so
+`mt_eval("performCushyAction('reload')")` returning does not mean the script
+rerun is finished, and an immediate probe may still see the old code. A normal
+reload keeps the engine and globals alive and does not unload or close the
+current script window, so the bridge survives it — this is the edit → reload →
+re-test loop. Do not drive a full reset
+(`performCushyAction('reload', 'reset')`) over the bridge: it wipes JS memory
+on the next tick and tears down the bridge, which then has to be re-enabled
+with `bridge on` in the JSConsole window. See
 `references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/README.md`.
-
-The reload takes effect on the next tick, not within the current `mt_eval`, so
-do not reload and then read the reloaded state in the same call — you get the
-old module (stale values, or a `TypeError` for a method that only exists in the
-new code). Split it: reload in one `mt_eval`, verify in the next.
 
 **One active bridge at a time (single owner).** The bridge uses a single fixed
 machine-global folder, so only one Microtonic instance can serve it at a time.

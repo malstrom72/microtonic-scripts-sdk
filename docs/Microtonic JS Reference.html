@@ -685,6 +685,12 @@ any data.</p>
 <p>Performs a “Cushy GUI action” with optional parameter string. “Cushy
 GUI actions” are part of the GUI layer in Microtonic. See <a
 href="#cushy-interface">Cushy Interface</a> for more information.</p>
+<p>The <code>"reload"</code> and <code>"reset"</code> actions themselves
+are <strong>asynchronous</strong>: the script rerun they trigger is not
+finished when this function returns, so code running immediately
+afterwards may still see the old scripts. <code>"reload"</code> always
+succeeds, so its boolean return is not a completion signal. Poll for an
+observable effect instead of assuming the new code is live.</p>
 <p>See also: <a href="#cushy-interface">Cushy Interface</a>, <a
 href="#getcushyvariable">getCushyVariable</a>, <a
 href="#setcushyvariable">setCushyVariable</a></p>

@@ -488,6 +488,11 @@ See also: [parseArray](#parsearray)
 Performs a "Cushy GUI action" with optional parameter string. "Cushy GUI actions" are part of the GUI layer in
 Microtonic. See [Cushy Interface](#cushy-interface) for more information.
 
+The `"reload"` and `"reset"` actions themselves are **asynchronous**: the script rerun they trigger is not finished
+when this function returns, so code running immediately afterwards may still see the old scripts. `"reload"` always
+succeeds, so its boolean return is not a completion signal. Poll for an observable effect instead of assuming the new
+code is live.
+
 See also: [Cushy Interface](#cushy-interface), [getCushyVariable](#getcushyvariable), [setCushyVariable](#setcushyvariable)
 
 ### print

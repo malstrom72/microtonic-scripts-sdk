@@ -2,7 +2,8 @@
 
 For quicker round-trips during development, keep a project-local copy of the entire `Microtonic Scripts` folder and
 link Microtonic's scripts folder to it. Copy the current scripts folder into your project first so existing scripts are
-preserved.
+preserved. This pairs well with the [live scripting bridge](../README.md#live-scripting-bridge): edit a file, then
+reload over the bridge with `mt_reload`, passing an `until` expression that observes the edited code.
 
 On macOS, Microtonic's scripts folder is normally:
 

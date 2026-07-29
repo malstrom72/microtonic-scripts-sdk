@@ -62,6 +62,12 @@ already handled.
   per-call suspension limit. Wrap multi-statement snippets in an IIFE so local
   `var`s do not leak into the shared global space or shadow host names like
   `save`, `load`, or `print`. Default timeout `20000` ms.
+- **`mt_reload([until], [timeout_ms])`** — rerun edited script files and, when
+  `until` is supplied, poll that JavaScript expression until the new code is
+  observably live. The `reload` action is asynchronous, so prefer this over a
+  bare `mt_eval("performCushyAction('reload')")`. Without `until`, the tool
+  invokes the reload but warns that it cannot determine when the rerun has
+  finished. Default timeout `10000` ms.
 - **`mt_status()`** — check whether the bridge is actually **responding**. It probes
   (a trivial eval with a short timeout) and reports `bridge: LIVE` or `bridge: NOT
   RESPONDING`, rather than trusting the `bridge.json` presence file, which lingers
@@ -161,17 +167,23 @@ the user script window you are debugging.
 
 The console's `reload` / `reset` are JSConsole *commands*, not globals, so
 `mt_eval("reload")` just throws `ReferenceError`. To rerun the script files and
-rebuild the GUI from the host — the edit → reload → re-test loop — evaluate the
-underlying action instead:
+rebuild the GUI from the host — the edit → reload → re-test loop — use
+`mt_reload` with an expression that observes your change:
 
 ```js
-mt_eval("performCushyAction('reload')")
+mt_reload({ until: "typeof myScript.newAction !== 'undefined'" })
 ```
 
 A normal reload reruns the JavaScript files but keeps the engine and globals
 alive. It does not unload or close the current script window, so
-**the bridge survives its own reload** and keeps working. The call returns
-`true`.
+**the bridge survives its own reload** and keeps working.
+
+The `reload` action is asynchronous: its script rerun is not finished when
+`performCushyAction('reload')` returns, so an eval sent immediately afterwards
+can still observe the old code. Reload also always returns `true`; that value is
+not a completion signal. If no useful predicate is available, a bare
+`mt_eval("performCushyAction('reload')")` can still invoke it, but callers must
+not assume the new code is live yet.
 
 Do **not** drive a full reset (`performCushyAction('reload', 'reset')`) over the
 bridge. It is deferred to the next tick, so your current call still gets a reply,
