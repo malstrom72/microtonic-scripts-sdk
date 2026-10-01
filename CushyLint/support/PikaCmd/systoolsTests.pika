@@ -94,6 +94,15 @@ function {
 	save(testDir # 'testfile1.txt', 'abracadabra');
 	s = load(testDir # 'testfile1.txt');
 	assert(> s == 'abracadabra');
+	binaryData = "AB\r\nCD\x1AEF\x00GH\n\r\r\n";
+	for (i = 0; i < 256; ++i) binaryData #= char(i);
+	saveBinary(testDir # 'binary.bin', binaryData);
+	s = loadBinary(testDir # 'binary.bin');
+	assert(> s === binaryData);
+	saveBinary(testDir # 'binary.bin', 'short');
+	assert(> loadBinary(testDir # 'binary.bin') === 'short');
+	assert(> try(>loadBinary(testDir # 'doesntexist.bin')) == 'Cannot open file for reading: ' # escape(testDir # 'doesntexist.bin'));
+	eraseFile(testDir # 'binary.bin');
 	assert(> pathExists(testDir # 'testfile1.txt'));
 	assert(> pathExists(testDir # '*.txt'));
 	assert(> pathExists(testDir # 'testfile?.txt'));
