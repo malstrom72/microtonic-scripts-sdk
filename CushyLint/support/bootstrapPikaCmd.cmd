@@ -12,7 +12,7 @@ SET "stamp=%output%.sha256"
 
 IF "%~1"=="--hash-only" (
 	CALL :hashSource
-	EXIT /B %ERRORLEVEL%
+	EXIT /B !ERRORLEVEL!
 )
 
 IF NOT EXIST "%sourceFile%" (
@@ -30,15 +30,15 @@ IF "%needsRebuild%"=="0" IF NOT EXIST "%stamp%" (
 )
 IF "%needsRebuild%"=="0" CALL :checkStamp || SET needsRebuild=1
 
+SET "tmpOut=%output%.tmp.exe"
 IF "%needsRebuild%"=="1" (
-	SET "tmp=%output%.tmp.exe"
-	DEL /Q "%tmp%" >NUL 2>&1
-	CALL "%buildScript%" release native "%tmp%" /D "PLATFORM_STRING=WINDOWS" "%sourceFile%" || EXIT /B 1
+	DEL /Q "%tmpOut%" >NUL 2>&1
+	CALL "%buildScript%" release native "%tmpOut%" /D "PLATFORM_STRING=WINDOWS" "%sourceFile%" || EXIT /B 1
 	PUSHD "%pikaDir%" || EXIT /B 1
-	"%tmp%" unittests.pika >NUL || ( POPD & EXIT /B 1 )
-	"%tmp%" systoolsTests.pika || ( POPD & EXIT /B 1 )
+	"%tmpOut%" unittests.pika >NUL || ( POPD & EXIT /B 1 )
+	"%tmpOut%" systoolsTests.pika || ( POPD & EXIT /B 1 )
 	POPD
-	MOVE /Y "%tmp%" "%output%" >NUL || EXIT /B 1
+	MOVE /Y "%tmpOut%" "%output%" >NUL || EXIT /B 1
 	CALL :writeStamp || EXIT /B 1
 )
 
