@@ -66,6 +66,8 @@ namespace IVG {
 
 using NuXPixels::Rect; // Rect is a typedef in Carbon which can confuse the compiler so we do an explicit using for it.
 
+const int PATH_INSTRUCTION_LIMIT = 1000000;
+
 inline double square(double d) { return d * d; }
 
 void checkBounds(const NuXPixels::IntRect& bounds);

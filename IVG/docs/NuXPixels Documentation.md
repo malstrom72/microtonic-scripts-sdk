@@ -55,7 +55,8 @@ int main() {
 }
 ```
 
-Compile with `g++ example.cpp -std=c++17` (or a similar C++17 compiler command).
+Compile with `g++ example.cpp -std=c++17` (or a similar C++17 compiler command). NuXPixels itself needs C++11 with
+SIMD enabled, which is the default; built with `-DNUXPIXELS_SIMD=0` it is plain C++03.
 
 ## Core Data Types
 

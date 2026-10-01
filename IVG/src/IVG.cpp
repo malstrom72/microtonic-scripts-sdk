@@ -47,6 +47,7 @@ const double DEGREES = PI2 / 360.0;
 const double MIN_CURVE_QUALITY = 0.001;
 const double MAX_CURVE_QUALITY = 100.0;
 const double COORDINATE_LIMIT = 1000000.0;
+const double MAX_RADIUS_RATIO = 10000000000.0;	// Path::arcSweep() needs the x radius to be less than this many times the y radius.
 
 void checkBounds(const IntRect& bounds) {
 	if (bounds.left < -32768 || bounds.left >= 32768) {
@@ -65,6 +66,15 @@ void checkBounds(const IntRect& bounds) {
 		Interpreter::throwRunTimeError(String("bounds height out of range [1..32767]: ")
 				+ Interpreter::toString(bounds.height));
 	}
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	// Fuzz builds only (tools/buildIVGFuzz): canvases, images and patterns up to the full 32767 x 32767 are legal, but
+	// would be reported as out of memory, so they are capped at 16M pixels.
+	const int FUZZ_BOUNDS_PIXEL_LIMIT = 1 << 24;
+	if (bounds.width * bounds.height > FUZZ_BOUNDS_PIXEL_LIMIT) {
+		Interpreter::throwRunTimeError(String("bounds area out of range [0..") + Interpreter::toString(FUZZ_BOUNDS_PIXEL_LIMIT)
+				+ "]: " + Interpreter::toString(bounds.width * bounds.height));
+	}
+#endif
 }
 static StringIt eatSpace(StringIt p, const StringIt& e) {
 	while (p != e && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) ++p;
@@ -316,6 +326,10 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 								double largeArcSign = (largeArcFlag != 0 ? 1.0 : -1.0);
 								double sweepSign = (sweepFlag != 0 ? largeArcSign : -largeArcSign);
 								double aspectRatio = radii.x / radii.y;
+								if (aspectRatio >= MAX_RADIUS_RATIO) {
+									errorString = "Arc radius ratio out of range in svg path data";
+									return false;
+								}
 								double l = dx * dx + (aspectRatio * dy) * (aspectRatio * dy);
 								double b = max(4.0 * radii.x * radii.x / l - 1.0, EPSILON);
 								double a = sweepSign * sqrt(b * 0.25);
@@ -440,7 +454,7 @@ static bool parseNumericColor(Interpreter& impd, const StringRange& r, ARGB32::P
 			int count = parseNumberList(impd, StringRange(p, r.e - 1), n, 3, 4);
 			for (int i = 0; i < count; ++i) {
 				if (n[i] < 0.0 || n[i] > 1.0) {
-					impd.throwRunTimeError(String("hsv value number ") + impd.toString(i + 1)
+					impd.throwRunTimeError(String(isRGB ? "rgb" : "hsv") + " value number " + impd.toString(i + 1)
 							+ " out of range [0..1]: " + impd.toString(n[i]));
 				}
 			}
@@ -531,6 +545,21 @@ static int findTransformType(size_t n /* string length */, const char* s /* zero
 	return (stringIndex >= 0 && strcmp(s, STRINGS[stringIndex]) == 0) ? stringIndex : -1;
 }
 
+/**
+	Throws unless every element of `xf` is finite. Concatenating huge transforms can overflow to infinity and then to NaN
+	(infinity minus infinity in a rotation), which nothing further on can handle.
+**/
+static AffineTransformation checkTransformation(const AffineTransformation& xf) {
+	for (int i = 0; i < 2; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			if (!isfinite(xf.matrix[i][j])) {
+				Interpreter::throwRunTimeError("Transformation out of range");
+			}
+		}
+	}
+	return xf;
+}
+
 static AffineTransformation parseSingleTransformation(Interpreter& impd, TransformType transformType, ArgumentsContainer& arguments) {
 	double numbers[6];
 	double anchor[2];
@@ -593,7 +622,7 @@ class TransformationExecutor : public Executor {
 					ArgumentsContainer args(ArgumentsContainer::parse(impd, arguments));
 					AffineTransformation thisXF = parseSingleTransformation(impd, static_cast<TransformType>(foundTransform), args);
 					args.throwIfAnyUnfetched();
-					xf = thisXF.transform(xf);
+					xf = checkTransformation(thisXF.transform(xf));
 					return true;
 				}
 	public:		virtual void trace(Interpreter& impd, const WideString& s) { parentExecutor.trace(impd, s); }
@@ -783,7 +812,13 @@ void Context::stroke(const Path& path, Stroke& stroke, const Rect<double>& paint
 		if (stroke.gap > EPSILON) {
 			double l = stroke.dash + stroke.gap;
 			double dashOffset = fmod(fmod(stroke.dashOffset, l) + l, l);  // floor modulo trick
-			strokePath.dash(stroke.dash, stroke.gap, dashOffset);
+			strokePath.dash(stroke.dash, stroke.gap, dashOffset, PATH_INSTRUCTION_LIMIT);
+			if (strokePath.size() >= PATH_INSTRUCTION_LIMIT) {
+				Interpreter::throwRunTimeError("Path instruction limit exceeded");
+			}
+		}
+		if (strokePath.size() * 3 >= PATH_INSTRUCTION_LIMIT) {
+			Interpreter::throwRunTimeError("Path instruction limit exceeded");
 		}
 		strokePath.stroke(stroke.width * widthMultiplier, stroke.caps, stroke.joints, stroke.miterLimit
 				, calcCurveQuality());
@@ -974,9 +1009,13 @@ std::vector<const Font*> IVGExecutor::lookupExternalOrInternalFonts(Interpreter&
 		lastFontName = name;
 		const FontMap::const_iterator it = embeddedFonts.find(name);
 		lastFontPointers = (it != embeddedFonts.end()
-				? std::vector<const Font*>(1, &it->second) : lookupFonts(impd, name, forString));
+				? std::vector<const Font*>(1, &it->second) : std::vector<const Font*>());
 	}
-	return lastFontPointers;
+	/*
+		Only an embedded font can be cached: its pointer lives in embeddedFonts, while lookupFonts() only
+		promises its result until the next call, and answers per forString anyway.
+	*/
+	return (!lastFontPointers.empty() ? lastFontPointers : lookupFonts(impd, name, forString));
 }
 
 void IVGExecutor::executeDefine(Interpreter& impd, ArgumentsContainer& args) {
@@ -988,7 +1027,7 @@ void IVGExecutor::executeDefine(Interpreter& impd, ArgumentsContainer& args) {
 		args.throwIfAnyUnfetched();
 
 		if (embeddedFonts.find(name) != embeddedFonts.end()) {
-			Interpreter::throwRunTimeError(String("Duplicate font definition: ") + String(name.begin(), name.end()));
+			Interpreter::throwRunTimeError(String("Duplicate font definition: ") + narrowToString(name));
 		}
 		IVG::FontParser fontParser(this);
 		FormatInfo fontFormatInfo;	// Fresh format scope for embedded font documents.
@@ -1008,7 +1047,7 @@ void IVGExecutor::executeDefine(Interpreter& impd, ArgumentsContainer& args) {
 		args.throwIfAnyUnfetched();
 
 		if (definedImages.find(name) != definedImages.end()) {
-			Interpreter::throwRunTimeError(String("Duplicate image definition: ") + String(name.begin(), name.end()));
+			Interpreter::throwRunTimeError(String("Duplicate image definition: ") + narrowToString(name));
 		}
 
 		SelfContainedARGB32Canvas offscreenCanvas(resolution);
@@ -1155,7 +1194,7 @@ void IVGExecutor::executeImage(Interpreter& impd, ArgumentsContainer& args) {
 		image = loadImage(impd, imageName, gotSourceRectangle ? &sourceRectangle : 0
 				, doStretch, forXSize, !doFitWidth, forYSize, !doFitHeight);
 		if (image.raster == 0) {
-			Interpreter::throwRunTimeError(String("Missing image: ") + String(imageName.begin(), imageName.end()));
+			Interpreter::throwRunTimeError(String("Missing image: ") + narrowToString(imageName));
 		}
 	}
 	assert(image.xResolution > 0);
@@ -1273,8 +1312,14 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 				if (rounded[0] < 0.0 || rounded[1] < 0.0) {
 					impd.throwRunTimeError(String("Negative rounded corner radius: ") + impd.toString(numbers[numbers[0] < 0.0 ? 0 : 1]));
 				}
-				p.addRoundedRect(numbers[0], numbers[1], numbers[2], numbers[3], min(rounded[0], numbers[2] * 0.5)
-						, min(rounded[1], numbers[3] * 0.5), currentContext->calcCurveQuality());
+				const double cornerWidth = min(rounded[0], numbers[2] * 0.5);
+				const double cornerHeight = min(rounded[1], numbers[3] * 0.5);
+				if (cornerWidth >= EPSILON && cornerHeight >= EPSILON && cornerWidth / cornerHeight >= MAX_RADIUS_RATIO) {
+					impd.throwRunTimeError(String("Rounded corner radius ratio out of range (0..1e10): ")
+							+ impd.toString(cornerWidth / cornerHeight));
+				}
+				p.addRoundedRect(numbers[0], numbers[1], numbers[2], numbers[3], cornerWidth, cornerHeight
+						, currentContext->calcCurveQuality());
 			}
 			currentContext->draw(p);
 			break;
@@ -1327,7 +1372,7 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			AffineTransformation thisXF = parseSingleTransformation(impd, static_cast<TransformType>(ivgInstruction - MATRIX_INSTRUCTION), args);
 			args.throwIfAnyUnfetched();
 			// FIX : should reverse concat order as standard in new AffineTransform class?
-			state.transformation = thisXF.transform(state.transformation);
+			state.transformation = checkTransformation(thisXF.transform(state.transformation));
 			break;
 		}
 
@@ -1398,6 +1443,9 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			const double ry = (count == 4 ? numbers[3] : rx);
 			if (rx < 0.0 || ry < 0.0) {
 				impd.throwRunTimeError(String("Negative ellipse radius: ") + impd.toString(rx < 0.0 ? rx : ry));
+			}
+			if (rx >= EPSILON && ry >= EPSILON && rx / ry >= MAX_RADIUS_RATIO) {
+				impd.throwRunTimeError(String("Ellipse radius ratio out of range (0..1e10): ") + impd.toString(rx / ry));
 			}
 			if (rx == ry) {
 				p.addCircle(numbers[0], numbers[1], rx, currentContext->calcCurveQuality());
@@ -1476,7 +1524,7 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 				}
 				if (lookupExternalOrInternalFonts(impd, newFontName, UniString()).empty()) {
 					Interpreter::throwRunTimeError(String("Missing font: ")
-							+ String(newFontName.begin(), newFontName.end()));
+							+ narrowToString(newFontName));
 				}
 				state.textStyle.fontName = newFontName;
 			}
@@ -1537,7 +1585,7 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			std::vector<const Font*> fonts = lookupExternalOrInternalFonts(impd, state.textStyle.fontName, text);
 			if (fonts.empty()) {
 				Interpreter::throwRunTimeError(String("Missing font: ")
-						+ String(state.textStyle.fontName.begin(), state.textStyle.fontName.end()));
+						+ narrowToString(state.textStyle.fontName));
 			}
 			
 			double advance;
@@ -1794,7 +1842,7 @@ bool FontParser::execute(Interpreter& impd, const String& instruction, const Str
 			Font::Glyph glyph;
 			const UniString ws = impd.unescapeToUni(args.fetchRequired(0));
 			if (ws.size() != 1) {
-				impd.throwBadSyntax(String("Invalid glyph character (length is not 1): ") + String(ws.begin(), ws.end()));
+				impd.throwBadSyntax(String("Invalid glyph character (length is not 1): ") + narrowToString(ws));
 			}
 			glyph.character = static_cast<UniChar>(ws[0]);
 			glyph.advance = impd.toDouble(args.fetchRequired(1));
