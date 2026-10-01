@@ -1,0 +1,6 @@
+# CushyLint's bootstrap scripts stamp the prebuilt binaries with a hash of their
+# build inputs, so those inputs must have identical bytes on every platform.
+CushyLint/support/** text=auto eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf

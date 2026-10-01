@@ -18,9 +18,7 @@ MKDIR "%rootDir%\build" >NUL 2>&1
 SET needsRebuild=0
 IF NOT EXIST "%output%" SET needsRebuild=1
 IF "%needsRebuild%"=="0" ECHO. | "%output%" - - >NUL 2>NUL || SET needsRebuild=1
-IF "%needsRebuild%"=="0" IF NOT EXIST "%stamp%" (
-	CALL :writeStamp || SET needsRebuild=1
-)
+IF "%needsRebuild%"=="0" IF NOT EXIST "%stamp%" SET needsRebuild=1
 IF "%needsRebuild%"=="0" CALL :checkStamp || SET needsRebuild=1
 
 SET "tmpOut=%output%.tmp.exe"
