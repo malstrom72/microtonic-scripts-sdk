@@ -4,9 +4,14 @@ A tiny [Model Context Protocol](https://modelcontextprotocol.io) server that let
 an MCP client (e.g. Claude Code) evaluate JavaScript against a **live** Microtonic
 engine and read the result back — no GUI automation, no screen reading.
 
-It drives the file bridge built into `JSConsole.mtscript`. You type `bridge on`
-in JSConsole; this server writes JS requests to a shared folder and reads the
+It drives the file bridge built into `JSConsole.mtscript`. You type `bridge on` in the
+JSConsole window; this server writes JS requests to a shared folder and reads the
 replies the bridge writes back.
+
+`server.js` and `server.test.js` are shared verbatim with the sibling Synplant
+Scripts SDK. Everything product-specific (names, tool prefix, default folder) lives
+in the `PRODUCT` block near the top of `server.js`; keep the rest of both files
+identical across the two repos.
 
 ## How it fits together
 
@@ -18,8 +23,9 @@ MCP client  ◀──value/output──   this server  ◀─response.json──
 ```
 
 Because every Microtonic script shares one JS global space, code you `mt_eval`
-can read and drive a script running in the **main GUI layer** while JSConsole
-runs in the dev layer — it's a real debugger into the running instrument.
+can read and drive a script running in the **main GUI layer** while the
+JSConsole runs in the dev layer — it's a real debugger into the running
+instrument.
 
 ## Shared folder
 
@@ -32,27 +38,31 @@ Both ends agree on a fixed, user-writable, username-independent path:
 
 The server `mkdir -p`s it on startup (Microtonic's script API cannot create
 folders). Override with the `BRIDGE_BASE` environment variable if needed — it
-must match `jsConsole.bridgeBase()` in `JSConsole_main.js`.
+must match `jsConsole.bridgeDefaultBase()` in `JSConsole_main.js`. The folder
+must never be shared with another product's bridge (for example Synplant's): two
+consoles open at once would then share `request.json` / `response.json`.
 
 Files (all JSON):
 
 - `request.json` — `{ seq, code }`, written by this server (temp file + atomic rename).
 - `response.json` — `{ seq, ok, value, output, error }`, written by the bridge.
-- `bridge.json` — `{ ready, protocol, time, owner }`, written by the bridge on `bridge on`
-  (`owner` is a token identifying the instance that currently holds the bridge).
+- `bridge.json` — `{ ready, protocol, time, owner }`, written by the bridge on
+  `bridge on` (`time` is epoch ms; `owner` is a token identifying the instance that
+  currently holds the bridge). The server uses `time` for the "announced N s ago"
+  status.
 
 Requests and replies are paired by a strictly increasing `seq` (epoch-ms based,
 so it keeps climbing across restarts). The bridge ignores any `seq` it has
 already handled.
 
 > **One active bridge at a time (single owner).** The folder is a single fixed
-> machine-global path, so only one Microtonic instance can serve the bridge at a
-> time. `bridge on` records an `owner` token in `bridge.json`. If another instance
-> already owns it, `bridge on` pops an OK/Cancel dialog offering to take over;
-> taking over writes the new owner, and the previous owner sees the changed token
-> on its next tick and stands down — so two engines never handle the same request.
-> To move the bridge to a different instance, run `bridge on` (and click OK) in that
-> instance's JSConsole window.
+> path, so only one Microtonic instance can serve the bridge at a time. `bridge on`
+> records an `owner` token in `bridge.json`. If another instance already owns it,
+> `bridge on` pops an OK/Cancel dialog offering to take over; taking over writes
+> the new owner, and the previous owner sees the changed token on its next tick and
+> stands down — so two engines never handle the same request. To move the bridge to
+> a different instance, run `bridge on` (and click OK) in that instance's
+> JSConsole window.
 
 ## Tools
 
@@ -61,7 +71,8 @@ already handled.
   snippets short: each eval freezes the UI and is subject to Microtonic's ~20s
   per-call suspension limit. Wrap multi-statement snippets in an IIFE so local
   `var`s do not leak into the shared global space or shadow host names like
-  `save`, `load`, or `print`. Default timeout `20000` ms.
+  `save`, `load`, or `print`. Avoid evals that may open modal dialogs during a
+  reload or startup. Default timeout `20000` ms.
 - **`mt_reload([until], [timeout_ms])`** — rerun edited script files and, when
   `until` is supplied, poll that JavaScript expression until the new code is
   observably live. The `reload` action is asynchronous, so prefer this over a
@@ -77,7 +88,35 @@ already handled.
 
 Requires Node ≥ 18 (no dependencies, no build step).
 
-### Claude Code
+### 1. Install the JSConsole into Microtonic
+
+Copy the `JSConsole.mtscript` folder (at the repo root) into your Microtonic Scripts
+folder. The quickest way to find that folder is the script menu in Microtonic →
+**Open Scripts Folder** (it is `DIRS.SCRIPTS`).
+
+On Windows, before the bridge exists, the SDK helper can usually locate the same
+folder from the Sonic Charge registry keys:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\locate-scripts-folder.ps1 -Verify
+```
+
+Treat that output as a candidate to confirm, not as a replacement for
+`DIRS.SCRIPTS` / **Open Scripts Folder**. If the target is under
+`C:\Program Files\Sonic Charge\`, copying the console may need elevation; for
+repeated development, consider linking the live scripts folder to a project
+`scripts` folder first.
+
+Once the target is confirmed, copy the SDK's bridged console with:
+
+```sh
+node tools/install-jsconsole.js "<Microtonic Scripts folder>"
+```
+
+The helper refuses to run unless the source console contains the bridge commands,
+which avoids accidentally installing a plain JSConsole copy.
+
+### 2. Register the MCP server
 
 This repo ships a project-scoped [`.mcp.json`](../../.mcp.json) at its root, so
 opening the project in Claude Code offers the server automatically — approve the
@@ -100,22 +139,12 @@ the file protocol described above.
 
 ## Usage
 
-1. Install this SDK's bridged `JSConsole.mtscript` into Microtonic's scripts folder, then open Microtonic, open
-   `JSConsole.mtscript`, and type `bridge on`. Grant the folder write-permission prompt when it appears.
+1. Open Microtonic, open `JSConsole.mtscript`, and type `bridge on`. Grant the
+   folder write-permission prompt when it appears.
 2. From the MCP client, call `mt_status` to confirm `bridge: LIVE`, then
    `mt_eval` with a snippet, e.g. `getElement('pattern').steps`.
 
 You'll see each command echo as `BRIDGE> …` in the JSConsole window.
-
-The quickest way to find the scripts folder is the script menu in Microtonic →
-**Open Scripts Folder** (it is `DIRS.SCRIPTS`). On Windows, copying the console may need elevation; for repeated
-development, consider linking the live scripts folder to a project `scripts` folder first.
-
-Once the target is confirmed, copy the SDK's bridged console with:
-
-```sh
-node tools/install-jsconsole.js "<Microtonic Scripts folder>"
-```
 
 ## Running or toggling a script over the bridge
 
@@ -175,8 +204,8 @@ mt_reload({ until: "typeof myScript.newAction !== 'undefined'" })
 ```
 
 A normal reload reruns the JavaScript files but keeps the engine and globals
-alive. It does not unload or close the current script window, so
-**the bridge survives its own reload** and keeps working.
+alive. It does not close the current script window, so **the bridge survives its
+own reload** and keeps working.
 
 The `reload` action is asynchronous: its script rerun is not finished when
 `performCushyAction('reload')` returns, so an eval sent immediately afterwards
@@ -208,9 +237,12 @@ bridge isn't answering. **Diagnose in order of likelihood — a modal dialog is 
    (`displayCushy(...)` from a startup/reload path, or a Cushy/IVG load-error dialog
    such as an invalid pre-multiplied `#AARRGGBB` color) freezes the tick until
    dismissed. The tell is `last reply seq` frozen *below* `last request seq` after it
-   had been advancing. Dismiss the dialog in Microtonic, then run `bridge off` /
-   `bridge on`.
+   had been advancing (a `mt_eval` timeout reports both numbers). Dismiss the
+   dialog in Microtonic, then run `bridge off` / `bridge on`.
 
 `mt_status` distinguishes these cases: it probes the bridge (a trivial eval with a
 short timeout) and reports `LIVE` or `NOT RESPONDING` rather than trusting the
 presence file. Re-run it before sending another eval.
+
+When iterating on GUI packages, run CushyLint and static IVG checks first, then use
+normal reload evals only after the package is unlikely to throw a load-time modal.

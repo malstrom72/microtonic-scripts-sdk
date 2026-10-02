@@ -68,11 +68,14 @@ function stripPrefixFromFile(file, prefix) {
 
 function postprocessMarkdown(file) {
   let text = readText(file);
+  const guideBase = path.basename(file, ".md");
+  const artifactDir = guideBase + "_artifacts";
+  const encodedArtifactDir = artifactDir.replace(/ /g, "%20");
 
-  text = text.replace(/Microtonic User Guide_artifacts\//g, "Microtonic%20User%20Guide_artifacts/");
+  text = text.replace(new RegExp(escapeRegExp(artifactDir + "/"), "g"), encodedArtifactDir + "/");
 
   text = text.replace(
-    /(## Table of Contents\n\n)([\s\S]*?)(\n## I N T R O D U C T I O N)/,
+    /(## Table of Contents\n\n)([\s\S]*?)(\n## [^\n]+)/,
     function (match, before, tocBlock, after) {
       const cleaned = cleanToc(tocBlock);
       return cleaned === null ? match : before + cleaned + after;
