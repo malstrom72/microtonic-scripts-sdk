@@ -1,9 +1,9 @@
 /*
-	systools.pika v0.97
+	systools.pika v0.98
 
 	PikaScript is released under the "New Simplified BSD License". http://www.opensource.org/licenses/bsd-license.php
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 
 	FUNCTIONS
@@ -226,8 +226,8 @@ if (PLATFORM == 'UNIX') {
 
 	fromNativePath = function { $0 };
 	toNativePath = function { $0 };
-	quotePath = function { "'" # replace($0, "'", "'\\''") # "'" };
-	quoteWildcardPath = function { replace($0, " ()<>'\"&|$~!", '\', find, 1, >$1 # $0) };
+	quotePath = function { "'" # (if ($0{0} === '-') './') # replace($0, "'", "'\\''") # "'" };	// ./ so a leading - is not taken as a command option.
+	quoteWildcardPath = function { replace(quotePath($0), '*?', '', find, 1, >"'" # $0 # "'") };	// Everything but * and ? stays quoted.
 	currentDir = function { appendDirSlash(pipe('pwd -L')) };
 
 	splitPath = function {
@@ -317,7 +317,11 @@ if (PLATFORM == 'UNIX') {
 
 	toNativePath = function { replace($0, '/', '\') };
 	fromNativePath = function { replace($0, '\', '/') };
-	quotePath = function { '"' # replace($0, '/', '\') # '"' };
+	quotePath = function {
+		// A " would end the quoted string early (and is not allowed in Windows filenames anyway).
+		if (find($0, '"') < length($0)) throw('Invalid character in path: ' # escape($0));
+		( '"' # replace($0, '/', '\') # '"' )
+	};
 	quoteWildcardPath = quotePath;
 	currentDir = function { appendDirSlash(fromNativePath(pipe('cd'))) };
 	renameFile = function {

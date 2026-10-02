@@ -1,9 +1,9 @@
 /*
-	unittests.pika v0.97
+	unittests.pika v0.98
 
 	PikaScript is released under the "New Simplified BSD License". http://www.opensource.org/licenses/bsd-license.php
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 */
 
@@ -92,14 +92,6 @@ assert(> (n /= 2) == "1234.5678" );
 assert(> (n %= 358) == "160.5678" );
 assert(> (n % 123.123) == "37.4448" );
 assert(> 0xFF == 255 );
-/* FIX : must decide how this should work 
-assert(> 0xFFFFFFFFFFFFFFFF == 0xFFFFFFFF );
-if (0x100000000 == 0xFFFFFFFF) {
-	assert(> 0x80000000 == (-0x80000000 & -1) );
-} else {
-	assert(> 0x8000000000000000 == -0x8000000000000000 );
-};
-*/
 compose(@tests, 0.0, "0", 0.000000000000000000000001, "1e-24", 1.000000000000000000000001, "1"
 		, 1.0e-400, "0", 1.0e-250, "1e-250", 1.0e+250, "1e+250", 0.09999999999999995, "0.1", 999999999999999, "1e+15"
 		, 0.99999999999999, "0.99999999999999", 9.99999999999995, "10", 0.9999999999999999999999999999999, "1"
@@ -446,7 +438,7 @@ testHelpExamples = function {
 				if (!exists(@::skiptests[expr])) {
 //print('Testing: ' # expr);
 					x = try(>v = evaluate(expr, @::));
-					if (x !== void) report("FAILED : " # escape(expr))
+					if (x !== void) throw('Help example failed: ' # escape(expr) # ' (' # x # ')')
 					else if (classify(v) === 'boolean') assert(v, expr);
 				}
 			});
@@ -599,6 +591,34 @@ assert(> try(>unescape('"\+"')) != void);		// Syntax bug: accepted + only as a n
 assert(> try(>evaluate("a=3e;")) != void);		// Syntax bug: accepted non-existing number after e.
 assert(> try(>evaluate("a=3e+(3)")) != void);	// - " -
 assert(> try(>{a="3e+";+a}) != void);			// - " -
+
+// 0.97 -> 0.98
+
+intIs32 = (~0 == 4294967295);					// Integers are 32 bits (or 64 bits with PIKA_64_BIT_INTEGERS) on every platform.
+minInt = (if (intIs32) '-2147483648' else '-9223372036854775808');
+maxInt = (if (intIs32) '2147483647' else '9223372036854775807');
+assert(> try(>minInt \ -1) === 'Integer overflow');						// Crash bug: the most negative integer / -1 trapped in the CPU.
+assert(> minInt \ 1 == minInt && try(>1 \ 0) === 'Division by zero');
+assert(> try(>'99999999999999999999' \ 1) === "Invalid integer: '99999999999999999999'");	// Bug: integer parsing silently overflowed.
+assert(> try(>1.5 \ 1) === "Invalid integer: '1.5'" && try(>10000000000 \ 1) === "Invalid integer: '1e+10'");
+assert(> radix(4294967295, 16) === 'ffffffff' && (4294967295 & 0xFFFF0000) == 0xFFFF0000);	// Unsigned values above the signed integer range still work.
+assert(> right(radix(-1, 16), 8) === 'ffffffff' && (-1 & 0xFF) == 255);		// Negative values are two's complement for the bitwise operators.
+assert(> right(radix(~0, 16), 8) === 'ffffffff');
+assert(> ((4294967296 + 5) & 0xFF) == 5);									// Bitwise operators keep the low bits of values that are too large.
+assert(> 1e99999999999 == +infinity && 1e-99999999999 == 0);				// Huge exponents still parse.
+assert(>{ x = maxInt; ++x; x === minInt });								// Increment and decrement are integer operations that wrap around (used to be undefined behavior).
+assert(>{ x = minInt; x--; x === maxInt });								// - " -
+assert(> intIs32 || { x = 9999999999; ++x; x++; x === '10000000001' });	// Stays an integer (not 1.0000000001e+10) with 64-bit integers.
+assert(>{ x = 7; x \= 2; x <<= 2; x &= 0xF; x |= 1; x ^= 3; x == 14 });		// Compound assignments in the integer world.
+assert(> -0x10 === '-16' && +0xff === '255');								// Bug: negative hex literals became huge unsigned values.
+assert(> -0xFFFFFFFF === (if (intIs32) '1' else '-4294967295'));			// The sign is part of a hex literal, which wraps like the bitwise operators...
+assert(> -(0xFFFFFFFF) == -4294967295);										// ...while negating a value is a floating point operation.
+assert(> 0 / 0 === 'nan' && sqrt(-1) === 'nan' && 0 / 0 != 0);				// Bug: NaN was formatted as '0'.
+assert(> try(>+(0 / 0)) === "Invalid number: 'nan'" && 10000000000 === '1e+10');
+assert(> 1 << 64 == 0 && 1 << -1 == 0 && 256 >> 64 == 0 && 256 >> -1 == 0);	// Bug: out of range shift counts were undefined behavior.
+assert(> 1 << 31 == 2147483648);											// In-range shifts are unchanged.
+assert(> (if (intIs32) try(>1 << 4294967297) === "Invalid integer: '4294967297'" else 1 << 4294967297 == 0));	// The shift count is a signed integer.
+assert(> upper('abc XYZ 123') === 'ABC XYZ 123' && lower('abc XYZ 123') === 'abc xyz 123');	// upper() and lower() had no tests.
 
 //////////////////////////
 

@@ -103,6 +103,16 @@ function {
 	assert(> loadBinary(testDir # 'binary.bin') === 'short');
 	assert(> try(>loadBinary(testDir # 'doesntexist.bin')) == 'Cannot open file for reading: ' # escape(testDir # 'doesntexist.bin'));
 	eraseFile(testDir # 'binary.bin');
+	oddName = testDir # "odd ;`$(x)'&#{[~.txt";											// Shell metacharacters must not be interpreted in paths.
+	save(oddName, 'odd');
+	assert(> pathExists(oddName));
+	copyFile(oddName, testDir # 'odd copy.txt');
+	assert(> load(testDir # 'odd copy.txt') == 'odd');
+	eraseFile(oddName);
+	assert(> !pathExists(oddName));
+	eraseFile(testDir # 'odd copy.txt');
+	if (PLATFORM == 'UNIX') assert(> quoteWildcardPath("a b*c?'d") === "'a b'*'c'?''\\''d'" && quotePath('-rf') === "'./-rf'");
+	if (PLATFORM == 'WINDOWS') assert(> try(>quotePath('a"b')) === 'Invalid character in path: ''a"b''');
 	assert(> pathExists(testDir # 'testfile1.txt'));
 	assert(> pathExists(testDir # '*.txt'));
 	assert(> pathExists(testDir # 'testfile?.txt'));

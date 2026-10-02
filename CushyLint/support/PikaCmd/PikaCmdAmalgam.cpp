@@ -5,13 +5,13 @@
 	
 	\version
 	
-	Version 0.97
+	Version 0.98
 	
 	\page Copyright
 	
 	PikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 	
 	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
@@ -41,6 +41,7 @@
 #include <map>
 #include <string>
 #include <functional>
+#include <stdint.h>
 
 // These are defined as macros in the Windows headers and collide with some of our "proper" C++ definitions. Sorry, it
 // just ain't right to use global macros in C++. I #undef them. Include PikaScript.h before the Windows headers if you
@@ -57,16 +58,30 @@ namespace Pika {
 
 #if (PIKA_UNICODE)
 	#define STR(s) L##s
-	#define PIKA_SCRIPT_VERSION L"0.97"
+	#define PIKA_SCRIPT_VERSION L"0.98"
 #else
 	#define STR(x) x
-	#define PIKA_SCRIPT_VERSION "0.97"
+	#define PIKA_SCRIPT_VERSION "0.98"
 #endif
 
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
+
+/**
+	Int and UInt are the integer types of the PikaScript integer operations (++, --, \, the bitwise operators,
+	hexadecimal literals and the radix() value). They are 32 bits on every platform, or 64 bits if PIKA_64_BIT_INTEGERS
+	is defined to 1.
+	(STLValue converts them through its int / long / long long overloads.)
+**/
+#if (PIKA_64_BIT_INTEGERS)
+	typedef int64_t Int;
+	typedef uint64_t UInt;
+#else
+	typedef int32_t Int;
+	typedef uint32_t UInt;
+#endif
 
 /**
 	\name Conversion routines for string <-> other types.
@@ -80,8 +95,8 @@ typedef unsigned long ulong;
 //@{
 
 template<class S> std::string toStdString(const S& s);																	///< Converts the string \p s to a standard C++ string. \details The default implementation is std::string(s.begin(), s.end()). You should specialize this template if necessary.
-template<class S> ulong hexToLong(typename S::const_iterator& p, const typename S::const_iterator& e);					///< Converts a string in hexadecimal form to an ulong integer. \details \p p is updated on return to point to the first unparsed (e.g. invalid) character. If \p p == \p e, the full string was successfully converted.
-template<class S> long stringToLong(typename S::const_iterator& p, const typename S::const_iterator& e);				///< Converts a string in decimal form to a signed long integer. \details \p p is updated on return to point to the first unparsed (e.g. invalid) character. If \p p == \p e, the full string was successfully converted.
+template<class S> uint64_t hexToLong(typename S::const_iterator& p, const typename S::const_iterator& e);				///< Converts a string in hexadecimal form to an unsigned 64-bit integer (wrapping around if there are too many digits). \details \p p is updated on return to point to the first unparsed (e.g. invalid) character. If \p p == \p e, the full string was successfully converted.
+template<class S> long stringToLong(typename S::const_iterator& p, const typename S::const_iterator& e);				///< Converts a string in decimal form to a signed long integer. \details \p p is updated on return to point to the first unparsed (e.g. invalid) character. If \p p == \p e, the full string was successfully converted. If the value does not fit in a long, the result saturates at the long range limit.
 template<class S, typename T> S intToString(T i, int radix = 10, int minLength = 1);									///< Converts the integer \p i to a string with a radix and minimum length of your choice. \details \p radix can be anything between 1 (binary) and 16 (hexadecimal).
 template<class S> double stringToDouble(typename S::const_iterator& p, const typename S::const_iterator& e);			///< Converts a string in scientific e notation (e.g. -12.34e-3) to a double floating point value. \details Spaces before 'e' are not accepted. Uppercase 'E' is allowed. Positive and negative 'infinity' is supported (provided the compiler allows it).\p p is updated on return to point to the first unparsed (e.g. invalid) character. If \p p == \p e, the full string was successfully converted.
 template<class S> bool stringToDouble(const S& s, double& d);															///< A convenient utility routine that tries to convert the entire string \p s (in scientific e notation) to a double, returning true on success or false if the string is not in valid syntax.
@@ -98,7 +113,9 @@ template<class S> S escape(const S& s);																					///< Depending on th
 
 	You would normally use the helper function bound_mem_fun() to automatically instantiate the correct template.
 */
-template<class C, class A0, class R> class bound_mem_fun_t : public std::unary_function<A0, R> {
+template<class C, class A0, class R> class bound_mem_fun_t {
+	public:		typedef A0 argument_type;
+	public:		typedef R result_type;
 	public:		bound_mem_fun_t(R (C::*m)(A0), C* o) : m(m), o(o) { }
 	public:		R operator()(A0 a) const { return (o->*m)(a); }
 	protected:	R (C::*m)(A0);
@@ -119,6 +136,30 @@ template<class C, class A0, class R> class bound_mem_fun_t : public std::unary_f
 template<class C, class A0, class R> inline bound_mem_fun_t<C, A0, R> bound_mem_fun(R (C::*m)(A0), C* o) {
 	return bound_mem_fun_t<C, A0, R>(m, o);
 }
+
+/**
+	unary_fun_t wraps a pointer to a unary C++ function in a functor with the argument_type and result_type typedefs
+	that UnaryFunctor needs. It replaces std::ptr_fun, which was removed in C++17.
+*/
+template<class A0, class R> class unary_fun_t {
+	public:		typedef A0 argument_type;
+	public:		typedef R result_type;
+	public:		explicit unary_fun_t(R (*f)(A0)) : f(f) { }
+	public:		R operator()(A0 a) const { return f(a); }
+	protected:	R (*f)(A0);
+};
+
+/**
+	binary_fun_t is the binary counterpart of unary_fun_t (for BinaryFunctor).
+*/
+template<class A0, class A1, class R> class binary_fun_t {
+	public:		typedef A0 first_argument_type;
+	public:		typedef A1 second_argument_type;
+	public:		typedef R result_type;
+	public:		explicit binary_fun_t(R (*f)(A0, A1)) : f(f) { }
+	public:		R operator()(A0 a0, A1 a1) const { return f(a0, a1); }
+	protected:	R (*f)(A0, A1);
+};
 
 /**
 	We use this dummy class to specialize member functions for arbitrary types (including void, references etc).
@@ -185,6 +226,8 @@ template<class S> class STLValue : public S {
 	public:		STLValue(ulong i) : S(intToString<S, ulong>(i)) { }														///< Constructs a value representing the ulong integer \p l.
 	public:		STLValue(int i) : S(intToString<S, long>(i)) { }														///< Constructs a value representing the signed integer \p i.
 	public:		STLValue(uint i) : S(intToString<S, ulong>(i)) { }														///< Constructs a value representing the unsigned integer \p i.
+	public:		STLValue(long long i) : S(intToString<S, long long>(i)) { }												///< Constructs a value representing the signed 64-bit integer \p i. \details (Declared as long long since int64_t is long on some platforms.)
+	public:		STLValue(unsigned long long i) : S(intToString<S, unsigned long long>(i)) { }							///< Constructs a value representing the unsigned 64-bit integer \p i.
 	public:		STLValue(bool b) : S(b ? S(STR("true")) : S(STR("false"))) { }											///< Constructs a value representing the boolean \p b.
 	public:		template<class T> STLValue(const T& s) : S(s) { }														///< Pass other types of construction onwards to the super-class \p S.
 	//@}
@@ -194,9 +237,11 @@ template<class S> class STLValue : public S {
 	public:		operator long() const;																					///< Converts the value to a signed long integer. \details If the value isn't in valid integer format an exception is thrown.
 	public:		operator double() const;																				///< Converts the value to a double precision floating point. \details If the value isn't in valid floating point format an exception is thrown.
 	public:		operator float() const { return float(double(*this)); }													///< Converts the value to a single precision floating point. \details If the value isn't in valid floating point format an exception is thrown.
-	public:		operator ulong() const { return ulong(long(*this)); }													///< Converts the value to an ulong integer. \details If the value isn't in valid integer format an exception is thrown.
-	public:		operator int() const { return int(long(*this)); }														///< Converts the value to a signed integer. \details If the value isn't in valid integer format an exception is thrown.
-	public:		operator uint() const { return uint(int(*this)); }														///< Converts the value to an unsigned integer. \details If the value isn't in valid integer format an exception is thrown.
+	public:		operator ulong() const;																					///< Converts the value to an ulong integer. \details Values that are too large keep their lowest bits (and negative values convert to two's complement). If the value isn't in valid integer format an exception is thrown.
+	public:		operator int() const;																					///< Converts the value to a signed integer. \details If the value isn't in valid integer format an exception is thrown.
+	public:		operator uint() const;																					///< Converts the value to an unsigned integer. \details Values that are too large keep their lowest bits (and negative values convert to two's complement). If the value isn't in valid integer format an exception is thrown.
+	public:		operator long long() const;																				///< Converts the value to a signed 64-bit integer. \details If the value isn't in valid integer format, or does not fit, an exception is thrown.
+	public:		operator unsigned long long() const;																	///< Converts the value to an unsigned 64-bit integer. \details Values that are too large keep their lowest bits (and negative values convert to two's complement). If the value isn't in valid integer format an exception is thrown.
 	//@}
 	/// \name Overloaded operators (comparisons and subscript).
 	//@{
@@ -338,10 +383,10 @@ template<class Config> struct Script {
 		//@{
 		public:		void registerNative(const String& identifier, Native* native);										///< Registers the native function (or object) \p native with \p identifier in the appropriate variable space (determined by any "frame identifier" present in \p identifier). \details Once registered, the native is considered "owned" by the variable space. In other words, all registered natives will be deleted by the Variables destructor. Also, if you register a new native on an already used identifier, the old native for that identifier will be deleted automatically. Besides assigning the native with Variables::assignNative() this method also sets the variable \p identifier to \c <identifier> (unless \p native is a null-pointer).
 		public:		template<class A0, class R> void registerNative(const String& i, R (*f)(A0)) {
-						registerNative(i, newUnaryFunctor(std::ptr_fun(f)));
+						registerNative(i, newUnaryFunctor(unary_fun_t<A0, R>(f)));
 					}																									///< Helper template for easily registering a unary C++ function. \details The C++ function should take a single argument of either Frame& or any of the native types that are convertible from Script::Value. It should return a value of any type that is convertible to Script::Value or void.
 		public:		template<class A0, class A1, class R> void registerNative(const String& i, R (*f)(A0, A1)) {
-						registerNative(i, newBinaryFunctor(std::ptr_fun(f)));
+						registerNative(i, newBinaryFunctor(binary_fun_t<A0, A1, R>(f)));
 					}																									///< Helper template for easily registering a binary C++ function. \details The C++ function should take two arguments of any of the native types that are convertible from Script::Value. It should return a value of any type that is convertible to Script::Value or void.
 		public:		template<class C, class A0, class R> void registerNative(const String& i, C* o, R (C::*m)(A0)) {
 						registerNative(i, newUnaryFunctor(bound_mem_fun(m, o)));
@@ -372,7 +417,7 @@ template<class Config> struct Script {
 		protected:	bool expr(StringIt& p, const StringIt& e, XValue& v, bool emptyOk, bool dry, Precedence thres);
 		protected:	bool termExpr(StringIt& p, const StringIt& e, XValue& v, bool emptyOk, bool dry, Precedence thres
 							, Char term);
-		protected:	static long intDiv(long x, long y);
+		protected:	static Int intDiv(Int x, Int y);
 
 		protected:	Variables& vars;
 		protected:	Root& root;
@@ -597,13 +642,13 @@ typedef Script<StdConfig> StdScript;
 	
 	\version
 	
-	Version 0.97
+	Version 0.98
 	
 	\page Copyright
 	
 	PikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 	
 	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
@@ -671,11 +716,12 @@ template<> inline std::basic_istream<char>& xcin() { return std::cin; }
 template<> inline std::basic_istream<wchar_t>& xcin() { return std::wcin; }
 template<> inline std::string toStdString(const std::string& s) { return s; }
 
-inline ulong shiftRight(ulong l, int r) { return l >> r; }
-inline ulong shiftLeft(ulong l, int r) { return l << r; }
-inline ulong bitAnd(ulong l, ulong r) { return l & r; }
-inline ulong bitOr(ulong l, ulong r) { return l | r; }
-inline ulong bitXor(ulong l, ulong r) { return l ^ r; }
+inline UInt shiftRight(UInt l, Int r) { return (UInt(r) >= sizeof (UInt) * 8) ? 0 : l >> r; }							// Out of range (and negative) shift counts are undefined behavior in C++.
+inline UInt shiftLeft(UInt l, Int r) { return (UInt(r) >= sizeof (UInt) * 8) ? 0 : l << r; }
+inline Int incDec(Int x, Int d) { return Int(UInt(x) + UInt(d)); }														// Increment and decrement wrap around (well defined in unsigned).
+inline UInt bitAnd(UInt l, UInt r) { return l & r; }
+inline UInt bitOr(UInt l, UInt r) { return l | r; }
+inline UInt bitXor(UInt l, UInt r) { return l ^ r; }
 inline double modulo(double x, double y) { return fmod(x, y); }
 
 template<class C> inline bool isSymbolChar(C c) {
@@ -688,20 +734,35 @@ template<class S> std::string toStdString(const S& s) { return std::string(s.beg
 template<> std::string toStdString(const std::string& s);
 inline std::string& toStdString(std::string& s) { return s; }
 
-template<class S> ulong hexToLong(typename S::const_iterator& p, const typename S::const_iterator& e) {
+template<class S> uint64_t hexToLong(typename S::const_iterator& p, const typename S::const_iterator& e) {
 	assert(p <= e);
-	ulong l = 0;
+	uint64_t l = 0;
 	for (; p < e && ((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'F') || (*p >= 'a' && *p <= 'f')); ++p)
 		l = (l << 4) + (*p <= '9' ? *p - '0' : (*p & ~0x20) - ('A' - 10));
 	return l;
 }
 
-template<class S> long stringToLong(typename S::const_iterator& p, const typename S::const_iterator& e) {
+template<class S> uint64_t scanInteger(typename S::const_iterator& p, const typename S::const_iterator& e
+		, uint64_t maxPositive, bool& overflow) {
 	assert(p <= e);
-	bool negative = (e - p > 1 && ((*p == '+' || *p == '-') && p[1] >= '0' && p[1] <= '9') ? (*p++ == '-') : false);
-	long l = 0;
-	for (; p < e && *p >= '0' && *p <= '9'; ++p) l = l * 10 + (*p - '0');
-	return negative ? -l : l;
+	const bool negative = (e - p > 1 && ((*p == '+' || *p == '-') && p[1] >= '0' && p[1] <= '9') ? (*p++ == '-') : false);
+	const uint64_t limit = (negative ? maxPositive + 1 : maxPositive), cutoff = limit / 10, cutlim = limit % 10;
+	uint64_t l = 0;
+	overflow = false;
+	for (; p < e && *p >= '0' && *p <= '9'; ++p) {
+		const uint64_t d = *p - '0';
+		overflow = overflow || l > cutoff || (l == cutoff && d > cutlim);
+		l = l * 10 + d;
+	}
+	return (negative ? 0 - l : l);
+}
+
+template<class S> long stringToLong(typename S::const_iterator& p, const typename S::const_iterator& e) {
+	const bool negative = (p < e && *p == '-');
+	bool overflow;
+	const uint64_t l = scanInteger<S>(p, e, std::numeric_limits<long>::max(), overflow);
+	if (overflow) return (negative ? std::numeric_limits<long>::min() : std::numeric_limits<long>::max());
+	return long(l);
 }
 
 template<class S, class T> S intToString(T i, int radix, int minLength) {
@@ -731,7 +792,7 @@ template<class S> double stringToDouble(typename S::const_iterator& p, const typ
 		}
 		if (e - p > 1 && (*p == 'E' || *p == 'e')) {
 			typename S::const_iterator b = p;
-			d *= pow(10, double(stringToLong<S>(++p, e)));
+			d *= pow(10, double(stringToLong<S>(++p, e)));																// (Saturates on overflow, which still yields infinity or 0.)
 			if (p == b + 1) p = b;
 		}
 	}
@@ -748,8 +809,9 @@ template<class S> S doubleToString(double d, int precision) {
 	assert(1 <= precision && precision <= 24);
 	const double EPSILON = 1.0e-300, SMALL = 1.0e-5, LARGE = 1.0e+10;
 	double x = fabs(d), y = x;
+	if (d != d) return S(STR("nan"));																					// NaN fails all tests below.
 	if (y <= EPSILON) return S(STR("0"));
-	else if (precision >= 12 && y < LARGE && long(d) == d) return intToString<S, long>(long(d));
+	else if (precision >= 12 && y < LARGE && int64_t(d) == d) return intToString<S, int64_t>(int64_t(d));
 	else if (std::numeric_limits<double>::has_infinity && x == std::numeric_limits<double>::infinity())
 		return d < 0 ? S(STR("-infinity")) : S(STR("+infinity"));
 	typename S::value_type buffer[32], * bp = buffer + 2, * dp = bp, * pp = dp + 1, * ep = pp + precision;
@@ -798,7 +860,7 @@ template<class S> S unescape(typename S::const_iterator& p, const typename S::co
 		if (*p == '\\' && e - p > 1) {
 			d += S(b, p);
 			const CHAR* f = std::find(ESCAPE_CHARS, ESCAPE_CHARS + ESCAPE_CODE_COUNT, *++p);
-			ulong l;
+			uint64_t l;
 			if (f != ESCAPE_CHARS + ESCAPE_CODE_COUNT) { ++p; l = ESCAPE_CODES[f - ESCAPE_CHARS]; }
 			else if (*p == 'x') { b = ++p; l = hexToLong<S>(p, (e - p > 2 ? p + 2 : e)); }
 			else if (*p == 'u') { b = ++p; l = hexToLong<S>(p, (e - p > 4 ? p + 4 : e)); }
@@ -846,12 +908,33 @@ template<class S> STLValue<S>::operator bool() const {
 	else throw Exception<S>(S(STR("Invalid boolean: ")) += escape(S(*this)));
 }
 
-template<class S> STLValue<S>::operator long() const {
-	typename S::const_iterator p = S::begin();
-	long y = stringToLong<S>(p, S::end());
-	if (p == S::begin() || p < S::end()) throw Exception<S>(S(STR("Invalid integer: ")) += escape(S(*this)));
+template<class S> void throwInvalidInteger(const S& s) { throw Exception<S>(S(STR("Invalid integer: ")) += escape(s)); }
+
+template<class S> uint64_t scanValue(const S& s, uint64_t maxPositive, bool& overflow) {
+	typename S::const_iterator p = s.begin();
+	const uint64_t y = scanInteger<S>(p, s.end(), maxPositive, overflow);
+	if (p == s.begin() || p < s.end()) throwInvalidInteger(s);
 	return y;
 }
+
+template<class T, class S> T toSignedInteger(const S& s) {
+	bool overflow;
+	const uint64_t y = scanValue(s, std::numeric_limits<T>::max(), overflow);
+	if (overflow) throwInvalidInteger(s);
+	return T(y);
+}
+
+template<class T, class S> T toUnsignedInteger(const S& s) {
+	bool overflow;
+	return T(scanValue(s, 0, overflow));
+}
+
+template<class S> STLValue<S>::operator int() const { return toSignedInteger<int, S>(*this); }
+template<class S> STLValue<S>::operator long() const { return toSignedInteger<long, S>(*this); }
+template<class S> STLValue<S>::operator long long() const { return toSignedInteger<long long, S>(*this); }
+template<class S> STLValue<S>::operator uint() const { return toUnsignedInteger<uint, S>(*this); }
+template<class S> STLValue<S>::operator ulong() const { return toUnsignedInteger<ulong, S>(*this); }
+template<class S> STLValue<S>::operator unsigned long long() const { return toUnsignedInteger<unsigned long long, S>(*this); }
 
 template<class S> STLValue<S>::operator double() const {
 	double d;
@@ -1029,7 +1112,7 @@ TMPL template<class F> bool Script<CFG>::Frame::addSubOp(StringIt& p, const Stri
 	else if (thres >= POSTFIX) return false;
 	else if (!dry) {
 		Value r = rvalue(v, false);																						// <-- post inc/dec
-		set(lvalue(v), f(long(r), 1));
+		set(lvalue(v), incDec(Int(r), *p == '-' ? -1 : 1));
 		v = XValue(false, r);
 	}
 	p += 2;
@@ -1050,7 +1133,7 @@ TMPL bool Script<CFG>::Frame::pre(StringIt& p, const StringIt& e, XValue& v, boo
 	switch (p < e ? *p : 0) {
 		case 0:		return false;
 		case '!':	expr(++p, e, v, false, dry, PREFIX); if (!dry) v = XValue(false, !rvalue(v)); return true;			// <-- logical not
-		case '~':	expr(++p, e, v, false, dry, PREFIX); if (!dry) v = XValue(false, ~ulong(rvalue(v))); return true;	// <-- bitwise not
+		case '~':	expr(++p, e, v, false, dry, PREFIX); if (!dry) v = XValue(false, ~UInt(rvalue(v))); return true;	// <-- bitwise not
 		case '(':	termExpr(++p, e, v, false, dry, BRACKETS, ')'); return true;										// <-- parenthesis
 		case ':':	if (e - p > 1 && p[1] == ':') p += 2; break;														// <-- root
 		case '^':	while (++p < e && *p == '^'); break;																// <-- frame peek
@@ -1079,7 +1162,7 @@ TMPL bool Script<CFG>::Frame::pre(StringIt& p, const StringIt& e, XValue& v, boo
 					else if (++p >= e) return false;
 					else if (*p == *b) {
 						expr(++p, e, v, false, dry, PREFIX);															// <-- pre inc/dec
-						if (!dry) v = XValue(false, set(lvalue(v), long(rvalue(v, false)) + (*b == '-' ? -1 : 1)));
+						if (!dry) v = XValue(false, set(lvalue(v), incDec(Int(rvalue(v, false)), *b == '-' ? -1 : 1)));
 						return true;
 					} else if (*p < '0' || *p > '9') {
 						expr(p, e, v, false, dry, PREFIX);																// <-- positive / negative
@@ -1088,9 +1171,9 @@ TMPL bool Script<CFG>::Frame::pre(StringIt& p, const StringIt& e, XValue& v, boo
 					} /* else continue */
 
 		case '0':	if (e - p > 1 && p[1] == 'x') {
-						ulong l = hexToLong<String>(p += 2, e);															// <-- hexadecimal literal
+						const UInt l = UInt(hexToLong<String>(p += 2, e));												// <-- hexadecimal literal
 						if (p == b + 2) throw Xception(STR("Invalid hexadecimal number"));
-						if (!dry) v = XValue(false, *b == '-' ? -long(l) : l);
+						if (!dry) v = XValue(false, *b == '-' ? Value(Int(0 - l)) : Value(l));							// Hex literals are integers and wrap like the bitwise operators.
 						return true;
 					} /* else continue */
 
@@ -1149,10 +1232,9 @@ TMPL bool Script<CFG>::Frame::pre(StringIt& p, const StringIt& e, XValue& v, boo
 	return (b != p);
 }
 
-TMPL long Script<CFG>::Frame::intDiv(long x, long y) {
-	if (y == 0) {
-		throw Xception(STR("Division by zero"));
-	}
+TMPL Int Script<CFG>::Frame::intDiv(Int x, Int y) {
+	if (y == 0) throw Xception(STR("Division by zero"));
+	if (y == -1 && x == std::numeric_limits<Int>::min()) throw Xception(STR("Integer overflow"));						// The most negative integer / -1 does not fit and traps on x86.
 	return x / y;
 }
 
@@ -1468,12 +1550,14 @@ TMPL void Script<CFG>::lib::thrower(const String& s) { throw Xception(s); }
 TMPL T_TYPE(Value) Script<CFG>::lib::time(const Frame&) { return double(::time(0)); }
 
 TMPL T_TYPE(String) Script<CFG>::lib::upper(String s) {
-	transform(s.begin(), s.end(), s.begin(), std::bind2nd(std::ptr_fun(std::toupper<Char>), std::locale::classic()));
+	const std::ctype<Char>& ct = std::use_facet< std::ctype<Char> >(std::locale::classic());
+	for (typename String::iterator it = s.begin(), e = s.end(); it != e; ++it) *it = ct.toupper(*it);
 	return s;
 }
 
 TMPL T_TYPE(String) Script<CFG>::lib::lower(String s) {
-	transform(s.begin(), s.end(), s.begin(), std::bind2nd(std::ptr_fun(std::tolower<Char>), std::locale::classic()));
+	const std::ctype<Char>& ct = std::use_facet< std::ctype<Char> >(std::locale::classic());
+	for (typename String::iterator it = s.begin(), e = s.end(); it != e; ++it) *it = ct.tolower(*it);
 	return s;
 }
 
@@ -1566,16 +1650,17 @@ TMPL T_TYPE(String) Script<CFG>::lib::radix(const Frame& f) {
 	int radix = f.get(STR("$1"));
 	if (radix < 2 || radix > 16) throw Xception(String(STR("Radix out of range: ")) += intToString<String>(radix));
 	int minLength = f.getOptional(STR("$2"), 1);
-	if (minLength < 0 || minLength > int(sizeof (int) * 8))
+	if (minLength < 0 || minLength > int(sizeof (UInt) * 8))
 		throw Xception(String(STR("Minimum length out of range: ")) += intToString<String>(minLength));
-	return intToString<String, ulong>(f.get(STR("$0")), f.get(STR("$1")), minLength);
+	return intToString<String>(UInt(f.get(STR("$0"))), radix, minLength);
 }
 
 TMPL void Script<CFG>::lib::save(const String& file, const String& chars) {
 	std::basic_ofstream<Char> outstream(toStdString(file).c_str());															// Sorry, can't pass a wchar_t filename. MSVC supports it, but it is non-standard. So we convert to a std::string to be on the safe side.
 	if (!outstream.good()) throw Xception(String(STR("Cannot open file for writing: ")) += escape(file));
 	outstream.write(chars.data(), chars.size());
-	if (!outstream.good()) throw Xception(String(STR("Error writing to file: ")) += escape(file));
+	outstream.close();																									// Flush now so errors writing the last buffered bytes are not lost in the destructor.
+	if (outstream.fail()) throw Xception(String(STR("Error writing to file: ")) += escape(file));
 }
 
 TMPL ulong Script<CFG>::lib::search(const String& a, const String& b) {
@@ -1690,13 +1775,13 @@ TMPL Script<CFG>::Variables::~Variables() { }
 	
 	\version
 	
-	Version 0.97
+	Version 0.98
 	
 	\page Copyright
 	
 	PikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 	
 	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
@@ -2087,13 +2172,13 @@ bool unitTest();
 	
 	\version
 	
-	Version 0.97
+	Version 0.98
 	
 	\page Copyright
 	
 	PikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 	
 	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
@@ -2194,13 +2279,13 @@ template<class Super, unsigned int CACHE_SIZE = 11> class QuickVars : public Sup
 	
 	\version
 	
-	Version 0.97
+	Version 0.98
 	
 	\page Copyright
 	
 	PikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 	
 	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
@@ -2254,13 +2339,13 @@ template struct Script<StdConfig>;
 	
 	\version
 	
-	Version 0.97
+	Version 0.98
 	
 	\page Copyright
 	
 	PikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause
 	
-	Copyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem
+	Copyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem
 	All rights reserved.
 	
 	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
@@ -2343,11 +2428,11 @@ REGISTER_UNIT_TEST(QStrings::unitTest)
 #endif
 const char* BUILT_IN_DEBUG =
 	"/*\n"
-	"\tdebug.pika v0.97\n"
+	"\tdebug.pika v0.98\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
-	"\tCopyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem\n"
+	"\tCopyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem\n"
 	"\tAll rights reserved.\n"
 	"*/\n"
 	"\n"
@@ -2606,11 +2691,11 @@ const char* BUILT_IN_DEBUG =
 
 const char* BUILT_IN_HELP =
 	"/*\n"
-	"\thelp.pika v0.97\n"
+	"\thelp.pika v0.98\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
-	"\tCopyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem\n"
+	"\tCopyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem\n"
 	"\tAll rights reserved.\n"
 	"*/\n"
 	"\n"
@@ -2757,7 +2842,7 @@ const char* BUILT_IN_HELP =
 	"describe('#objects', 'newLocal',\t\t\"@object = newLocal(>constructor, [<arguments>, ...])\",\t\t\t\t\t\"Allocates and constructs on local heap.\", \"\", 'construct, gc, new');\n"
 	"describe('#objects', 'this',\t\t\t\"@object = this()\",\t\t\t\t\t\t\t\t\t\t\t\t\t\t\"Object called.\", \"\", 'method');\n"
 	"\n"
-	"describe('#strings', 'char',\t\t\"'character' = char(+code)\",\t\t\t\t\t\t\"Returns the character represented by +code as a string. +code is either an ASCII or Unicode value (depending on how PikaScript is configured). If +code is not a valid character code the exception 'Illegal character code: {code}' will be thrown.\\n\\nInverse: ordinal('character').\", \"char(65) === 'A'\\nchar(ordinal('\xc3\xa5')) === '\xc3\xa5'\", 'ordinal');\n"
+	"describe('#strings', 'char',\t\t\"'character' = char(+code)\",\t\t\t\t\t\t\"Returns the character represented by +code as a string. +code is either an ASCII or Unicode value (depending on how PikaScript is configured). If +code is not a valid character code the exception 'Illegal character code: {code}' will be thrown.\\n\\nInverse: ordinal('character').\", \"char(65) === 'A'\\nordinal(char(229)) == 229\", 'ordinal');\n"
 	"describe('#strings', 'chop',\t\t\"'chopped' = chop('string', +count)\",\t\t\t\t\"Removes the last +count number of characters from 'string'. This function is equivalent to 'string'{:length('string') - +count}. If +count is zero or negative, the entire 'string' is returned. If +count is greater than the length of 'string', the empty string is returned. (There is no function for removing characters from the beginning of the string because you can easily use 'string'{+count:}.)\", \"chop('abcdefgh', 3) === 'abcde'\\nchop('abcdefgh', 42) === ''\", 'length, right, trim');\n"
 	"describe('#strings', 'bake',\t\t\"'concrete' = bake('abstract', ['escape' = \\\"{\\\"], ['return' = \\\"}\\\"])\",\t\"Processes the 'abstract' string by interpreting any text bracketed by 'escape' and 'return' as PikaScript expressions and injecting the results from evaluating those expressions. The default brackets are '{' and '}'. The code is evaluated in the caller's frame. Thus you can inject local variables like this: '{myvar}'.\", \"bake('The result of 3+7 is {3+7}') === 'The result of 3+7 is 10'\\nbake('Welcome back {username}. It has been {days} days since your last visit.')\", 'evaluate');\n"
 	"describe('#strings', 'escape',\t\t\"'escaped' = escape('raw')\",\t\t\t\t\t\t\"Depending on the contents of the source string 'raw' it is encoded either in single (') or double (\\\") quotes. If the string contains only printable ASCII chars (ASCII values between 32 and 126 inclusively) and no apostrophes ('), it is enclosed in single quotes with no further processing. Otherwise it is enclosed in double quotes (\\\") and any unprintable ASCII character, backslash (\\\\) or quotation mark (\\\") is encoded using C-style escape sequences (e.g. \\\"line1\\\\nline2\\\").\\n\\nYou can use unescape() to decode an escaped string.\", \"escape(\\\"trivial\\\") === \\\"'trivial'\\\"\\nescape(\\\"it's got an apostrophe\\\") === '\\\"it''s got an apostrophe\\\"'\\nescape(unescape('\\\"first line\\\\n\\\\xe2\\\\x00tail\\\"')) === '\\\"first line\\\\n\\\\xe2\\\\x00tail\\\"'\", 'unescape');\n"
@@ -2767,7 +2852,7 @@ const char* BUILT_IN_HELP =
 	"describe('#strings', 'mismatch',\t\"+offset = mismatch('first', 'second')\",\t\t\t\"Compares the 'first' and 'second' strings character by character and returns the zero-based offset of the first mismatch (e.g. 0 = first character). If the strings are identical in contents, the returned value is the length of the shortest string. As usual, the comparison is case sensitive.\", \"mismatch('abcd', 'abcd') == 4\\nmismatch('abc', 'abcd') == 3\\nmismatch('abCd', 'abcd') == 2\", 'find, search, span');\n"
 	"describe('#strings', 'ordinal',\t\t\"+code = ordinal('character')\",\t\t\t\t\t\t\"Returns the ordinal (i.e. the character code) of the single character string 'character'. Depending on how PikaScript is configured, the character code is an ASCII or Unicode value. If 'character' cannot be converted to a character code the exception 'Value is not single character: {character}' will be thrown.\\n\\nInverse: char(+code).\", \"ordinal('A') == 65\\nordinal(char(211)) == 211\", 'char');\n"
 	"describe('#strings', 'precision',\t\"'string' = precision(+value, +precision)\",\t\t\t\"Converts +value to a decimal number string (in scientific E notation if required). +precision is the maximum number of digits to include in the output. Scientific E notation (e.g. 1.3e+3) will be used if +precision is smaller than the number of digits required to express +value in decimal notation. The maximum number of characters returned is +precision plus 7 (for possible minus sign, decimal point and exponent).\", \"precision(12345, 3) === '1.23e+4'\\nprecision(9876, 8) === '9876'\\nprecision(9876.54321, 8) === '9876.5432'\\nprecision(-0.000000123456, 5) === '-1.2346e-7'\\nprecision(+infinity, 1) === '+infinity'\", \"radix, trunc\");\n"
-	"describe('#strings', 'radix',\t\t\"'string' = radix(+value, +radix, [+minLength])\",\t\"Converts the integer +value to a string using a selectable radix between 2 (binary) and 16 (hexadecimal). If +minLength is specified and the string becomes shorter than this, it will be padded with leading zeroes. May throw 'Radix out of range: {radix}' or 'Minimum length out of range: {minLength}'.\", \"radix(0xaa, 2, 12) === '000010101010'\\nradix(3735928559, 16) === 'deadbeef'\\nradix(0x2710, 10) === 10000\", 'precision');\n"
+	"describe('#strings', 'radix',\t\t\"'string' = radix(+value, +radix, [+minLength])\",\t\"Converts the integer +value to a string using a selectable radix between 2 (binary) and 16 (hexadecimal). +value is treated like an operand of the bitwise operators, i.e. as an unsigned integer where negative values become their two's complement. If +minLength is specified and the string becomes shorter than this, it will be padded with leading zeroes. May throw 'Radix out of range: {radix}' or 'Minimum length out of range: {minLength}'.\", \"radix(0xaa, 2, 12) === '000010101010'\\nradix(3735928559, 16) === 'deadbeef'\\nradix(0x2710, 10) === 10000\", 'precision');\n"
 	"describe('#strings', 'repeat',\t\t\"'repeated' = repeat('repeatme', +count)\",\t\t\t\"Concatenates 'repeatme' +count number of times.\", \"repeat(' ', 5) === '     '\\nrepeat('-#-', 10) === '-#--#--#--#--#--#--#--#--#--#-'\");\n"
 	"describe('#strings', 'replace',\t\t\"'processed' = replace('source', 'what', 'with', [>findFunction = search], [+dropCount = length(what)], [>replaceFunction = >$1])\",\t\"Replaces all occurrences of 'what' with 'with' in the 'source' string.\\n\\nThe optional >findFunction allows you to modify how the function finds occurrences of 'what' and +dropCount determines how many characters are replaced on each occurrence. The default >findFunction is ::search (and +dropCount is the number of characters in 'what'), which means that 'what' represents a substring to substitute. If you want this function to substitute any occurrence of any character in 'what', you can let >findFunction be ::find and +dropCount be 1. Similarly, you may use ::span to substitute occurrences of all characters not present in 'what'.\\n\\nFinally, >replaceFunction lets you customize how substrings should be replaced. It will be called with two arguments, the source substring in $0 and 'with' in $1, and it is expected to return the replacement substring.\", \"replace('Barbazoo', 'zoo', 'bright') === 'Barbabright'\\nreplace('Barbalama', 'lm', 'p', find, 1) === 'Barbapapa'\\nreplace('Bqaxrbzzabypeillme', 'Bbarel', '', span, 1) === 'Barbabelle'\\nreplace('B03102020', '0123', 'abmr', find, 1, >$1{$0}) === 'Barbamama'\", \"bake, find, search, span\");\n"
 	"describe('#strings', 'reverse',\t\t\"'backwards' = reverse('string')\",\t\t\t\t\t\"Returns 'string' reversed.\", \"reverse('stressed') === 'desserts'\");\n"
@@ -2816,11 +2901,11 @@ const char* BUILT_IN_INTERACTIVE =
 	"#! /usr/local/bin/PikaCmd\n"
 	"\n"
 	"/*\n"
-	"\tinteractive.pika v0.97\n"
+	"\tinteractive.pika v0.98\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
-	"\tCopyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem\n"
+	"\tCopyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem\n"
 	"\tAll rights reserved.\n"
 	"*/\n"
 	"\n"
@@ -2936,11 +3021,11 @@ const char* BUILT_IN_INTERACTIVE =
 
 const char* BUILT_IN_STDLIB =
 	"/*\n"
-	"\tstdlib.pika v0.97\n"
+	"\tstdlib.pika v0.98\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
-	"\tCopyright (c) 2008-2025, NuEdge Development / Magnus Lidstroem\n"
+	"\tCopyright (c) 2008-2026, NuEdge Development / Magnus Lidstroem\n"
 	"\tAll rights reserved.\n"
 	"*/\n"
 	"\n"
@@ -3239,7 +3324,7 @@ const char* BUILT_IN_STDLIB =
 
 	\version
 
-	Version 0.971
+	Version 0.98
 	
 	\page Copyright
 
@@ -3269,7 +3354,7 @@ const char* BUILT_IN_STDLIB =
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define PIKA_CMD_VERSION "0.971"
+#define PIKA_CMD_VERSION "0.98"
 #define PIKA_UNICODE 0
 #define QUICKER_SCRIPT 1
 
@@ -3307,6 +3392,16 @@ const char* BUILT_IN_STDLIB =
 	};
 #else
 	typedef Pika::StdScript Script;
+#endif
+
+#if defined(_WIN32)
+	#define WIN32_LEAN_AND_MEAN
+	#define NOMINMAX
+	#include <windows.h>
+#elif defined(__APPLE__)
+	#include <mach-o/dyld.h>
+#elif defined(__linux__)
+	#include <unistd.h>
 #endif
 
 #define STRINGIFY(x) #x
@@ -3381,6 +3476,23 @@ static Script::String loadFile(std::basic_ifstream<Script::Char>& instream, cons
 
 std::string pikaCmdDir;
 
+static std::string executablePath(const char* argv0) {	/// full path of the running executable, falls back to `argv0`
+#if defined(_WIN32)
+	char buffer[4096];
+	DWORD n = GetModuleFileNameA(0, buffer, sizeof (buffer));
+	if (n > 0 && n < sizeof (buffer)) return std::string(buffer, n);
+#elif defined(__APPLE__)
+	char buffer[4096];
+	uint32_t size = sizeof (buffer);
+	if (_NSGetExecutablePath(buffer, &size) == 0) return std::string(buffer);
+#elif defined(__linux__)
+	char buffer[4096];
+	ssize_t n = readlink("/proc/self/exe", buffer, sizeof (buffer));
+	if (n > 0 && n < ssize_t(sizeof (buffer))) return std::string(buffer, n);
+#endif
+	return argv0;
+}
+
 Script::String overloadedLoad(const Script::String& filename) {
 	std::string name(Pika::toStdString(filename));	// Sorry, can't pass a wchar_t filename. MSVC supports it, but it is non-standard. So we convert to a std::string to be on the safe side.
 	{
@@ -3412,7 +3524,8 @@ void saveBinary(const Script::String& filename, const Script::String& chars) {
 	if (!outstream.good())
 		throw Script::Xception(Script::String("Cannot open file for writing: ") += Pika::escape(filename));
 	outstream.write(chars.data(), chars.size());
-	if (!outstream.good())
+	outstream.close();	// Flush now so errors writing the last buffered bytes are not lost in the destructor.
+	if (outstream.fail())
 		throw Script::Xception(Script::String("Error writing to file: ") += Pika::escape(filename));
 }
 
@@ -3501,7 +3614,7 @@ int main(int argc, const char* argv[]) {
 				"All rights reserved." << std::endl << "Run PikaCmd -h for command-line argument syntax."
 				<< std::endl << std::endl;
 	try {
-		pikaCmdDir = argv[0];
+		pikaCmdDir = executablePath(argv[0]);	// argv[0] has no directory when PikaCmd is found through PATH.
 		size_t pos = pikaCmdDir.find_last_of("/\\:");
 		if (pos == std::string::npos) pikaCmdDir.clear();
 		else pikaCmdDir = pikaCmdDir.substr(0, pos + 1);
@@ -3521,8 +3634,11 @@ int main(int argc, const char* argv[]) {
 		}
 		root.call("run", (fn[0] == '{' ? Script::String(BUILT_IN_DIRECT) : Script::Value()), args.size(), &args[0]);
 		exitCode = static_cast<int>(root.getOptional("exitCode"));
-	} catch (const Script::Xception& x) {
+	} catch (const std::exception& x) {	// Script::Xception, but also e.g. std::bad_alloc.
 		std::cerr << "!!!! " << x.what() << std::endl;
+		exitCode = 255;
+	} catch (...) {
+		std::cerr << "!!!! Unknown exception" << std::endl;
 		exitCode = 255;
 	}
 #if (QUICKER_SCRIPT)
