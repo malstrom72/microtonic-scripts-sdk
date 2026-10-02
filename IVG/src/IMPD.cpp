@@ -437,7 +437,9 @@ StringIt Interpreter::eatBlock(StringIt p, const StringIt& e) {															//
 				++p;
 				if (open[open.size() - 1] == (c == '}' ? '{' : '[')) {
 					open.erase(open.size() - 1);
-					if (open.empty()) return p;
+					if (open.empty()) {
+						return p;
+					}
 				}
 				break;
 			}
@@ -446,7 +448,9 @@ StringIt Interpreter::eatBlock(StringIt p, const StringIt& e) {															//
 			default: ++p; break;
 		}
 	}
-	if (p == e) throwBadSyntax(open[open.size() - 1] == '[' ? "Missing ]" : "Missing }");
+	if (p == e) {
+		throwBadSyntax(open[open.size() - 1] == '[' ? "Missing ]" : "Missing }");
+	}
 
 	return p;
 }
@@ -1009,16 +1013,20 @@ StringIt Interpreter::substringOperation(StringIt p, const StringIt& e, Evaluati
 
 // FIX : the naming of these two functions make no sense any more, even the splitting into two functions is pointless
 
-/**
+/*
 	Takes one level of the expression nesting limit for as long as it exists, and gives it back however the scope is left.
-**/
+*/
 class ExpressionNesting {
-	public:		ExpressionNesting(int& limit) : limit(limit) {
-					if (limit == 0) Interpreter::throwRunTimeError("Expression nesting limit reached");
-					--limit;
-				}
-	public:		~ExpressionNesting() { ++limit; }
-	protected:	int& limit;
+	public:
+		ExpressionNesting(int& limit) : limit(limit) {
+			if (limit == 0) {
+				Interpreter::throwRunTimeError("Expression nesting limit reached");
+			}
+			--limit;
+		}
+		~ExpressionNesting() { ++limit; }
+	protected:
+		int& limit;
 };
 
 StringIt Interpreter::evaluateInner(StringIt b, const StringIt& e, EvaluationValue& v, Precedence precedence, bool dry) const {

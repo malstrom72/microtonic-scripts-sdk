@@ -932,9 +932,22 @@ LinearAscend::LinearAscend(double startX, double startY, double endX, double end
 		l = 1.0 / l;
 	}
 	l *= l * (1 << 16);
-	dx = roundToInt(dx0 * l);
-	dy = roundToInt(dy0 * l);
-	start = roundToInt(-startX * dx - startY * dy);
+	double fdx = dx0 * l;
+	double fdy = dy0 * l;
+	/*
+		Steps above MAX_STEP mean a gradient shorter than 1/16 pixel (with the default MAX_RENDER_LENGTH), which goes from
+		its first to its last stop within one pixel either way. Such steps are scaled down, keeping the direction and
+		where the ramp starts, so that render() can step a whole span without leaving the int range (see there).
+	*/
+	const double MAX_STEP = (1 << 28) / MAX_RENDER_LENGTH;
+	const double largest = maxValue(fabs(fdx), fabs(fdy));
+	if (largest > MAX_STEP) {
+		fdx *= MAX_STEP / largest;
+		fdy *= MAX_STEP / largest;
+	}
+	dx = roundToInt(fdx);
+	dy = roundToInt(fdy);
+	start = floor(-startX * dx - startY * dy + 0.5);
 }
 
 IntRect LinearAscend::calcBounds() const {
@@ -947,7 +960,13 @@ void LinearAscend::render(int x, int y, int length, SpanBuffer<Mask8>& output) c
 
 	// FIX : increase x resolution from 16 bits?
 
-	int ki = start + x * dx + y * dy;
+	/*
+		Worked out exactly as a double and clamped, since far from the gradient it does not fit an int. Beyond 1 << 30
+		the whole span is one solid color either way: dx and dy are at most (1 << 28) / MAX_RENDER_LENGTH (see the
+		constructor), so a span moves ki by at most 1 << 28.
+	*/
+	const double kd = start + static_cast<double>(x) * dx + static_cast<double>(y) * dy;
+	int ki = (kd < -(1 << 30) ? -(1 << 30) : (kd > (1 << 30) ? (1 << 30) : static_cast<int>(kd)));
 	int dk = dx;
 
 	int i = 0;
@@ -1027,9 +1046,13 @@ void RadialAscend::render(int x, int y, int length, SpanBuffer<Mask8>& output) c
 	const double a = 1.0 - dy * dy / (height * height);
 	const double rowWidth = (a > EPSILON) ? width * sqrt(a) : 0;
 	const double rowStart = (centerX - rowWidth);
-	const int rowStartInt = roundToInt(rowStart);
+	// The edges are clamped before rounding, since a center far off the canvas does not fit an int. A span is at most
+	// MAX_RENDER_LENGTH pixels, so an edge clamped at -(1 << 30) or 1 << 30 still lies on the same side of it.
+	const double EDGE_LIMIT = (1 << 30);
+	const int rowStartInt = roundToInt(minValue(maxValue(rowStart, -EDGE_LIMIT), EDGE_LIMIT));
 	const int leftEdge = minValue(maxValue(rowStartInt - x, 0), length);
-	const int rightEdge = minValue(roundToInt(rowStart + rowWidth * 2 - x), length);
+	const int rightEdge = minValue(roundToInt(minValue(maxValue(rowStart + rowWidth * 2, -EDGE_LIMIT), EDGE_LIMIT) - x)
+			, length);
 	
 	int i = 0;
 	while (i < length) {
