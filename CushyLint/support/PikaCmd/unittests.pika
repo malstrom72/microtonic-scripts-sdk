@@ -1,5 +1,5 @@
 /*
-	unittests.pika v0.98
+	unittests.pika v0.981
 
 	PikaScript is released under the "New Simplified BSD License". http://www.opensource.org/licenses/bsd-license.php
 	
@@ -619,6 +619,10 @@ assert(> 1 << 64 == 0 && 1 << -1 == 0 && 256 >> 64 == 0 && 256 >> -1 == 0);	// B
 assert(> 1 << 31 == 2147483648);											// In-range shifts are unchanged.
 assert(> (if (intIs32) try(>1 << 4294967297) === "Invalid integer: '4294967297'" else 1 << 4294967297 == 0));	// The shift count is a signed integer.
 assert(> upper('abc XYZ 123') === 'ABC XYZ 123' && lower('abc XYZ 123') === 'abc xyz 123');	// upper() and lower() had no tests.
+
+// 0.98 -> 0.981
+
+assert(> delete(@::) === false);											// Crash bug: erasing the empty name read outside the string (found by fuzzing).
 
 //////////////////////////
 
