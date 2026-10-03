@@ -20,16 +20,9 @@ fi
 
 mkdir -p "$root_dir/build"
 
+# Hash file contents only (not paths) so a committed stamp is valid in any checkout.
 current_stamp() {
-	shasum -a 256 "$source_file" "$build_script" "$script_file" | shasum -a 256 | awk '{ print $1 }'
-}
-
-expected_version() {
-	sed -n 's/.*#define PIKA_SCRIPT_VERSION "\([^"]*\)".*/\1/p' "$source_file" | head -n 1
-}
-
-actual_version() {
-	"$output" '{ print(VERSION) }' 2>/dev/null | sed -n '1p'
+	cat "$source_file" "$build_script" "$script_file" | shasum -a 256 | awk '{ print $1 }'
 }
 
 needs_rebuild=false
@@ -38,11 +31,7 @@ if [ ! -x "$output" ]; then
 elif ! "$output" -h >/dev/null 2>&1; then
 	needs_rebuild=true
 elif [ ! -f "$stamp" ]; then
-	if [ "$(actual_version)" = "$(expected_version)" ]; then
-		current_stamp > "$stamp"
-	else
-		needs_rebuild=true
-	fi
+	needs_rebuild=true
 elif [ "$(cat "$stamp")" != "$(current_stamp)" ]; then
 	needs_rebuild=true
 fi

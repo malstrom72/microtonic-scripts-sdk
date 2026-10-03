@@ -10,7 +10,7 @@ SET "stamp=%output%.sha256"
 
 IF "%~1"=="--hash-only" (
 	CALL :hashSources
-	EXIT /B %ERRORLEVEL%
+	EXIT /B !ERRORLEVEL!
 )
 
 MKDIR "%rootDir%\build" >NUL 2>&1
@@ -18,17 +18,15 @@ MKDIR "%rootDir%\build" >NUL 2>&1
 SET needsRebuild=0
 IF NOT EXIST "%output%" SET needsRebuild=1
 IF "%needsRebuild%"=="0" ECHO. | "%output%" - - >NUL 2>NUL || SET needsRebuild=1
-IF "%needsRebuild%"=="0" IF NOT EXIST "%stamp%" (
-	CALL :writeStamp || SET needsRebuild=1
-)
+IF "%needsRebuild%"=="0" IF NOT EXIST "%stamp%" SET needsRebuild=1
 IF "%needsRebuild%"=="0" CALL :checkStamp || SET needsRebuild=1
 
+SET "tmpOut=%output%.tmp.exe"
 IF "%needsRebuild%"=="1" (
-	SET "tmp=%output%.tmp.exe"
-	DEL /Q "%tmp%" >NUL 2>&1
-	CALL "%buildScript%" release native "%tmp%" /I "%supportDir%" "%supportDir%\MakaronCmd.cpp" "%supportDir%\Makaron.cpp" || EXIT /B 1
-	ECHO. | "%tmp%" - - >NUL 2>NUL || EXIT /B 1
-	MOVE /Y "%tmp%" "%output%" >NUL || EXIT /B 1
+	DEL /Q "%tmpOut%" >NUL 2>&1
+	CALL "%buildScript%" release native "%tmpOut%" /I "%supportDir%" "%supportDir%\MakaronCmd.cpp" "%supportDir%\Makaron.cpp" || EXIT /B 1
+	ECHO. | "%tmpOut%" - - >NUL 2>NUL || EXIT /B 1
+	MOVE /Y "%tmpOut%" "%output%" >NUL || EXIT /B 1
 	CALL :writeStamp || EXIT /B 1
 )
 
@@ -38,7 +36,7 @@ EXIT /B 0
 SET "hashInput=%TEMP%\makaron-%RANDOM%-%RANDOM%.hashinput"
 DEL /Q "%hashInput%" >NUL 2>&1
 FOR %%F IN ("%supportDir%\MakaronCmd.cpp" "%supportDir%\Makaron.cpp" "%supportDir%\Makaron.h" "%buildScript%") DO (
-	CERTUTIL -hashfile "%%~fF" SHA256 | FINDSTR /R "^[0-9A-F][0-9A-F]" >>"%hashInput%" || EXIT /B 1
+	CERTUTIL -hashfile "%%~fF" SHA256 | FINDSTR /I /R "^[0-9a-f][0-9a-f]*$" >>"%hashInput%" || EXIT /B 1
 )
 FOR /F "usebackq skip=1 tokens=1" %%H IN (`CERTUTIL -hashfile "%hashInput%" SHA256`) DO (
 	SET "line=%%H"

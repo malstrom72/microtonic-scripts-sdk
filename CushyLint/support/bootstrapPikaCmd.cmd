@@ -12,7 +12,7 @@ SET "stamp=%output%.sha256"
 
 IF "%~1"=="--hash-only" (
 	CALL :hashSource
-	EXIT /B %ERRORLEVEL%
+	EXIT /B !ERRORLEVEL!
 )
 
 IF NOT EXIST "%sourceFile%" (
@@ -25,20 +25,18 @@ MKDIR "%rootDir%\build" >NUL 2>&1
 SET needsRebuild=0
 IF NOT EXIST "%output%" SET needsRebuild=1
 IF "%needsRebuild%"=="0" "%output%" -h >NUL 2>NUL || SET needsRebuild=1
-IF "%needsRebuild%"=="0" IF NOT EXIST "%stamp%" (
-	CALL :checkVersionOrWriteStamp || SET needsRebuild=1
-)
+IF "%needsRebuild%"=="0" IF NOT EXIST "%stamp%" SET needsRebuild=1
 IF "%needsRebuild%"=="0" CALL :checkStamp || SET needsRebuild=1
 
+SET "tmpOut=%output%.tmp.exe"
 IF "%needsRebuild%"=="1" (
-	SET "tmp=%output%.tmp.exe"
-	DEL /Q "%tmp%" >NUL 2>&1
-	CALL "%buildScript%" release native "%tmp%" /D "PLATFORM_STRING=WINDOWS" "%sourceFile%" || EXIT /B 1
+	DEL /Q "%tmpOut%" >NUL 2>&1
+	CALL "%buildScript%" release native "%tmpOut%" /D "PLATFORM_STRING=WINDOWS" "%sourceFile%" || EXIT /B 1
 	PUSHD "%pikaDir%" || EXIT /B 1
-	"%tmp%" unittests.pika >NUL || ( POPD & EXIT /B 1 )
-	"%tmp%" systoolsTests.pika || ( POPD & EXIT /B 1 )
+	"%tmpOut%" unittests.pika >NUL || ( POPD & EXIT /B 1 )
+	"%tmpOut%" systoolsTests.pika || ( POPD & EXIT /B 1 )
 	POPD
-	MOVE /Y "%tmp%" "%output%" >NUL || EXIT /B 1
+	MOVE /Y "%tmpOut%" "%output%" >NUL || EXIT /B 1
 	CALL :writeStamp || EXIT /B 1
 )
 
@@ -58,27 +56,6 @@ EXIT /B 1
 SET /P oldStamp=<"%stamp%"
 FOR /F "usebackq tokens=*" %%H IN (`CALL "%~f0" --hash-only`) DO SET "newStamp=%%H"
 IF "%oldStamp%"=="%newStamp%" EXIT /B 0
-EXIT /B 1
-
-:checkVersionOrWriteStamp
-CALL :expectedVersion || EXIT /B 1
-CALL :actualVersion || EXIT /B 1
-IF NOT "%expectedVersion%"=="%actualVersion%" EXIT /B 1
-CALL :writeStamp
-EXIT /B %ERRORLEVEL%
-
-:expectedVersion
-FOR /F "tokens=3" %%V IN ('FINDSTR /C:"PIKA_SCRIPT_VERSION" "%sourceFile%"') DO (
-	SET "expectedVersion=%%~V"
-	EXIT /B 0
-)
-EXIT /B 1
-
-:actualVersion
-FOR /F "usebackq tokens=*" %%V IN (`"%output%" "{ print(VERSION) }" 2^>NUL`) DO (
-	SET "actualVersion=%%V"
-	EXIT /B 0
-)
 EXIT /B 1
 
 :writeStamp

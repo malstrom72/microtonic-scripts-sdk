@@ -66,6 +66,8 @@ namespace IVG {
 
 using NuXPixels::Rect; // Rect is a typedef in Carbon which can confuse the compiler so we do an explicit using for it.
 
+const int PATH_INSTRUCTION_LIMIT = 1000000;
+
 inline double square(double d) { return d * d; }
 
 void checkBounds(const NuXPixels::IntRect& bounds);
@@ -443,8 +445,14 @@ template<class PIXEL_TYPE> class LinearGradientPainter : public GradientPainter<
 					NuXPixels::Vertex xfEnd90 = xf.transform(Vertex(start.x - end.y + start.y, start.y + end.x - start.x));
 					double dx = xfEnd90.x - xfStart.x;
 					double dy = xfEnd90.y - xfStart.y;
-					double l = fabs((xfEnd.y - xfStart.y) * dx - (xfEnd.x - xfStart.x) * dy) / (dx * dx + dy * dy);
-					xfEnd = NuXPixels::Vertex(xfStart.x + dy * l, xfStart.y - dx * l);
+					const double dSquared = dx * dx + dy * dy;
+					if (dSquared != 0) {
+						double l = fabs((xfEnd.y - xfStart.y) * dx - (xfEnd.x - xfStart.x) * dy) / dSquared;
+						xfEnd = NuXPixels::Vertex(xfStart.x + dy * l, xfStart.y - dx * l);
+					}
+					if (!isfinite(xfStart.x) || !isfinite(xfStart.y) || !isfinite(xfEnd.x) || !isfinite(xfEnd.y)) {
+						IMPD::Interpreter::throwRunTimeError("Gradient coordinates out of range");
+					}
 					
 					inContext.accessCanvas().blend(this->gradient[NuXPixels::LinearAscend(xfStart.x, xfStart.y, xfEnd.x, xfEnd.y)]
 							* static_cast<const NuXPixels::Renderer<NuXPixels::Mask8>&>(FadedMask(mask, withPaint.opacity)));
@@ -476,6 +484,10 @@ template<class PIXEL_TYPE> class RadialGradientPainter : public GradientPainter<
 						inContext.accessCanvas().blend(NuXPixels::Solid<PIXEL_TYPE>
 								(PIXEL_TYPE::multiply(this->gradient[0], withPaint.opacity)) * mask);
 					} else {
+						// RadialAscend works out its bounds in an int, so the gradient must stay well inside that range.
+						if (!(fabs(xfCenter.x) + hSize < (1 << 30) && fabs(xfCenter.y) + vSize < (1 << 30))) {
+							IMPD::Interpreter::throwRunTimeError("Gradient coordinates out of range");
+						}
 						inContext.accessCanvas().blend(this->gradient[NuXPixels::RadialAscend(xfCenter.x, xfCenter.y, hSize, vSize)]
 								* static_cast<const NuXPixels::Renderer<NuXPixels::Mask8>&>(FadedMask(mask, withPaint.opacity)));
 					}
