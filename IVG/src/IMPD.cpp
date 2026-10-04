@@ -102,7 +102,7 @@ WideString convertUniToWideString(const UniString& s) {
 	if (s.empty()) {
 		return WideString();
 	} else if (sizeof (WideChar) == sizeof (UniChar)) {
-		return WideString(s.begin(), s.end());
+		return WideString(reinterpret_cast<const WideChar*>(s.data()), s.size());
 	} else if (sizeof (WideChar) == sizeof (uint16_t)) {
 		const size_t requiredSize = calcUTF32ToUTF16Size(s.size(), s.data());
 		WideString ws(requiredSize, L'\0');
@@ -342,21 +342,21 @@ Interpreter::EvaluationValue::operator String() const {
 
 Interpreter::Interpreter(Executor& executor, Variables& vars, FormatInfo& formatInfo, int statementsLimit, int recursionLimit)
 		: executor(executor), vars(vars), formatInfo(formatInfo), callingFrame(0), rootFrame(*this)
-		, statementsLimit(statementsLimit), recursionLimit(recursionLimit) { }
+		, statementsLimit(statementsLimit), recursionLimit(recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
 
 Interpreter::Interpreter(Executor& executor, Variables& vars, Interpreter& callingFrame)
 		: executor(executor), vars(vars), formatInfo(callingFrame.formatInfo), callingFrame(&callingFrame), rootFrame(callingFrame.rootFrame)
-		, statementsLimit(callingFrame.statementsLimit), recursionLimit(callingFrame.recursionLimit) { }
+		, statementsLimit(callingFrame.statementsLimit), recursionLimit(callingFrame.recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
 
 Interpreter::Interpreter(Executor& executor, Interpreter& enclosingInterpreter)
 		: executor(executor), vars(enclosingInterpreter.vars), formatInfo(enclosingInterpreter.formatInfo)
 		, callingFrame(enclosingInterpreter.callingFrame), rootFrame(enclosingInterpreter.rootFrame)
-		, statementsLimit(enclosingInterpreter.statementsLimit), recursionLimit(enclosingInterpreter.recursionLimit) { }
+		, statementsLimit(enclosingInterpreter.statementsLimit), recursionLimit(enclosingInterpreter.recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
 
 Interpreter::Interpreter(Executor& executor, Interpreter& enclosingInterpreter, FormatInfo& formatInfo)
 		: executor(executor), vars(enclosingInterpreter.vars), formatInfo(formatInfo), callingFrame(enclosingInterpreter.callingFrame)
 		, rootFrame(enclosingInterpreter.rootFrame), statementsLimit(enclosingInterpreter.statementsLimit)
-		, recursionLimit(enclosingInterpreter.recursionLimit) { }
+		, recursionLimit(enclosingInterpreter.recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
 
 void Interpreter::throwBadSyntax(const String& how) { throw SyntaxException(how); }
 void Interpreter::throwRunTimeError(const String& how) { throw RunTimeException(how); }
@@ -423,22 +423,35 @@ StringIt Interpreter::eatSymbolForAssignment(StringIt p, const StringIt& e) {
 
 StringIt Interpreter::eatBlock(StringIt p, const StringIt& e) {															// FIX : <- termination char argument is better solution
 	assert(p != e && (*p == '{' || *p == '['));
-	const Char c = *p;
+	// The open blocks, innermost last. A loop with this stack rather than recursion, so that deep nesting cannot
+	// overflow the call stack. Each block only ends at its own kind of closing bracket, as before.
+	String open(1, *p);
 	++p;
 	while (p != e) {
 		switch (*p) {
 			case '\\': p = eatEscape(p, e); break;
 			case '"': p = eatQuotedString(p, e); break;
-			case '{': case '[': p = eatBlock(p, e); break;
-			case '}': ++p; if (c == '{') return p; break;
-			case ']': ++p; if (c == '[') return p; break;
+			case '{': case '[': open += *p; ++p; break;
+			case '}': case ']': {
+				const Char c = *p;
+				++p;
+				if (open[open.size() - 1] == (c == '}' ? '{' : '[')) {
+					open.erase(open.size() - 1);
+					if (open.empty()) {
+						return p;
+					}
+				}
+				break;
+			}
 			case '/': if (isComment(p, e)) { p = eatComment(p, e); break; }
 			/* else continue */
 			default: ++p; break;
 		}
 	}
-	if (p == e) throwBadSyntax(c == '[' ? "Missing ]" : "Missing }");
-				
+	if (p == e) {
+		throwBadSyntax(open[open.size() - 1] == '[' ? "Missing ]" : "Missing }");
+	}
+
 	return p;
 }
 
@@ -704,16 +717,21 @@ StringIt Interpreter::parseHex(StringIt p, const StringIt& e, uint32_t& i) {
 	return p;
 }
 
-StringIt Interpreter::parseUnsignedInt(StringIt p, const StringIt& e, uint32_t& i) {
-	for (i = 0; p != e && *p >= '0' && *p <= '9'; ++p) i = i * 10 + (*p - '0');
+// Stops before a digit that would take the value past limit, so a caller expecting the whole string sees it as invalid.
+static StringIt parseDigits(StringIt p, const StringIt& e, uint32_t limit, uint32_t& i) {
+	for (i = 0; p != e && *p >= '0' && *p <= '9' && i <= (limit - (*p - '0')) / 10; ++p) i = i * 10 + (*p - '0');
 	return p;
+}
+
+StringIt Interpreter::parseUnsignedInt(StringIt p, const StringIt& e, uint32_t& i) {
+	return parseDigits(p, e, 0xFFFFFFFFu, i);
 }
 
 StringIt Interpreter::parseInt(StringIt p, const StringIt& e, int32_t& i) {
 	bool negative = (e - p >= 2 && ((*p == '+' || *p == '-') && p[1] >= '0' && p[1] <= '9') ? (*p++ == '-') : false);
 	uint32_t ui;
-	p = parseUnsignedInt(p, e, ui);
-	i = (negative ? -static_cast<int>(ui) : ui);
+	p = parseDigits(p, e, (negative ? 0x80000000u : 0x7FFFFFFFu), ui);
+	i = (negative ? static_cast<int32_t>(0u - ui) : static_cast<int32_t>(ui));
 	return p;
 }
 
@@ -734,7 +752,14 @@ StringIt Interpreter::parseDouble(StringIt p, const StringIt& e, double& v) {
 	if (q != e && (*q == 'E' || *q == 'e')) {
 		int32_t i;
 		StringIt t = parseInt(q + 1, e, i);
-		if (t != q + 1) { d *= pow(10, static_cast<double>(i)); q = t; }
+		if (t != q + 1) {
+			if (t != e && *t >= '0' && *t <= '9') {		// More digits than an int32_t holds, so out of range either way.
+				i = (i < 0 ? -100000 : 100000);
+				while (t != e && *t >= '0' && *t <= '9') ++t;
+			}
+			d *= pow(10, static_cast<double>(i));
+			q = t;
+		}
 	}
 	v = d * sign;
 	return q;
@@ -782,12 +807,16 @@ bool Interpreter::toBool(const String& s) {
 StringIt Interpreter::numericOperation(StringIt p, const StringIt& e, EvaluationValue& v, Precedence precedence
 		, Char op, Precedence opPrecedence, bool dry) const {
 	if (precedence < opPrecedence) {
-		double l = v;
-		StringIt q = evaluateInner(p += (op == '^' ? 2 : 1), e, v, opPrecedence, dry);
+		double l = 0.0;
+		if (!dry) {
+			l = v;																					// Converted before the right operand is parsed, so a bad left one is still reported first.
+		}
+		EvaluationValue right;
+		StringIt q = evaluateInner(p += (op == '^' ? 2 : 1), e, right, opPrecedence, dry);
 		if (q == p) throwBadSyntax("Syntax error");
 		p = q;
 		if (!dry) {
-			double r = v;
+			double r = right;
 			switch (op) {
 				case '+': l += r; break;
 				case '-': l -= r; break;
@@ -810,7 +839,7 @@ StringIt Interpreter::moduloPercentOperation(StringIt p, const StringIt& e, Eval
 		if (q == p + 1) {
 			++p;
 			if (!dry) {
-				v = fabs(static_cast<double>(v) / 100.0);
+				v = static_cast<double>(v) / 100.0;
 			}
 		} else if (precedence < MUL_DIV_MOD) {
 			p = q;
@@ -845,7 +874,7 @@ StringIt Interpreter::booleanOperation(StringIt p, const StringIt& e, Evaluation
 		bool l = v;
 		Char op = *p;
 		if (p + 1 != e && p[1] == op)  {
-			StringIt q = evaluateInner(p += 2, e, v, BOOLEAN, dry);
+			StringIt q = evaluateInner(p += 2, e, v, BOOLEAN, dry || (op == '&' ? !l : l));
 			if (q == p) throwBadSyntax("Syntax error");
 			p = q;
 			if (!dry) {
@@ -962,13 +991,16 @@ StringIt Interpreter::substringOperation(StringIt p, const StringIt& e, Evaluati
 			const String source = static_cast<String>(v);
 			const long sourceLength = lossless_cast<long>(source.size());
 
-			const long intOffset = (gotOffset ? static_cast<long>(floor(static_cast<double>(offset))) : 0L);
-			const long intLength = (gotLength ? static_cast<long>(floor(static_cast<double>(length))) : 0L);
+			// Worked out as doubles and clamped before the conversion, so a huge offset or length cannot overflow a long.
+			const double sourceLengthValue = static_cast<double>(sourceLength);
+			const double offsetValue = (gotOffset ? floor(static_cast<double>(offset)) : 0.0);
+			const double lengthValue = (gotLength ? floor(static_cast<double>(length)) : 0.0);
 
-			long start = (gotOffset ? (intOffset < 0 ? sourceLength + intOffset : intOffset) : (intLength < 0 ? sourceLength : 0));
-			long end = (gotLength ? start + intLength : sourceLength);
-			start = min(max(start, 0L), sourceLength);
-			end = min(max(end, 0L), sourceLength);
+			const double startValue = (gotOffset ? (offsetValue < 0.0 ? sourceLengthValue + offsetValue : offsetValue)
+					: (lengthValue < 0.0 ? sourceLengthValue : 0.0));
+			const double endValue = (gotLength ? startValue + lengthValue : sourceLengthValue);
+			const long start = static_cast<long>(min(max(startValue, 0.0), sourceLengthValue));
+			const long end = static_cast<long>(min(max(endValue, 0.0), sourceLengthValue));
 			if (end < start) {
 				v = String(source.rbegin() + (sourceLength - start), source.rbegin() + (sourceLength - end));
 			} else {
@@ -981,7 +1013,25 @@ StringIt Interpreter::substringOperation(StringIt p, const StringIt& e, Evaluati
 
 // FIX : the naming of these two functions make no sense any more, even the splitting into two functions is pointless
 
+/*
+	Takes one level of the expression nesting limit for as long as it exists, and gives it back however the scope is left.
+*/
+class ExpressionNesting {
+	public:
+		ExpressionNesting(int& limit) : limit(limit) {
+			if (limit == 0) {
+				Interpreter::throwRunTimeError("Expression nesting limit reached");
+			}
+			--limit;
+		}
+		~ExpressionNesting() { ++limit; }
+	protected:
+		int& limit;
+};
+
 StringIt Interpreter::evaluateInner(StringIt b, const StringIt& e, EvaluationValue& v, Precedence precedence, bool dry) const {
+	// Every nested sub-expression passes through here. The limit is kept in the root frame, since this function is const.
+	const ExpressionNesting nesting(rootFrame.expressionNestingLimit);
 	StringIt p = evaluateOuter(b, e, v, dry);
 	while (p != b) {
 		b = p;
@@ -1046,7 +1096,7 @@ StringIt Interpreter::evaluateOuter(StringIt b, const StringIt& e, EvaluationVal
 			if (p + 1 != e) {
 				UniChar c;
 				p = unescapeChar(++p, e, c);
-				if (static_cast<Char>(c) != c) {
+				if (static_cast<UniChar>(static_cast<Char>(c)) != c) {
 					throwBadSyntax("Invalid character escape code inside { } expression");
 				}
 				if (!dry) {
@@ -1110,6 +1160,16 @@ StringIt Interpreter::evaluateOuter(StringIt b, const StringIt& e, EvaluationVal
 	return p;
 }
 
+/*
+	Strings are ASCII, and other characters are written as \x, \u or \U escapes. A byte above 127 is an error, since
+	its meaning would depend on the platform's char signedness.
+*/
+static void throwIfNotASCII(Char c) {
+	if (static_cast<unsigned char>(c) >= 0x80) {
+		Interpreter::throwRunTimeError("Non-ASCII character in string (use a \\x, \\u or \\U escape)");
+	}
+}
+
 StringIt Interpreter::unescapeChar(StringIt p, const StringIt& e, UniChar& c) {
 	const Char* f = find(ESCAPE_CHARS, ESCAPE_CHARS + ESCAPE_CODE_COUNT, *p);
 	uint32_t i;
@@ -1120,7 +1180,13 @@ StringIt Interpreter::unescapeChar(StringIt p, const StringIt& e, UniChar& c) {
 	else {
 		StringIt q = parseUnsignedInt(p, e, i);
 		if (q != p) p = q;
-		else i = *p++;
+		else {
+			throwIfNotASCII(*p);
+			i = *p++;
+		}
+	}
+	if ((i >= 0xD800 && i <= 0xDFFF) || i > 0x10FFFF) {
+		throwRunTimeError("Invalid Unicode character in escape");
 	}
 	c = static_cast<UniChar>(i);
 	return p;
@@ -1140,6 +1206,7 @@ UniString Interpreter::unescapeToUni(const StringRange& r) {
 			}
 			b = p;
 		} else {
+			throwIfNotASCII(*p);
 			++p;
 		}
 	}
@@ -1159,18 +1226,19 @@ WideString Interpreter::unescapeToWide(const StringRange& r) {
 				p = unescapeChar(p, r.e, c);
 				if (sizeof (WideString::value_type) == sizeof (uint16_t)) {
 					if ((c >> 16) == 0) {
-						processed += c;
+						processed += static_cast<WideChar>(c);
 					} else {
 						processed += static_cast<uint16_t>(((c - 0x10000) >> 10) + 0xD800);
 						processed += static_cast<uint16_t>(((c - 0x10000) & 0x3FF) + 0xDC00);
 					}
 				} else {
 					assert(sizeof (WideString::value_type) == sizeof (UniChar));
-					processed += c;
+					processed += static_cast<WideChar>(c);
 				}
 			}
 			b = p;
 		} else {
+			throwIfNotASCII(*p);
 			++p;
 		}
 	}
@@ -1257,7 +1325,7 @@ void Interpreter::runInstruction(const String& instructionString, const StringRa
 	if (foundIndex < 0) {
 		if (executor.execute(*this, instructionString, argumentsRange)) return;
 		else throwBadSyntax(String("Unrecognized instruction: ") + instructionString);
-}
+	}
 
 	BuiltInInstruction instruction = static_cast<BuiltInInstruction>(foundIndex);
 	switch (instruction) {
@@ -1441,17 +1509,23 @@ void Interpreter::runInstruction(const String& instructionString, const StringRa
 			String runThis;
 			int counter = 0;
 			for (ArgumentVector::const_iterator it = allArguments.begin(), e = allArguments.end(); it != e; ++it) {
-				if (!runThis.empty())
-					newVars.declare((it->label.empty() ? Interpreter::toString(counter++) : it->label), it->value);
-				else if (it->label.empty()) runThis = it->value;
+				if (it->label.empty() && runThis.empty()) runThis = it->value;
+				else {
+					const String name = (it->label.empty() ? Interpreter::toString(counter++) : it->label);
+					if (!newVars.declare(name, it->value)) {
+						throwRunTimeError(String("Variable ") + name + " already declared");
+					}
+				}
+			}
+			if (!newVars.declare("n", toString(counter))) {	// $n is the argument count, so no label may take it.
+				throwRunTimeError("Variable n already declared");
 			}
 			if (instruction == INCLUDE_INSTRUCTION) {
 				const WideString file = unescapeToWide(expand(runThis));
 				if (!executor.load(*this, file, runThis)) {
-					throwRunTimeError(String("Could not include file: ") + String(file.begin(), file.end()));
+					throwRunTimeError(String("Could not include file: ") + narrowToString(file));
 				}
 			}
-			newVars.declare("n", toString(counter));
 			Interpreter newFrame(executor, newVars, *this);
 			newFrame.run(runThis);
 			break;

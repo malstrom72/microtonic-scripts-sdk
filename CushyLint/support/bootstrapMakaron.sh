@@ -14,8 +14,9 @@ sources=("$support_dir/MakaronCmd.cpp" "$support_dir/Makaron.cpp" "$support_dir/
 
 mkdir -p "$root_dir/build"
 
+# Hash file contents only (not paths) so a committed stamp is valid in any checkout.
 current_stamp() {
-	shasum -a 256 "${sources[@]}" | shasum -a 256 | awk '{ print $1 }'
+	cat "${sources[@]}" | shasum -a 256 | awk '{ print $1 }'
 }
 
 needs_rebuild=false
@@ -24,7 +25,7 @@ if [ ! -x "$output" ]; then
 elif ! printf '' | "$output" - - >/dev/null 2>&1; then
 	needs_rebuild=true
 elif [ ! -f "$stamp" ]; then
-	current_stamp > "$stamp"
+	needs_rebuild=true
 elif [ "$(cat "$stamp")" != "$(current_stamp)" ]; then
 	needs_rebuild=true
 fi

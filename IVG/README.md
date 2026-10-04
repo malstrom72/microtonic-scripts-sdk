@@ -60,8 +60,8 @@ You will need a standard C++ compiler.
 - On **Windows**, the build requires Microsoft Visual C++. Any version from Visual Studio 2008
 	(VC9.0) onward should work. The build scripts locate the compiler automatically using
 	`vswhere.exe`, falling back to known versions if needed.
-- Node.js 16+ is required for `tools/svg2ivg.js` and the SVG conversion tests. If Node.js is
-	unavailable, set `SKIP_SVG=1` before running `./build.sh` to skip them.
+- Node.js 16+ is required for the SVG conversion tests. If Node.js is unavailable, set
+	`SKIP_SVG=1` before running `./build.sh` to skip them.
 
 ## Build & Test
 
@@ -77,7 +77,7 @@ instructions when available.
 ## Helper Scripts
 
 - `build.sh` / `build.cmd` – build both the **beta** and **release** targets and run all tests
-- `tools/updateIVGTests.sh` / `.cmd` – regenerate golden PNGs from all `.ivg` test files
+- `tools/testIVG.sh update` / `.cmd update` – regenerate golden PNGs from all `.ivg` test files
 - `tools/updateDocumentation.sh` – rebuild HTML documentation using Pandoc and PikaScript
 	(Mac / Linux only)
 

@@ -92,6 +92,22 @@ class IVGExecutorWithExternalFonts : public IVGExecutor {
 
 
 #ifdef LIBFUZZ
+#if defined(_WIN32)
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+/*
+	On Windows a stack overflow leaves no stack for AddressSanitizer and libFuzzer to report it on, so the input that
+	caused it is never saved. Reserving some stack for the overflow handler lets libFuzzer write the crash file.
+*/
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) {
+	ULONG guarantee = 256 * 1024;
+	SetThreadStackGuarantee(&guarantee);
+	return 0;
+}
+#endif
+
 struct FuzzerExecutor : public IVGExecutor {
 	FuzzerExecutor(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform = NuXPixels::AffineTransformation())
 			: IVGExecutor(canvas, initialTransform) { }
@@ -195,10 +211,10 @@ int main(int argc, const char* argv[]) {
 				int g = (*p >> 8) & 0xFF;
 				int b = (*p >> 0) & 0xFF;
 				if (a != 0xFF && a != 0x00) {
-					int m = 0xFFFF / a;
-					r = (r * m) >> 8;
-					g = (g * m) >> 8;
-					b = (b * m) >> 8;
+					// Round to nearest, the exact inverse of premultiplying with (v * a + 127) / 255.
+					r = (r * 255 + a / 2) / a;
+					g = (g * 255 + a / 2) / a;
+					b = (b * 255 + a / 2) / a;
 					assert(0 <= r && r < 0x100);
 					assert(0 <= g && g < 0x100);
 					assert(0 <= b && b < 0x100);

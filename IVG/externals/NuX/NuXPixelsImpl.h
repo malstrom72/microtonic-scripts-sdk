@@ -250,7 +250,7 @@ template<> void interpolatePixelsYOnly<ARGB32>(int count, typename ARGB32::Pixel
 /* --- Span -- */
 
 template<class T> Span<T>::Span(int length, bool solid, bool opaque, const typename T::Pixel* pixels)
-	: lengthAndFlags(length | (solid << 31) | (opaque << 30))
+	: lengthAndFlags(length | (static_cast<UInt32>(solid) << 31) | (opaque << 30))
 	, pixels(pixels)
 {
 	assert(length >= 0);
@@ -393,7 +393,7 @@ template<class T> Renderer<T>::~Renderer() { }
 
 /* --- Solid -- */
 
-template<class T> Solid<T>::Solid(const typename T::Pixel& pixel) : pixel(pixel) { assert(T::isValid(pixel)); };
+template<class T> Solid<T>::Solid(const typename T::Pixel& pixel) : pixel(pixel) { assert(T::isValid(pixel)); }
 template<class T> IntRect Solid<T>::calcBounds() const { return FULL_RECT; }
 template<class T> void Solid<T>::render(int /*x*/, int /*y*/, int length, SpanBuffer<T>& output) const {
 	assert(0 < length && length <= MAX_RENDER_LENGTH);

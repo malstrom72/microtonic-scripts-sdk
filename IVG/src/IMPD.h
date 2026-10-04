@@ -53,6 +53,7 @@ typedef std::map<String, String> StringStringMap;
 
 const int DEFAULT_STATEMENTS_LIMIT = 1000000;																			// To prevent endless loops. 1 million instructions can take quite a while, but better than crashing. If your data require more than a million statements to execute you are probably doing it wrong.
 const int DEFAULT_RECURSION_LIMIT = 50;																					// To prevent stack overflow. If you can't describe your data without 50 times recursion, you are doing it wrong.
+const int EXPRESSION_NESTING_LIMIT = 100;																				// To prevent stack overflow, like DEFAULT_RECURSION_LIMIT. Counts nested parentheses, prefix operators, conditionals and [ ] inside one { } expression.
 const int NUMBER_PRECISION_DIGITS = 13;
 const double NUMBER_PRECISION_MAGNITUDE = 1e-13;
 
@@ -62,6 +63,18 @@ const int ESCAPE_CODE_COUNT = 7;
 
 WideString convertUniToWideString(const UniString& s);
 UniString convertWideToUniString(const WideString& s);
+
+/**
+	Narrows each character to a Char, for error messages. Unescaped strings hold the script's UTF-8 bytes one per
+	character, so this gives the original text back.
+**/
+template<class S> String narrowToString(const S& s) {
+	String narrowed(s.size(), '\0');
+	for (size_t i = 0; i < s.size(); ++i) {
+		narrowed[i] = static_cast<Char>(s[i]);
+	}
+	return narrowed;
+}
 
 /**
 	Helper representing a pair of iterators into a string.
@@ -175,7 +188,7 @@ class Executor {
 	public:		virtual bool progress(Interpreter& interpreter, int maxStatementsLeft) = 0;								///< Called before every statement is executed. Return false to stop processing and throw AbortedException.
 	public:		virtual bool load(Interpreter& interpreter, const WideString& filename, String& contents) = 0;			///< Called by the INCLUDE instruction. Load contents of file into `contents`. Return false to throw a RunTimeException.
 	public:		virtual void trace(Interpreter& interpreter, const WideString& s) = 0;									///< Used for debugging. Trace `s` to standard out, any log-files etc...
-	public:		virtual bool meta(Interpreter& interpreter, const String& key, const String& arguments) = 0;			///< Used for passing meta-data from the IMPD script to the executor. `key` is passed in lower case (and will end with `-n` version number if declared in `format uses:`). `arguments` is the raw argument string (may be empty). Return false if the meta tag is unrecognized (not an error, but may trace a warning).
+	public:		virtual bool meta(Interpreter& interpreter, const String& key, const String& arguments) = 0;			///< Used for passing meta-data from the IMPD script to the executor. `key` is passed in lower case (and will end with `-n` version number if declared in `format uses:`). `arguments` is the raw argument string (may be empty). Return false if the meta tag is unrecognized. This is not an error and the interpreter ignores the result, but the executor may trace a warning itself.
 	public:		virtual ~Executor() { }
 };
 
@@ -267,6 +280,7 @@ class Interpreter {
 	protected:	Interpreter& rootFrame;
 	protected:	int statementsLimit;
 	protected:	int recursionLimit;
+	protected:	int expressionNestingLimit;
 
 	protected:	enum BuiltInInstruction {
 					DEBUG_INSTRUCTION, CALL_INSTRUCTION, FOR_INSTRUCTION, FORMAT_INSTRUCTION, IF_INSTRUCTION
