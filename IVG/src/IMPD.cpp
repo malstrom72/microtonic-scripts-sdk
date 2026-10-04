@@ -1325,7 +1325,7 @@ void Interpreter::runInstruction(const String& instructionString, const StringRa
 	if (foundIndex < 0) {
 		if (executor.execute(*this, instructionString, argumentsRange)) return;
 		else throwBadSyntax(String("Unrecognized instruction: ") + instructionString);
-}
+	}
 
 	BuiltInInstruction instruction = static_cast<BuiltInInstruction>(foundIndex);
 	switch (instruction) {

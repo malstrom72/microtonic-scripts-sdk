@@ -6,7 +6,7 @@ reference for the shipping Microtonic IVG implementation.
 Imported from `malstrom72/IVG` commit:
 
 ```text
-78a732cbc088a8c62c9bd1f6f6f05c0b215edb01
+7f2bee01deff195d1d8550059305067b8768c749
 ```
 
 Do not update this directory to latest upstream IVG unless Microtonic's shipped

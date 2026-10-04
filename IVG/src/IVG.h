@@ -71,6 +71,7 @@ const int PATH_INSTRUCTION_LIMIT = 1000000;
 inline double square(double d) { return d * d; }
 
 void checkBounds(const NuXPixels::IntRect& bounds);
+void checkTextureTransformation(const NuXPixels::AffineTransformation& xf, const char* what);
 
 /**
 	Small helper that wraps a pointer which might live on the heap.
@@ -539,6 +540,7 @@ template<class PIXEL_TYPE> class PatternPainter : public PatternBase {
 						xf = NuXPixels::AffineTransformation().scale(1.0 / scale)
 								.transform(withPaint.transformation.transform(inContext.getTransformation()));
 					}
+					checkTextureTransformation(xf, "Pattern");
 
 					inContext.accessCanvas().blend(NuXPixels::Texture<PIXEL_TYPE>(*image, true
 							, NuXPixels::AffineTransformation().transform(xf))
