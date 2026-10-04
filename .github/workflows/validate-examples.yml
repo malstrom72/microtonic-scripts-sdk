@@ -1,9 +1,12 @@
 name: Validate examples
 
-# Runs the aggregate example validator (Cushy schema + JavaScript + static IVG).
-# macOS runners match the prebuilt PikaCmd / IVG2PNG binaries in the repo and the
-# usual development environment; both auto-build from source if a prebuilt binary
-# cannot run.
+# Runs the aggregate example validator (Cushy schema + JavaScript + static IVG)
+# and the JSConsole bridge MCP server tests. macOS runners match the prebuilt
+# PikaCmd / IVG2PNG binaries in the repo and the usual development environment;
+# both auto-build from source if a prebuilt binary cannot run.
+#
+# This workflow is shared verbatim between the Microtonic and Synplant script
+# SDKs; keep both copies identical.
 
 on:
   push:
@@ -20,12 +23,19 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Validate example packages
         run: tools/validate-examples.sh
+
+      - name: Test JSConsole bridge MCP server
+        # Run even if the example validation failed, so one run reports both.
+        if: ${{ !cancelled() }}
+        # A shell glob rather than the bare directory: Node 21+ treats
+        # `node --test <dir>` as a file pattern and does not search the directory.
+        run: node --test tools/jsconsole-bridge-mcp/*.test.js
