@@ -6,7 +6,7 @@ reference for the shipping Microtonic IVG implementation.
 Imported from `malstrom72/IVG` commit:
 
 ```text
-c016809d2f120e74eca4d64d61b134ee8dfb563d
+7f2bee01deff195d1d8550059305067b8768c749
 ```
 
 Do not update this directory to latest upstream IVG unless Microtonic's shipped
@@ -41,4 +41,5 @@ included.
   calling `runIVG()` while the global `Module` value still points at the
   generated factory function, which can otherwise fail with
   `Module.lengthBytesUTF8 is not a function`.
-- `README.md` does not link to the omitted `tests/svg/` sample corpus.
+- `README.md` does not link to the omitted `tests/svg/` sample corpus or the omitted
+  `docs/CodingStyle.md`.

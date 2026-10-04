@@ -400,7 +400,8 @@ Path& Path::quadraticTo(double controlPointX, double controlPointY, double x, do
 	const double c2y = 2.0 * (py - 2.0 * controlPointY + y);
 
 	const double d = sqrt(c2x * c2x + c2y * c2y);	// Norm of second derivative is a measure of how direction (=first derivative) twist. We use this info to decide the segment count.
-	const int n = minValue(static_cast<int>(sqrt(d * 0.707 * curveQuality) + 0.5) + 1, MAX_SPLINE_SEGMENTS);
+	const int n = static_cast<int>(minValue(sqrt(d * 0.707 * curveQuality) + 0.5
+			, static_cast<double>(MAX_SPLINE_SEGMENTS - 1))) + 1;	// Clamped as double: a huge or NaN d must not reach the int cast.
 
 	const double m = 1.0 / n;
 	const double px2 = c2x * m * m;
@@ -440,7 +441,8 @@ Path& Path::cubicTo(double cpBeginX, double cpBeginY, double cpEndX, double cpEn
 	const double k2x = 6.0 * (cpBeginX - 2.0 * cpEndX + x);
 	const double k2y = 6.0 * (cpBeginY - 2.0 * cpEndY + y);
 	const double d = sqrt(maxValue(c2x * c2x + c2y * c2y, k2x * k2x + k2y * k2y));
-	const int n = minValue(static_cast<int>(sqrt(d * 0.707 * curveQuality) + 0.5) + 1, MAX_SPLINE_SEGMENTS);
+	const int n = static_cast<int>(minValue(sqrt(d * 0.707 * curveQuality) + 0.5
+			, static_cast<double>(MAX_SPLINE_SEGMENTS - 1))) + 1;	// Clamped as double: a huge or NaN d must not reach the int cast.
 
 	const double m = 1.0 / n;
 	const double px3 = c3x * m * m * m;
@@ -666,7 +668,7 @@ static void strokeOneSide(Path& stroked, double direction, const StrokeSegment* 
 		virtually collinear but opposite directions.
 	*/
 	const bool insideHalfPlane = (bx0 - ax1) * bdx < (ay1 - by0) * bdy + EPSILON * 2;
-	const bool oppositeDirs = zeroCross && dot <= -1.0 + EPSILON;
+	const bool oppositeDirs = zeroCross && dot <= -(adx * adx + ady * ady) + EPSILON;	// d is scaled to half the pen width, so an exact reversal gives -|d|^2, not -1.
 	if (insideHalfPlane && !oppositeDirs) {
 		// --- Inner joint ---
 		
@@ -806,11 +808,11 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 	}
 
 	instructions.swap(stroked.instructions);
-	openIndex = stroked.openIndex;
+	openIndex = instructions.size() - 1;
 	return *this;
 }
 
-Path& Path::dash(double dashLength, double gapLength, double dashOffset) {
+Path& Path::dash(double dashLength, double gapLength, double dashOffset, size_type limit) {
 	assert(0.0 <= dashLength);
 	assert(0.0 <= gapLength);
 	assert(0.0 <= dashOffset && dashOffset <= (dashLength + gapLength));
@@ -819,11 +821,13 @@ Path& Path::dash(double dashLength, double gapLength, double dashOffset) {
 		InstructionsVector dashed;
 		double initR = fmod(dashLength - dashOffset, (dashLength + gapLength));		
 		Vertex lv(0.0, 0.0);
-		for (const_iterator it = instructions.begin(), e = instructions.end(); it != e;) {
+		bool limitReached = false;
+		for (const_iterator it = instructions.begin(), e = instructions.end(); it != e && !limitReached;) {
 			for (; it != e && it->first != LINE; ++it) lv = it->second;
 			if (it != e) {
 				size_type firstDashIndex = dashed.size();
 				size_type lastDashIndex = firstDashIndex;
+				if (dashed.size() >= limit) { limitReached = true; break; }
 				dashed.push_back(Instruction(MOVE, lv));
 				bool firstPenDown = true;
 				double r = initR;
@@ -833,7 +837,7 @@ Path& Path::dash(double dashLength, double gapLength, double dashOffset) {
 				}
 				bool penDown = firstPenDown;
 				bool isClosed = false;
-				for (; it != e && it->first != MOVE && !isClosed; ++it) {
+				for (; it != e && it->first != MOVE && !isClosed && !limitReached; ++it) {
 					isClosed = (it->first == CLOSE);
 					double dx = it->second.x - lv.x;
 					double dy = it->second.y - lv.y;
@@ -849,6 +853,7 @@ Path& Path::dash(double dashLength, double gapLength, double dashOffset) {
 							l -= n;
 							r -= n;
 							if (penDown) {
+								if (dashed.size() >= limit) { limitReached = true; break; }
 								dashed.push_back(Instruction(LINE, lv));
 								if (r <= 0.0) {
 									penDown = false;
@@ -857,13 +862,14 @@ Path& Path::dash(double dashLength, double gapLength, double dashOffset) {
 							} else if (r <= 0.0) {
 								penDown = true;
 								lastDashIndex = dashed.size();
+								if (dashed.size() >= limit) { limitReached = true; break; }
 								dashed.push_back(Instruction(MOVE, lv));
 								r += dashLength;
 							}
-						} while (l > 0.0);
+						} while (l > 0.0 && !limitReached);
 					}
 				}
-				if (firstDashIndex != lastDashIndex && isClosed && penDown && firstPenDown) {	// If original sub-path was closed and we currently have "pen down", we should rotate the vertex data so that we begin the new sub-path at "pen-down-point".
+				if (!limitReached && firstDashIndex != lastDashIndex && isClosed && penDown && firstPenDown) {	// If original sub-path was closed and we currently have "pen down", we should rotate the vertex data so that we begin the new sub-path at "pen-down-point".
 					(dashed.begin() + firstDashIndex)->first = LINE;
 					std::rotate(dashed.begin() + firstDashIndex, dashed.begin() + lastDashIndex, dashed.end());
 				}
@@ -911,7 +917,7 @@ GammaTable::GammaTable(double gamma)
 {
 	assert(0.0 < gamma);
 	for (int i = 0; i < 256; ++i) {
-		table[i] = Mask8::Pixel(floor(pow(i / 255.0, 1.0 / gamma) * 255) + 0.5);
+		table[i] = Mask8::Pixel(roundToInt(pow(i / 255.0, 1.0 / gamma) * 255));
 	}
 }
 
@@ -926,9 +932,22 @@ LinearAscend::LinearAscend(double startX, double startY, double endX, double end
 		l = 1.0 / l;
 	}
 	l *= l * (1 << 16);
-	dx = roundToInt(dx0 * l);
-	dy = roundToInt(dy0 * l);
-	start = roundToInt(-startX * dx - startY * dy);
+	double fdx = dx0 * l;
+	double fdy = dy0 * l;
+	/*
+		Steps above MAX_STEP mean a gradient shorter than 1/16 pixel (with the default MAX_RENDER_LENGTH), which goes from
+		its first to its last stop within one pixel either way. Such steps are scaled down, keeping the direction and
+		where the ramp starts, so that render() can step a whole span without leaving the int range (see there).
+	*/
+	const double MAX_STEP = (1 << 28) / MAX_RENDER_LENGTH;
+	const double largest = maxValue(fabs(fdx), fabs(fdy));
+	if (largest > MAX_STEP) {
+		fdx *= MAX_STEP / largest;
+		fdy *= MAX_STEP / largest;
+	}
+	dx = roundToInt(fdx);
+	dy = roundToInt(fdy);
+	start = floor(-startX * dx - startY * dy + 0.5);
 }
 
 IntRect LinearAscend::calcBounds() const {
@@ -941,7 +960,13 @@ void LinearAscend::render(int x, int y, int length, SpanBuffer<Mask8>& output) c
 
 	// FIX : increase x resolution from 16 bits?
 
-	int ki = start + x * dx + y * dy;
+	/*
+		Worked out exactly as a double and clamped, since far from the gradient it does not fit an int. Beyond 1 << 30
+		the whole span is one solid color either way: dx and dy are at most (1 << 28) / MAX_RENDER_LENGTH (see the
+		constructor), so a span moves ki by at most 1 << 28.
+	*/
+	const double kd = start + static_cast<double>(x) * dx + static_cast<double>(y) * dy;
+	int ki = (kd < -(1 << 30) ? -(1 << 30) : (kd > (1 << 30) ? (1 << 30) : static_cast<int>(kd)));
 	int dk = dx;
 
 	int i = 0;
@@ -1021,9 +1046,13 @@ void RadialAscend::render(int x, int y, int length, SpanBuffer<Mask8>& output) c
 	const double a = 1.0 - dy * dy / (height * height);
 	const double rowWidth = (a > EPSILON) ? width * sqrt(a) : 0;
 	const double rowStart = (centerX - rowWidth);
-	const int rowStartInt = roundToInt(rowStart);
+	// The edges are clamped before rounding, since a center far off the canvas does not fit an int. A span is at most
+	// MAX_RENDER_LENGTH pixels, so an edge clamped at -(1 << 30) or 1 << 30 still lies on the same side of it.
+	const double EDGE_LIMIT = (1 << 30);
+	const int rowStartInt = roundToInt(minValue(maxValue(rowStart, -EDGE_LIMIT), EDGE_LIMIT));
 	const int leftEdge = minValue(maxValue(rowStartInt - x, 0), length);
-	const int rightEdge = minValue(roundToInt(rowStart + rowWidth * 2 - x), length);
+	const int rightEdge = minValue(roundToInt(minValue(maxValue(rowStart + rowWidth * 2, -EDGE_LIMIT), EDGE_LIMIT) - x)
+			, length);
 	
 	int i = 0;
 	while (i < length) {
@@ -1034,13 +1063,30 @@ void RadialAscend::render(int x, int y, int length, SpanBuffer<Mask8>& output) c
 			i = edge;
 		} else {
 			assert(i == leftEdge);
+			if (width < 4.0 || width > 32767.0) {
+				/*
+					Outside what the integration below handles: its integer slopes grow as 1 / width^2 and overflow for
+					narrow gradients, and it counts up to 2 * width steps from the row start, which must stay below
+					1 << 16. So evaluate each pixel centre directly. This depends only on the gradient, not on the span, so
+					every row gets the same pixels however it is split.
+				*/
+				Mask8::Pixel* pixels = output.addVariable(rightEdge - leftEdge, false);
+				for (; i < rightEdge; ++i) {
+					const double px = x + i + 0.5 - centerX;
+					const int z = roundToInt(minValue(dy * dy * hk + px * px * wk, double((1 << 30) - 1)));
+					const int precision = (z < (1 << (30 - 8))) << 2;
+					const int sqrtShift = ((30 - RADIAL_SQRT_BITS) - precision - precision);
+					*pixels++ = ((255 << precision) - 255 + sqrtTable[z >> sqrtShift]) >> precision;
+				}
+				continue;
+			}
 						
 			const int steps = x + i - rowStartInt;
 			assert(steps >= 0);
 			const double dx = rowStartInt - centerX;
 			const double dpp = 2.0 * wk;
 			const double dp = (2.0 * dx - 1.0) * wk + dpp * 0.5;
-			const double d = dy * dy * hk + dx * dx * wk + dp * 0.5;
+			const double d = dy * dy * hk + dx * dx * wk + dp * 0.5 + wk * 0.25;	// wk * (dx + 0.5)^2: the first pixel's centre, not its left edge.
 			assert(dpp >= 0.0);
 			const unsigned int dppi = roundToInt(dpp);
 			assert(steps < (1 << 16));
@@ -1049,7 +1095,8 @@ void RadialAscend::render(int x, int y, int length, SpanBuffer<Mask8>& output) c
 			// Calculate steps * (steps + 1) / 2 in a way that avoids overflow.
 			const int tri = ((steps & 1) != 0) ? steps * ((steps + 1) >> 1) : (steps >> 1) * (steps + 1);
 			int dpi = dp0 + steps * dppi;
-			int di = roundToInt(d) + steps * dp0 + dppi * tri;			
+			int di = static_cast<int>(static_cast<UInt32>(roundToInt(d)) + static_cast<UInt32>(steps) * static_cast<UInt32>(dp0)
+					+ dppi * static_cast<UInt32>(tri));	// Wraps on the way, but the result fits.
 			
 			Mask8::Pixel* pixels = output.addVariable(rightEdge - leftEdge, false);
 			
@@ -1158,10 +1205,13 @@ bool PolygonMask::isValid() const { return valid; }
 PolygonMask::PolygonMask(const Path& path, const IntRect& clipBounds, const FillRule& fillRule)
 	: segments(), fillRule(fillRule), row(0), engagedStart(0), engagedEnd(0), coverageDelta(), valid(true)
 {
-	// Clamp the clip rectangle to the numeric limits handled by the rasterizer.
+	/*
+		Clamp the clip rectangle to the numeric limits handled by the rasterizer. Coordinates are kept within half the
+		24.8 fixed-point range, so the difference of any two (edge deltas, clip catch-up) fits in an int.
+	*/
 	IntRect cb = clipBounds;
 	assert(0 <= cb.width && 0 <= cb.height);
-	const int limit = (0x7FFFFFFF >> FRACT_BITS);
+	const int limit = (0x3FFFFFFF >> FRACT_BITS);
 	cb.left = maxValue(-limit, minValue(cb.left, limit));
 	cb.top = maxValue(-limit, minValue(cb.top, limit));
 	int rightBound = maxValue(-limit, minValue(cb.calcRight(), limit));
@@ -1171,14 +1221,15 @@ PolygonMask::PolygonMask(const Path& path, const IntRect& clipBounds, const Fill
 
 	// Reserve space for all edges plus a sentinel segment.
 	segments.reserve(path.size() + 1);
-	const double vertexLimit = static_cast<double>(0x7FFFFFFF >> POLYGON_FRACTION_BITS);
+	const double vertexLimit = static_cast<double>(0x3FFFFFFF >> POLYGON_FRACTION_BITS);
 	int minY = 0x3FFFFFFF;
 	int minX = 0x3FFFFFFF;
 	int maxY = -0x3FFFFFFF;
 	int maxX = -0x3FFFFFFF;
-	int top = cb.top << FRACT_BITS;
-	int right = rightBound << FRACT_BITS;
-	int bottom = bottomBound << FRACT_BITS;
+	/* Shifted unsigned and cast back: shifting a negative int left is undefined before C++20. */
+	int top = static_cast<int>(static_cast<UInt32>(cb.top) << FRACT_BITS);
+	int right = static_cast<int>(static_cast<UInt32>(rightBound) << FRACT_BITS);
+	int bottom = static_cast<int>(static_cast<UInt32>(bottomBound) << FRACT_BITS);
 	int lx = 0;
 	int ly = 0;
 
@@ -1365,7 +1416,7 @@ void PolygonMask::render(int x, int y, int length, SpanBuffer<Mask8>& output) co
 			This may leave the horizontal list unsorted, requiring
 			extra work later when reordering.
 		*/
-		const int yFixed = y << FRACT_BITS;
+		const int yFixed = static_cast<int>(static_cast<UInt32>(y) << FRACT_BITS);
 		int segIndex = engagedStart;
 		while (segsVertically[segIndex]->topY < yFixed) {
 			Segment* seg = segsVertically[segIndex];
@@ -1379,7 +1430,7 @@ void PolygonMask::render(int x, int y, int length, SpanBuffer<Mask8>& output) co
 		row = y;
 	}
 	
-	const int rowFixed = row << FRACT_BITS;
+	const int rowFixed = static_cast<int>(static_cast<UInt32>(row) << FRACT_BITS);
 	
 	int includeIndex = engagedEnd;
 	while (segsVertically[includeIndex]->topY < rowFixed + FRACT_ONE) {
@@ -1558,8 +1609,6 @@ void PolygonMask::render(int x, int y, int length, SpanBuffer<Mask8>& output) co
 			}
 			Mask8::Pixel* pixels = output.addVariable(spanLength, false);
 			fillRule.processCoverage(spanLength, &coverageDelta[col], pixels);
-			for (int i = 0; i < spanLength; ++i) {
-			}
 			for (int i = 0; i < spanLength; ++i) {
 				coverageDelta[col + i] = 0;
 			}

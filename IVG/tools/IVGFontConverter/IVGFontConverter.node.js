@@ -120,6 +120,10 @@ if (process.argv.length > 4) {
         const range = v.split("-");
         const from = parseInt(range[0], 16);
         const to = range.length > 1 ? parseInt(range[1], 16) : from;
+        if (range.length > 2 || !range.every((h) => /^[0-9a-fA-F]+$/.test(h)) || from > to || to > 0x10FFFF) {
+            process.stderr.write("Invalid charset range: " + v + "\n");
+            process.exit(1);
+        }
         const r = [];
         for (let i = from; i <= to; ++i) {
             r.push(String.fromCodePoint(i));
