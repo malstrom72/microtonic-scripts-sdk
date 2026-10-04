@@ -144,7 +144,7 @@
 			f[i] = s;
 			if (s >= TRIG) { anyActive = true; }
 		}
-		if (!anyActive) { f[random.integer(3)] = (random.uniform() < 0.5 ? TRIG : ACCENT); }
+		if (!anyActive) { f[random.integer(4)] = (random.uniform() < 0.5 ? TRIG : ACCENT); }
 		return f;
 	}
 
@@ -152,7 +152,7 @@
 		if (beatdrop.bag.length === 0) {
 			var a = [ 0, 1, 2, 3, 4, 5, 6 ];
 			for (var i = a.length - 1; i > 0; --i) {
-				var j = random.integer(i);
+				var j = random.integer(i + 1);	// Fisher-Yates: j in 0..i
 				var t = a[i]; a[i] = a[j]; a[j] = t;
 			}
 			beatdrop.bag = a;
@@ -175,10 +175,10 @@
 		beatdrop.dirty = true;
 	}
 
-	//
-	// Recompute the bottom-16 grid into the selected pattern and (re)start playback.
-	// Only called on lock / new game, never per frame.
-	//
+	/*
+		Writes the bottom 16 rows into the selected pattern without touching play/stop. Callers save an undo point
+		first with `saveBeatDropUndo`. Only called on lock, new game and reload, never per frame.
+	*/
 	function writePattern() {
 		var preset = getElement('preset');
 		var pi = selected('pattern');
@@ -261,16 +261,17 @@
 		return rows;
 	}
 
-	function lockPiece() {
-		// Save an undo point before every drop, with collapse:true (saveUndo runs
-		// before the document write -- it snapshots the state to return to).
-		// Consecutive drops on the same pattern share the label and merge into one
-		// "Undo BeatDrop on Pattern X" item. Re-saving on every drop is what keeps us
-		// in sync with the document: after you undo and keep playing, the next drop
-		// starts a fresh item so you can always get back. (A script-side "already
-		// saved this pattern" flag would go stale, since undo rewinds the document
-		// but not our JS state.)
+	/*
+		Call before every pattern write. The collapsing label merges new game, reload and drops into one undo item that
+		restores the pattern from before BeatDrop. Saving on every write, rather than tracking it in JS, stays correct
+		after an undo, which rewinds the document but not our JS state.
+	*/
+	function saveBeatDropUndo() {
 		saveUndo('BeatDrop on Pattern ' + String.fromCharCode(65 + selected('pattern')), true);
+	}
+
+	function lockPiece() {
+		saveBeatDropUndo();
 		var c = beatdrop.cur, sh = cellsOf(c.type, c.rot), b = beatdrop.board, over = false;
 		for (var i = 0; i < sh.length; ++i) {
 			var x = c.x + sh[i][0];
@@ -417,6 +418,7 @@
 		beatdrop.nextType = nextFromBag();
 		beatdrop.nextFlags = randomFlags();
 		beatdrop.dirty = true;
+		saveBeatDropUndo();
 		writePattern();				// clears the pattern (you control play/stop in Microtonic)
 		spawn();
 	}
@@ -484,6 +486,7 @@
 			beatdrop.lastDrop = Date.now();
 			beatdrop.clearing = false;	// drop any half-finished strobe across a reload
 			beatdrop.flashRows = '[]';
+			saveBeatDropUndo();
 			writePattern();			// resync Microtonic with the current grid
 		}
 		render();

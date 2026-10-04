@@ -63,7 +63,7 @@ Object.assign(fmTool, {
 });
 
 Object.assign(fmTool, {
-	modRateToIndexFunc: fmTool.fmPitchFuncs.decay,
+	modRateToIndexFunc: fmTool.modRateToIndexFuncs.decay,
 	fmPitchFunc: fmTool.fmPitchFuncs.decay,
 	
 	clipWarning: false,
@@ -119,8 +119,12 @@ Object.assign(fmTool, {
 		} else {
 			var unaccentedFMIndex = bisect(fmTool.fmPitchFunc, fmTool.unaccentedTransposition.value / 12 + fmPitch, -0.02, fmTool.MAX_MOD_OCTS); // max fm index is same as max mod octs
 			var biAmount = dp.ModAmt * 2 - 1;
-			dp.ModVel = 1 - (fmTool.modOctsToAmount(unaccentedFMIndex) * 2 - 1) / Math.abs(biAmount);
-			dp.ModVel = clip(dp.ModVel);
+			if (biAmount === 0) {
+				dp.ModVel = 0;		// index 0 leaves no FM amount for velocity to scale
+			} else {
+				dp.ModVel = 1 - (fmTool.modOctsToAmount(unaccentedFMIndex) * 2 - 1) / Math.abs(biAmount);
+				dp.ModVel = clip(dp.ModVel);
+			}
 		}
 		dp.OscFreq = clip(dp.OscFreq);
 		dp.ModAmt = clip(dp.ModAmt);
