@@ -175,11 +175,10 @@
 		beatdrop.dirty = true;
 	}
 
-	//
-	// Recompute the bottom-16 grid into the selected pattern (play/stop stays with
-	// you in Microtonic). Only called on lock / new game / reload, never per frame.
-	// Callers save an undo point first (saveBeatDropUndo).
-	//
+	/*
+		Writes the bottom 16 rows into the selected pattern without touching play/stop. Callers save an undo point
+		first with `saveBeatDropUndo`. Only called on lock, new game and reload, never per frame.
+	*/
 	function writePattern() {
 		var preset = getElement('preset');
 		var pi = selected('pattern');
@@ -262,15 +261,11 @@
 		return rows;
 	}
 
-	// Save an undo point before every pattern write, with collapse:true (saveUndo
-	// runs before the document write -- it snapshots the state to return to).
-	// New game, reload and consecutive drops on the same pattern share the label
-	// and merge into one "Undo BeatDrop on Pattern X" item, so undo returns to the
-	// pattern as it was before BeatDrop touched it. Re-saving on every write is
-	// what keeps us in sync with the document: after you undo and keep playing,
-	// the next write starts a fresh item so you can always get back. (A
-	// script-side "already saved this pattern" flag would go stale, since undo
-	// rewinds the document but not our JS state.)
+	/*
+		Call before every pattern write. The collapsing label merges new game, reload and drops into one undo item that
+		restores the pattern from before BeatDrop. Saving on every write, rather than tracking it in JS, stays correct
+		after an undo, which rewinds the document but not our JS state.
+	*/
 	function saveBeatDropUndo() {
 		saveUndo('BeatDrop on Pattern ' + String.fromCharCode(65 + selected('pattern')), true);
 	}

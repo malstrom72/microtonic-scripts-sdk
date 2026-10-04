@@ -97,8 +97,8 @@ Object.assign(euclideanBeat, {
                     + ' ' + this.variable[0].toUpperCase() + this.variable.substr(1), true);
         },
         max: function max() {
-            return Math.max(0, (this.lane === "triggers" ? euclideanBeat.stepCount : euclideanBeat.triggers.onsets.value)
-                    - (this.variable === "rotation" ? 1 : 0));    // never -1 when there are no onsets
+            var count = (this.lane === "triggers" ? euclideanBeat.stepCount : euclideanBeat.triggers.onsets.value);
+            return Math.max(0, count - (this.variable === "rotation" ? 1 : 0));    // never -1 with no onsets
         },
         get: function get() { return this.value; },
         set: function set(v) {
