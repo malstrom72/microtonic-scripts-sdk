@@ -39,6 +39,9 @@ Object.assign(euclideanBeat, {
         var stepCount = this.stepCount;
         var trigCount = this.triggers.onsets.value = Math.min(this.triggers.onsets.value, stepCount);
         var accentCount = this.accents.onsets.value = Math.min(this.accents.onsets.value, trigCount);
+        // Keep the rotations in range (and the displayed values honest) when the counts shrink.
+        this.triggers.rotation.value = Math.min(this.triggers.rotation.value, this.triggers.rotation.max());
+        this.accents.rotation.value = Math.min(this.accents.rotation.value, this.accents.rotation.max());
 
         var triggers = this.generateEuclidean(trigCount, stepCount);
         var packedAccents = this.generateEuclidean(accentCount, trigCount);
@@ -94,8 +97,8 @@ Object.assign(euclideanBeat, {
                     + ' ' + this.variable[0].toUpperCase() + this.variable.substr(1), true);
         },
         max: function max() {
-            return (this.lane === "triggers" ? euclideanBeat.stepCount : euclideanBeat.triggers.onsets.value)
-                    - (this.variable === "rotation" ? 1 : 0);
+            return Math.max(0, (this.lane === "triggers" ? euclideanBeat.stepCount : euclideanBeat.triggers.onsets.value)
+                    - (this.variable === "rotation" ? 1 : 0));    // never -1 when there are no onsets
         },
         get: function get() { return this.value; },
         set: function set(v) {

@@ -100,7 +100,9 @@ Object.assign(macroTweak, {
 	
 	pitch: {
 		set: function(v) {
-			v = clamp(+v, -1, 1);
+			v = +v;
+			if (isNaN(v)) { return; }		// ignore non-numeric input (e.g. typed text) instead of writing NaN
+			v = clamp(v, -1, 1);
 			macroTweak.pitchSetting = v;
 			var d = OCTAVE_STEP * 2 * v;
 			macroTweak.tweak('Pitch', function(sp, dp) {
@@ -119,7 +121,9 @@ Object.assign(macroTweak, {
 
 	time: {
 		set: function(v) {
-			v = clamp(+v, -1, 1);
+			v = +v;
+			if (isNaN(v)) { return; }		// ignore non-numeric input (e.g. typed text) instead of writing NaN
+			v = clamp(v, -1, 1);
 			macroTweak.timeSetting = v;
 			var timeScale = Math.pow(2, v * 4);
 
@@ -164,7 +168,9 @@ Object.assign(macroTweak, {
 
 	dynamics: {
 		set: function(v) {
-			v = clamp(+v, -1, 1);
+			v = +v;
+			if (isNaN(v)) { return; }		// ignore non-numeric input (e.g. typed text) instead of writing NaN
+			v = clamp(v, -1, 1);
 			macroTweak.dynamicsSetting = v;
 			macroTweak.tweak('Dynamics', function(sp, dp) {
 				dp.Level = clamp(lerp(sp.Level, macroTweak.meanLevel, v), 0, 1);

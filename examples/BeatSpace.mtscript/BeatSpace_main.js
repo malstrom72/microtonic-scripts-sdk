@@ -682,17 +682,16 @@
 		var points = beatspace.latentPoints;
 		var enabled = beatspace.channelEnabled;
 		var mutes = getElement('preset').mutes;
-		var selected = [];
 		var pointStrings = [];
 		for (var i = 0; i < CHANNEL_COUNT; ++i) {
 			var point = points[i];
 			var pixelPoint = spaceToPixelPoint(point);
-			var selected = (i === beatspace.selectedChannel);
+			var isSelected = (i === beatspace.selectedChannel);
 			var isMuted = (mutes[i] ? 'yes' : 'no');
 			var isEnabled = (enabled[i] ? 'yes' : 'no');
 			var str = '[' + i + ',' + pixelPoint[0] + ',' + pixelPoint[1] + ','
 					+ isEnabled + ',' + isMuted + ']';
-			if (selected) {
+			if (isSelected) {
 				pointStrings.push(str);
 			} else {
 				pointStrings.unshift(str);
