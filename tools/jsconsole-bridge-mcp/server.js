@@ -133,6 +133,31 @@ function readJson(p) {
 	}
 }
 
+// On Windows, renaming over a file that another process has open (the bridge
+// polls request.json) fails with EPERM/EACCES/EBUSY. Retry with a short,
+// jittered backoff (like graceful-fs) so retries can't lock onto the poller's
+// timing, until `limitMs` runs out.
+const RENAME_RETRY_CODES = ['EPERM', 'EACCES', 'EBUSY'];
+const RENAME_RETRY_LIMIT_MS = 1000;
+
+async function renameWithRetry(from, to, rename, limitMs) {
+	rename = rename || fs.renameSync;
+	const deadline = Date.now() + (limitMs || RENAME_RETRY_LIMIT_MS);
+	let delay = 5;
+	for (;;) {
+		try {
+			rename(from, to);
+			return;
+		} catch (e) {
+			if (RENAME_RETRY_CODES.indexOf(e.code) < 0 || Date.now() >= deadline) {
+				throw e;
+			}
+		}
+		await sleep(Math.min(delay / 2 + Math.random() * delay, Math.max(0, deadline - Date.now())));
+		delay = Math.min(delay * 2, 100);
+	}
+}
+
 //
 // Tool: <prefix>_eval — write a request atomically, poll for the matching reply.
 //
@@ -147,7 +172,12 @@ async function bridgeEval(args) {
 	// Atomic publish: write a temp file in the same dir, then rename over request.json.
 	const tmp = path.join(BASE, 'request.' + process.pid + '.' + seq + '.tmp');
 	fs.writeFileSync(tmp, JSON.stringify({ seq: seq, code: code }));
-	fs.renameSync(tmp, REQUEST_PATH);
+	try {
+		await renameWithRetry(tmp, REQUEST_PATH, null, timeout);
+	} catch (e) {
+		try { fs.unlinkSync(tmp); } catch (e2) { /* already gone */ }
+		throw e;
+	}
 
 	const deadline = Date.now() + timeout;
 	while (Date.now() < deadline) {
@@ -484,7 +514,7 @@ function main() {
 
 // Exported so server.test.js can be shared verbatim and parameterised by PRODUCT.
 // Requiring this file does not start the server or touch the bridge folder.
-module.exports = { PRODUCT: PRODUCT };
+module.exports = { PRODUCT: PRODUCT, renameWithRetry: renameWithRetry };
 
 if (require.main === module) {
 	main();

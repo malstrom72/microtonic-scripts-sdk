@@ -98,6 +98,7 @@ function startServer(base) {
 
 // Stand-in for the product's JS Console bridge: watch request.json, and when a new
 // seq appears, write a response built by `handler(req)`. Records seqs seen.
+// Polls every 50ms like the real console's bridge tick.
 function startFakeBridge(base, handler, delayMs) {
 	let last = 0;
 	const seqs = [];
@@ -114,7 +115,7 @@ function startFakeBridge(base, handler, delayMs) {
 			fs.writeFileSync(resPath, JSON.stringify(Object.assign(base2, handler(req))));
 		};
 		if (delayMs) setTimeout(write, delayMs); else write();
-	}, 10);
+	}, 50);
 	return { stop: function () { clearInterval(timer); }, seqs: seqs };
 }
 
@@ -334,4 +335,38 @@ test('does not exit (or truncate the reply) while an eval is in flight', async f
 
 	const code = await s.waitExit();
 	assert.equal(code, 0);
+});
+
+const renameWithRetry = require('./server.js').renameWithRetry;
+
+function renameError(code) {
+	const e = new Error(code + ': operation not permitted, rename');
+	e.code = code;
+	return e;
+}
+
+test('renameWithRetry retries EPERM (a reader has request.json open on Windows)', async function () {
+	let calls = 0;
+	await renameWithRetry('a', 'b', function () {
+		if (++calls < 3) throw renameError('EPERM');
+	});
+	assert.equal(calls, 3);
+});
+
+test('renameWithRetry does not retry other errors', async function () {
+	let calls = 0;
+	await assert.rejects(renameWithRetry('a', 'b', function () {
+		++calls;
+		throw renameError('ENOENT');
+	}), /ENOENT/);
+	assert.equal(calls, 1);
+});
+
+test('renameWithRetry gives up when its time limit runs out', async function () {
+	const start = Date.now();
+	await assert.rejects(renameWithRetry('a', 'b', function () {
+		throw renameError('EBUSY');
+	}, 300), /EBUSY/);
+	const elapsed = Date.now() - start;
+	assert.ok(elapsed >= 250 && elapsed < 2000, 'elapsed ' + elapsed + 'ms');
 });
