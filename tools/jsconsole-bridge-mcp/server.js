@@ -25,13 +25,6 @@
 // increasing `seq`. We base `seq` on epoch ms so it keeps climbing across restarts
 // of this server.
 //
-// request.json and response.json each hold a single message, so this server runs
-// bridge calls strictly one at a time. Overlapping calls would overwrite each
-// other's request before the bridge saw it, or each other's reply before it was
-// read. A call that times out deletes its request, so a bridge that was only
-// blocked (e.g. by a modal dialog) does not run it later. That cannot stop a
-// request the bridge had already picked up.
-//
 // Transport is MCP stdio: newline-delimited JSON-RPC 2.0 on stdin/stdout.
 // stdout MUST carry only protocol messages — all diagnostics go to stderr.
 //
@@ -169,17 +162,24 @@ async function retryWhileLocked(op, limitMs) {
 	}
 }
 
-// Run bridge calls one at a time; see the protocol notes at the top of this file.
+/*
+	request.json and response.json hold one message each, so bridge calls run one at a time and
+	`timeout_ms` includes the wait in this queue. A call that times out withdraws its request, so a
+	blocked bridge does not run it later; one the bridge already picked up still runs.
+*/
 let bridgeQueue = Promise.resolve();
+let callsPending = 0;
 
-function oneAtATime(fn) {
-	const run = bridgeQueue.then(fn, fn);
-	bridgeQueue = run.then(function () {}, function () {});
-	return run;
+// Resolves true once `turn` settles, or false if `ms` runs out first.
+function waitAtMost(turn, ms) {
+	let timer = null;
+	const expired = new Promise(function (resolve) { timer = setTimeout(resolve, ms, false); });
+	return Promise.race([turn.then(function () { return true; }), expired]).finally(function () {
+		clearTimeout(timer);
+	});
 }
 
-// Delete our request if the bridge has not replaced it, so it cannot run later.
-// Returns false only if the file stayed locked.
+// Deletes our request unless the bridge replaced it. False only if it stayed locked.
 async function withdrawRequest(seq) {
 	const req = readJson(REQUEST_PATH);
 	if (!req || req.seq !== seq) {
@@ -205,29 +205,44 @@ async function withdrawRequest(seq) {
 //
 // Tool: <prefix>_eval — write a request atomically, poll for the matching reply.
 //
-function bridgeEval(args) {
-	return oneAtATime(function () { return bridgeEvalNow(args); });
-}
-
-async function bridgeEvalNow(args) {
+async function bridgeEval(args) {
 	const code = args && typeof args.code === 'string' ? args.code : null;
 	if (code === null) {
 		throw new Error(EVAL_TOOL + ' requires a string "code" argument');
 	}
 	const timeout = args && typeof args.timeout_ms === 'number' ? args.timeout_ms : DEFAULT_TIMEOUT_MS;
+	const deadline = Date.now() + timeout;
+
+	const previous = bridgeQueue;
+	let release = null;
+	const mine = new Promise(function (resolve) { release = resolve; });
+	bridgeQueue = previous.then(function () { return mine; });
+	callsPending++;
+	try {
+		if (!await waitAtMost(previous, deadline - Date.now())) {
+			throw new Error('timed out after ' + timeout + 'ms waiting for an earlier bridge call to '
+				+ 'finish; nothing was sent.');
+		}
+		return await bridgeEvalNow(code, timeout, deadline);
+	} finally {
+		callsPending--;
+		release();
+	}
+}
+
+async function bridgeEvalNow(code, timeout, deadline) {
 	const seq = nextSeq();
 
 	// Atomic publish: write a temp file in the same dir, then rename over request.json.
 	const tmp = path.join(BASE, 'request.' + process.pid + '.' + seq + '.tmp');
 	fs.writeFileSync(tmp, JSON.stringify({ seq: seq, code: code }));
 	try {
-		await renameWithRetry(tmp, REQUEST_PATH, null, timeout);
+		await renameWithRetry(tmp, REQUEST_PATH, null, Math.max(1, deadline - Date.now()));
 	} catch (e) {
 		try { fs.unlinkSync(tmp); } catch (e2) { /* already gone */ }
 		throw e;
 	}
 
-	const deadline = Date.now() + timeout;
 	while (Date.now() < deadline) {
 		const resp = readJson(RESPONSE_PATH);
 		if (resp && resp.seq === seq) {
@@ -308,8 +323,11 @@ async function bridgeReload(args) {
 		if (remaining <= 0) {
 			break;
 		}
-		const r = await bridgeEval({ code: probe, timeout_ms: Math.min(5000, remaining) });
-		if (r.ok && String(r.value).indexOf(READY_TOKEN) >= 0) {
+		let r = null;
+		try {
+			r = await bridgeEval({ code: probe, timeout_ms: Math.min(5000, remaining) });
+		} catch (e) { /* one probe timing out is not the end; keep polling until the deadline */ }
+		if (r && r.ok && String(r.value).indexOf(READY_TOKEN) >= 0) {
 			return {
 				text: 'reload complete after ' + (Date.now() - started)
 					+ 'ms (predicate satisfied).',
@@ -341,13 +359,20 @@ async function bridgeStatus() {
 	}
 	const presence = readJson(PRESENCE_PATH);
 
+	// A probe would queue behind the call in progress; report that instead of waiting.
+	const busy = callsPending > 0;
 	let live = false;
-	try {
-		await bridgeEval({ code: '1', timeout_ms: PROBE_TIMEOUT_MS });
-		live = true;
-	} catch (e) { /* no reply within the probe window */ }
+	if (!busy) {
+		try {
+			await bridgeEval({ code: '1', timeout_ms: PROBE_TIMEOUT_MS });
+			live = true;
+		} catch (e) { /* no reply within the probe window */ }
+	}
 
-	if (live) {
+	if (busy) {
+		lines.push('bridge: BUSY, another call is in progress, so no probe was sent. Run '
+			+ STATUS_TOOL + ' again after it returns.');
+	} else if (live) {
 		lines.push('bridge: LIVE — responded to a probe.');
 	} else if (presence && presence.ready) {
 		// bridge.json carries the bridge's own epoch-ms `time` stamp.
@@ -365,9 +390,7 @@ async function bridgeStatus() {
 		lines.push('bridge: NOT RESPONDING and no presence file — open the ' + CONSOLE + ' window in '
 			+ PRODUCT_NAME + ' and type `bridge on`.');
 	}
-	// Report the last seq we sent rather than request.json's: a timed-out request has
-	// been withdrawn, but "reply seq stuck below request seq" is still the tell for a
-	// blocked bridge.
+	// Our own last seq, since a timed-out request.json has been withdrawn.
 	const resp = readJson(RESPONSE_PATH);
 	lines.push('last request seq: ' + (lastSeq ? lastSeq : '(none)'));
 	lines.push('last reply seq: ' + (resp && typeof resp.seq === 'number' ? resp.seq : '(none)'));
@@ -409,7 +432,8 @@ const TOOLS = [
 			+ 'rather than trusting the bridge.json presence file, which lingers after the console '
 			+ 'is closed. Use it before evaluating, and when an ' + EVAL_TOOL + ' times out: NOT '
 			+ 'RESPONDING almost always means the ' + CONSOLE + ' window is closed or `bridge on` '
-			+ 'was not typed this session, not a modal dialog.',
+			+ 'was not typed this session, not a modal dialog. While another call is in progress it '
+			+ 'reports BUSY without probing.',
 		inputSchema: { type: 'object', properties: {} }
 	},
 	{

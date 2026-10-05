@@ -385,6 +385,37 @@ test(STATUS + ' still reports the last request seq after its probe is withdrawn'
 	assert.match(r.result.content[0].text, /last request seq: \d+/);
 });
 
+test(STATUS + ' reports BUSY at once instead of queueing behind a call in progress', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	t.after(function () { s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	const slow = s.request('tools/call', { name: EVAL, arguments: { code: 'slow', timeout_ms: 3000 } }, 8000);
+	await new Promise(function (resolve) { setTimeout(resolve, 100); });
+	const started = Date.now();
+	const r = await s.request('tools/call', { name: STATUS }, 4000);
+	assert.ok(Date.now() - started < 1000, 'status took ' + (Date.now() - started) + 'ms');
+	assert.match(r.result.content[0].text, /bridge: BUSY/);
+	assert.doesNotMatch(r.result.content[0].text, /NOT RESPONDING/);
+	await slow;
+});
+
+test('a queued call times out on its own timeout_ms without sending anything', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	t.after(function () { s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	const first = s.request('tools/call', { name: EVAL, arguments: { code: 'a', timeout_ms: 2000 } }, 8000);
+	const started = Date.now();
+	const r = await s.request('tools/call', { name: EVAL, arguments: { code: 'b', timeout_ms: 300 } }, 8000);
+	assert.ok(Date.now() - started < 1500, 'queued call took ' + (Date.now() - started) + 'ms');
+	assert.equal(r.result.isError, true);
+	assert.match(r.result.content[0].text, /waiting for an earlier bridge call/);
+	await first;
+});
+
 const renameWithRetry = require('./server.js').renameWithRetry;
 
 function renameError(code) {
