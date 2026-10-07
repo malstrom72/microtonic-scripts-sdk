@@ -84,6 +84,13 @@ already handled.
   RESPONDING`, rather than trusting the `bridge.json` presence file, which lingers
   after the console is closed. See [When the bridge doesn't respond](#when-the-bridge-doesnt-respond).
 
+The bridge holds one request and one reply at a time, so the server runs tool calls
+strictly one after another; calls made in parallel queue, and the wait counts against
+their `timeout_ms`. While a call is in progress, the status tool reports `bridge: BUSY`
+instead of probing. A call that times out withdraws its request, so a bridge that was
+only blocked (for example by a modal dialog) does not run it later. A request the bridge
+had already started still runs to completion.
+
 ## Install
 
 Requires Node ≥ 18 (no dependencies, no build step).

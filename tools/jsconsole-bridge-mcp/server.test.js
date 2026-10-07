@@ -337,6 +337,85 @@ test('does not exit (or truncate the reply) while an eval is in flight', async f
 	assert.equal(code, 0);
 });
 
+test('overlapping calls run one at a time and each gets its own reply', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	const fb = startFakeBridge(base, function (req) { return { value: 'r:' + req.code }; }, 100);
+	t.after(function () { fb.stop(); s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	// Sent back to back, so without serialization the second request would overwrite
+	// the first before the bridge's next poll, and the first call would time out.
+	const results = await Promise.all(['a', 'b', 'c'].map(function (code) {
+		return s.request('tools/call', { name: EVAL, arguments: { code: code, timeout_ms: 3000 } }, 8000);
+	}));
+	results.forEach(function (r, i) {
+		assert.equal(r.result.isError, false, r.result.content[0].text);
+		assert.match(r.result.content[0].text, new RegExp('value: r:' + 'abc'.charAt(i) + '$', 'm'));
+	});
+	assert.equal(fb.seqs.length, 3, 'the bridge should have seen every request');
+});
+
+test(EVAL + ' timeout withdraws the request so a blocked bridge does not run it later', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	let fb = null;
+	t.after(function () { if (fb) fb.stop(); s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	const r = await s.request('tools/call', { name: EVAL, arguments: { code: 'late', timeout_ms: 300 } });
+	assert.equal(r.result.isError, true);
+	assert.match(r.result.content[0].text, /request was withdrawn/);
+	assert.equal(fs.existsSync(path.join(base, 'request.json')), false);
+
+	// The bridge comes back (e.g. a modal dialog was dismissed): nothing to run.
+	fb = startFakeBridge(base, function () { return { value: 'ran' }; });
+	await new Promise(function (resolve) { setTimeout(resolve, 300); });
+	assert.deepEqual(fb.seqs, []);
+});
+
+test(STATUS + ' still reports the last request seq after its probe is withdrawn', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	t.after(function () { s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	const r = await s.request('tools/call', { name: STATUS }, 4000);
+	assert.match(r.result.content[0].text, /NOT RESPONDING/);
+	assert.match(r.result.content[0].text, /last request seq: \d+/);
+});
+
+test(STATUS + ' reports BUSY at once instead of queueing behind a call in progress', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	t.after(function () { s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	const slow = s.request('tools/call', { name: EVAL, arguments: { code: 'slow', timeout_ms: 3000 } }, 8000);
+	await new Promise(function (resolve) { setTimeout(resolve, 100); });
+	const started = Date.now();
+	const r = await s.request('tools/call', { name: STATUS }, 4000);
+	assert.ok(Date.now() - started < 1000, 'status took ' + (Date.now() - started) + 'ms');
+	assert.match(r.result.content[0].text, /bridge: BUSY/);
+	assert.doesNotMatch(r.result.content[0].text, /NOT RESPONDING/);
+	await slow;
+});
+
+test('a queued call times out on its own timeout_ms without sending anything', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	t.after(function () { s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	const first = s.request('tools/call', { name: EVAL, arguments: { code: 'a', timeout_ms: 2000 } }, 8000);
+	const started = Date.now();
+	const r = await s.request('tools/call', { name: EVAL, arguments: { code: 'b', timeout_ms: 300 } }, 8000);
+	assert.ok(Date.now() - started < 1500, 'queued call took ' + (Date.now() - started) + 'ms');
+	assert.equal(r.result.isError, true);
+	assert.match(r.result.content[0].text, /waiting for an earlier bridge call/);
+	await first;
+});
+
 const renameWithRetry = require('./server.js').renameWithRetry;
 
 function renameError(code) {
