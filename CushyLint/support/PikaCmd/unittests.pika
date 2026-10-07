@@ -1,5 +1,5 @@
 /*
-	unittests.pika v0.981
+	unittests.pika v0.983
 
 	PikaScript is released under the "New Simplified BSD License". http://www.opensource.org/licenses/bsd-license.php
 	
@@ -623,6 +623,19 @@ assert(> upper('abc XYZ 123') === 'ABC XYZ 123' && lower('abc XYZ 123') === 'abc
 // 0.98 -> 0.981
 
 assert(> delete(@::) === false);											// Crash bug: erasing the empty name read outside the string (found by fuzzing).
+
+// 0.981 -> 0.982
+
+assert(> ordinal(char(229)) == 229);										// Undefined behavior: codes over 127 were cast to a signed char (found by fuzzing).
+assert(> try(> char(2293)) !== void);
+assert(> try(> char(-1)) !== void);
+assert(> try(> char(65.5)) !== void);
+assert(> try(> invoke('max', , @nothing, 0, 2000000000)) !== void);			// A huge count allocated all arguments up front (found by fuzzing).
+
+// 0.982 -> 0.983
+
+assert(> try(> trace(>void, 50)) !== void);									// Undefined behavior: an out-of-range level was cast to the enum (found by fuzzing).
+assert(> try(> trace(>void, -1)) !== void);
 
 //////////////////////////
 

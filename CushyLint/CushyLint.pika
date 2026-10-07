@@ -23,7 +23,7 @@
 
 // include('debug.pika');
 include('stdlib.pika');
-include('include/systools.pika');
+include('support/PikaCmd/systools.pika');
 include('include/initPPEG.pika');
 include('include/objects.pika');
 
