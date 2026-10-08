@@ -1361,7 +1361,7 @@ void Interpreter::runInstruction(const String& instructionString, const StringRa
 				requiresList.erase(remove(requiresList.begin(), requiresList.end(), CURRENT_IMPD_REQUIRES_ID)
 						, requiresList.end());
 				for (StringVector::const_iterator it = requiresList.begin(); it != requiresList.end(); ++it) {
-					formatInfo.requires.insert(*it);
+					formatInfo.requirements.insert(*it);
 				}
 			}
 			args.throwIfAnyUnfetched();

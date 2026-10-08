@@ -20,8 +20,11 @@
 	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **/
+#include <climits>
 #include <math.h>
+#include <limits.h>
 #include <algorithm>
+#include <limits.h>
 #include "NuXPixels.h"
 #include "NuXPixelsImpl.h"
 #if (NUXPIXELS_SIMD)
@@ -107,10 +110,10 @@ static inline void sort(int& a, int& b) {
 	b = x + (y & ~z);
 }
 
-static double calcCircleRotationVector(double curveQuality, double diameter, double& rx, double& ry) {
-	const double t = (diameter < EPSILON ? PI2
+static double calcCircleRotationVector(double curveQuality, double diameter, double maxT, double& rx, double& ry) {
+	const double t = minValue((diameter < EPSILON ? PI2
 			: minValue(maxValue(1.0 / sqrt(curveQuality * diameter), PI2 / MAX_CIRCLE_DIVISIONS)
-			, PI2 / MIN_CIRCLE_DIVISIONS));
+			, PI2 / MIN_CIRCLE_DIVISIONS)), maxT);
 	rx = cos(t);
 	ry = sin(t);
 	return t;
@@ -482,18 +485,24 @@ Path& Path::addRect(double left, double top, double width, double height) {
 /**
 	Makes an arc by rotating a point around the center of the arc.
 **/
-Path& Path::arcSweep(double centerX, double centerY, double sweepRadians, double aspectRatio, double curveQuality) {
+Path& Path::arcSweep(double centerX, double centerY, double sweepRadians, double ratioX, double ratioY, double curveQuality) {
 	assert(-PI2 <= sweepRadians && sweepRadians <= PI2);
-	assert(0.0 < aspectRatio && aspectRatio < 10000000000.0);
 	assert(0.0 < curveQuality);
-
+	
 	const Vertex pos(getPosition());
-	const double sx = (pos.x - centerX) / aspectRatio;
-	const double sy = pos.y - centerY;
-	const double diameter = maxValue(2.0 * fabs(aspectRatio), 2.0) * sqrt(sx * sx + sy * sy);
-	double rx;
-	double ry;
-	const double t = calcCircleRotationVector(curveQuality, diameter, rx, ry);
+
+	assert(EPSILON < fabs(ratioX) || fabs(pos.x - centerX) < EPSILON);	// zero x or ratio requires zero width or height
+	assert(EPSILON < fabs(ratioY) || fabs(pos.y - centerY) < EPSILON);	// zero x or ratio requires zero width or height
+
+	const double sx = (EPSILON < fabs(ratioX) ? (pos.x - centerX) / ratioX : 0.0);
+	const double sy = (EPSILON < fabs(ratioY) ? (pos.y - centerY) / ratioY : 0.0);
+
+	const double major = maxValue(fabs(ratioX), fabs(ratioY));
+	const double diameter = maxValue(major, 1.0) * 2.0 * sqrt(sx * sx + sy * sy);
+
+	double rx, ry;
+	const double t = calcCircleRotationVector(curveQuality, diameter, 0.5 * fabs(sweepRadians), rx, ry);
+
 	double s = sweepRadians;
 	if (s < 0) {
 		s = -s;
@@ -508,25 +517,52 @@ Path& Path::arcSweep(double centerX, double centerY, double sweepRadians, double
 		px = nx;
 		py = ny;
 		r += t;
-		lineTo(centerX + px * aspectRatio, centerY + py);
+		lineTo(centerX + px * ratioX, centerY + py * ratioY);
 	}
 	rx = cos(sweepRadians);
 	ry = sin(sweepRadians);
-	px = sx * rx - sy * ry;
-	py = sx * ry + sy * rx;
-	lineTo(centerX + px * aspectRatio, centerY + py);
+	const double ex = centerX + (sx * rx - sy * ry) * ratioX;
+	const double ey = centerY + (sx * ry + sy * rx) * ratioY;
+	lineTo(ex, ey);
 
+	return *this;
+}
+
+Path& Path::arcMove(double centerX, double centerY, double sweepRadians, double ratioX, double ratioY) {
+	assert(-PI2 <= sweepRadians && sweepRadians <= PI2);
+
+	const Vertex pos(getPosition());
+
+	assert(EPSILON < fabs(ratioX) || fabs(pos.x - centerX) < EPSILON);	// zero x or ratio requires zero width or height
+	assert(EPSILON < fabs(ratioY) || fabs(pos.y - centerY) < EPSILON);	// zero x or ratio requires zero width or height
+
+	const double sx = (EPSILON < fabs(ratioX) ? (pos.x - centerX) / ratioX : 0.0);
+	const double sy = (EPSILON < fabs(ratioY) ? (pos.y - centerY) / ratioY : 0.0);
+
+	const double rx = cos(sweepRadians);
+	const double ry = sin(sweepRadians);
+
+	const double endX = centerX + (sx * rx - sy * ry) * ratioX;
+	const double endY = centerY + (sx * ry + sy * rx) * ratioY;
+
+	if (!instructions.empty() && instructions.back().first == MOVE) {
+		instructions.back().second = Vertex(endX, endY);
+	} else {
+		moveTo(endX, endY);
+	}
 	return *this;
 }
 
 Path& Path::addEllipse(double centerX, double centerY, double radiusX, double radiusY, double curveQuality) {
 	assert(0.0 < curveQuality);
-	if (fabs(radiusX) < EPSILON) addLine(centerX, centerY - radiusY, centerX, centerY + radiusY);
-	else if (fabs(radiusY) < EPSILON) addLine(centerX - radiusX, centerY, centerX + radiusX, centerY);
-	else {
-		double sweepSign = ((radiusX < 0.0) != (radiusY < 0.0) ? -1.0 : 1.0);
+	if (fabs(radiusX) < EPSILON) {
+		addLine(centerX, centerY - radiusY, centerX, centerY + radiusY);
+	} else if (fabs(radiusY) < EPSILON) {
+		addLine(centerX - radiusX, centerY, centerX + radiusX, centerY);
+	} else {
+		const double sweepSign = ((radiusX < 0.0) != (radiusY < 0.0) ? -1.0 : 1.0);
 		moveTo(centerX + radiusX, centerY);
-		arcSweep(centerX, centerY, sweepSign * PI2, sweepSign * radiusX / radiusY, curveQuality);
+		arcSweep(centerX, centerY, sweepSign * PI2, radiusX, radiusY, curveQuality);
 	}
 	close();
 	return *this;
@@ -534,8 +570,12 @@ Path& Path::addEllipse(double centerX, double centerY, double radiusX, double ra
 
 Path& Path::addCircle(double centerX, double centerY, double radius, double curveQuality) {
 	assert(0.0 < curveQuality);
-	moveTo(centerX + radius, centerY);
-	arcSweep(centerX, centerY, PI2, 1.0, curveQuality);
+	if (fabs(radius) < EPSILON) {
+		moveTo(centerX, centerY);
+	} else {
+		moveTo(centerX + radius, centerY);
+		arcSweep(centerX, centerY, PI2, radius, radius, curveQuality);
+	}
 	close();
 	return *this;
 }
@@ -545,20 +585,19 @@ Path& Path::addRoundedRect(double left, double top, double width, double height,
 	if (cornerWidth < EPSILON || cornerHeight < EPSILON) {
 		addRect(left, top, width, height);
 	} else {
-		double ratio = cornerWidth / cornerHeight;
 		double right = left + width;
 		double bottom = top + height;
 		addLine(left + cornerWidth, top, right - cornerWidth, top);
-		arcSweep(right - cornerWidth, top + cornerHeight, PI * 0.5, ratio, curveQuality);
+		arcSweep(right - cornerWidth, top + cornerHeight, PI * 0.5, cornerWidth, cornerHeight, curveQuality);
 		lineTo(right, top + cornerHeight);
 		lineTo(right, bottom - cornerHeight);
-		arcSweep(right - cornerWidth, bottom - cornerHeight, PI * 0.5, ratio, curveQuality);
+		arcSweep(right - cornerWidth, bottom - cornerHeight, PI * 0.5, cornerWidth, cornerHeight, curveQuality);
 		lineTo(right - cornerWidth, bottom);
 		lineTo(left + cornerWidth, bottom);
-		arcSweep(left + cornerWidth, bottom - cornerHeight, PI * 0.5, ratio, curveQuality);
+		arcSweep(left + cornerWidth, bottom - cornerHeight, PI * 0.5, cornerWidth, cornerHeight, curveQuality);
 		lineTo(left, bottom - cornerHeight);
 		lineTo(left, top + cornerHeight);
-		arcSweep(left + cornerWidth, top + cornerHeight, PI * 0.5, ratio, curveQuality);
+		arcSweep(left + cornerWidth, top + cornerHeight, PI * 0.5, cornerWidth, cornerHeight, curveQuality);
 		close();
 	}
 	return *this;
@@ -733,7 +772,7 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 	double rx = 0.0;
 	double ry = 0.0;
 	if (joints == CURVE || endCaps == ROUND) {
-		calcCircleRotationVector(curveQuality, width, rx, ry);
+		calcCircleRotationVector(curveQuality, width, 0.5 * PI, rx, ry);
 	}
 
 	Vertex lv(0.0, 0.0);
@@ -812,6 +851,7 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 	return *this;
 }
 
+
 Path& Path::dash(double dashLength, double gapLength, double dashOffset, size_type limit) {
 	assert(0.0 <= dashLength);
 	assert(0.0 <= gapLength);
@@ -819,7 +859,7 @@ Path& Path::dash(double dashLength, double gapLength, double dashOffset, size_ty
 
 	if (gapLength >= EPSILON) {
 		InstructionsVector dashed;
-		double initR = fmod(dashLength - dashOffset, (dashLength + gapLength));		
+		double initR = fmod(dashLength - dashOffset, (dashLength + gapLength));
 		Vertex lv(0.0, 0.0);
 		bool limitReached = false;
 		for (const_iterator it = instructions.begin(), e = instructions.end(); it != e && !limitReached;) {
@@ -869,17 +909,16 @@ Path& Path::dash(double dashLength, double gapLength, double dashOffset, size_ty
 						} while (l > 0.0 && !limitReached);
 					}
 				}
-				if (!limitReached && firstDashIndex != lastDashIndex && isClosed && penDown && firstPenDown) {	// If original sub-path was closed and we currently have "pen down", we should rotate the vertex data so that we begin the new sub-path at "pen-down-point".
+				if (!limitReached && firstDashIndex != lastDashIndex && isClosed && penDown && firstPenDown) {
 					(dashed.begin() + firstDashIndex)->first = LINE;
 					std::rotate(dashed.begin() + firstDashIndex, dashed.begin() + lastDashIndex, dashed.end());
 				}
 			}
 		}
-		
 		instructions.swap(dashed);
 		openIndex = instructions.size() - 1;
 	}
-	
+
 	return *this;
 }
 
@@ -1221,7 +1260,7 @@ PolygonMask::PolygonMask(const Path& path, const IntRect& clipBounds, const Fill
 
 	// Reserve space for all edges plus a sentinel segment.
 	segments.reserve(path.size() + 1);
-	const double vertexLimit = static_cast<double>(0x3FFFFFFF >> POLYGON_FRACTION_BITS);
+	const double VERTEX_LIMIT = static_cast<double>(0x3FFFFFFF >> POLYGON_FRACTION_BITS);
 	int minY = 0x3FFFFFFF;
 	int minX = 0x3FFFFFFF;
 	int maxY = -0x3FFFFFFF;
@@ -1239,7 +1278,7 @@ PolygonMask::PolygonMask(const Path& path, const IntRect& clipBounds, const Fill
 			// Begin a new contour.
 			const double x = it->second.x;
 			const double y = it->second.y;
-			if (!isfinite(x) || !isfinite(y) || fabs(x) > vertexLimit || fabs(y) > vertexLimit) {
+			if (!isfinite(x) || !isfinite(y) || fabs(x) > VERTEX_LIMIT || fabs(y) > VERTEX_LIMIT) {
 				valid = false;
 				segments.clear();
 				bounds = IntRect();
@@ -1254,7 +1293,7 @@ PolygonMask::PolygonMask(const Path& path, const IntRect& clipBounds, const Fill
 			int y0 = ly;
 			const double x = it->second.x;
 			const double y = it->second.y;
-			if (!isfinite(x) || !isfinite(y) || fabs(x) > vertexLimit || fabs(y) > vertexLimit) {
+			if (!isfinite(x) || !isfinite(y) || fabs(x) > VERTEX_LIMIT || fabs(y) > VERTEX_LIMIT) {
 				valid = false;
 				segments.clear();
 				bounds = IntRect();
@@ -1284,6 +1323,12 @@ PolygonMask::PolygonMask(const Path& path, const IntRect& clipBounds, const Fill
 				int coverageByX = 1 << (COVERAGE_BITS + FRACT_BITS);
 				const int dx = x1 - x0;
 				if (dx != 0) {
+					if ((y0 < 0 && y1 > INT_MAX + y0) || (y0 > 0 && y1 < INT_MIN + y0)) {
+						valid = false;
+						segments.clear();
+						bounds = IntRect();
+						return;
+					}
 					const int dy = y1 - y0;
 					seg.dx = divide(dx, dy);
 					assert(dy >= 0);
@@ -1420,10 +1465,10 @@ void PolygonMask::render(int x, int y, int length, SpanBuffer<Mask8>& output) co
 		int segIndex = engagedStart;
 		while (segsVertically[segIndex]->topY < yFixed) {
 			Segment* seg = segsVertically[segIndex];
-			int dy = yFixed - seg->currentY;
+			const int dy = minValue(yFixed, seg->bottomY) - seg->currentY;
 			if (dy > 0) {
 				seg->x = add(seg->x, multiply(static_cast<UInt32>(dy), seg->dx));
-				seg->currentY = yFixed;
+				seg->currentY += dy;
 			}
 			++segIndex;
 		}

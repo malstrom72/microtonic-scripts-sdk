@@ -100,10 +100,14 @@ class IVGExecutorWithExternalFonts : public IVGExecutor {
 /*
 	On Windows a stack overflow leaves no stack for AddressSanitizer and libFuzzer to report it on, so the input that
 	caused it is never saved. Reserving some stack for the overflow handler lets libFuzzer write the crash file.
+	Failed asserts, abort() and crashes report to stderr instead of opening dialogs that would stall an unattended run.
 */
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) {
 	ULONG guarantee = 256 * 1024;
 	SetThreadStackGuarantee(&guarantee);
+	_set_error_mode(_OUT_TO_STDERR);
+	_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 	return 0;
 }
 #endif
