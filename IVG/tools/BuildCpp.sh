@@ -1,4 +1,5 @@
 #!/bin/bash
+# BuildCpp.sh version 2026-10-07
 
 CPP_COMPILER="${CPP_COMPILER:-g++}"
 CPP_OPTIONS="${CPP_OPTIONS:-}"
@@ -56,6 +57,9 @@ fi
 output="$1"
 shift
 
+# A -std= applies to every source in the command, not just the ones after it, so a command that mixes .c and C++
+# sources must not set one: gcc only warns, but clang fails. Build C sources in a separate command when a -std= is
+# needed.
 args=()
 for arg in "$@"; do
 	if [[ "$arg" == *.c ]]; then

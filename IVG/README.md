@@ -128,7 +128,7 @@ by Fredrik Lidström, a TypeScript wrapper around the legacy
 - [NuXPixels Documentation](docs/NuXPixels%20Documentation.md)
 - [ivgfont Documentation](docs/ivgfont%20Documentation.md)
 - [Developer Guide](docs/Developer%20Guide.md)
-- [Fuzzing](docs/Fuzzing.md)
+- [Fuzzing](docs/fuzzing.md)
 
 ## AI Usage
 

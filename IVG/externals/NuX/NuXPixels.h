@@ -95,7 +95,7 @@
 /**
 	Intel-compiler has a very severe optimization bug with construction of arrays. Empty inline constructors are not
 	removed in compilation. NuXPixels constructs *a lot* of Span arrays, so this adds up to an extreme CPU overhead.
- 
+
 	The workaround is constructing byte-arrays and ugly-casting them to Span arrays instead.
 **/
 #ifndef NUXPIXELS_ICC_HACK
@@ -299,7 +299,7 @@ class Path {
 	public:		enum EndCapStyle { BUTT, ROUND, SQUARE };
 	public:		enum JointStyle { BEVEL, CURVE, MITER };
 	public:		enum Operation { MOVE, LINE, CLOSE };
-	
+
 	public:		typedef std::pair<Operation, Vertex> Instruction;
 	public:		typedef std::vector<Instruction> InstructionsVector;
 	public:		typedef InstructionsVector::size_type size_type;
@@ -313,7 +313,8 @@ class Path {
 	public:		Path& lineTo(double x, double y);
 	public:		Path& quadraticTo(double controlPointX, double controlPointY, double x, double y, double curveQuality = 1.0);
 	public:		Path& cubicTo(double cpBeginX, double cpBeginY, double cpEndX, double cpEndY, double x, double y, double curveQuality = 1.0);
-	public:		Path& arcSweep(double centerX, double centerY, double sweepRadians, double aspectRatio = 1.0, double curveQuality = 1.0);
+	public:		Path& arcSweep(double centerX, double centerY, double sweepRadians, double ratioX = 1.0, double ratioY = 1.0, double curveQuality = 1.0);
+	public:		Path& arcMove(double centerX, double centerY, double sweepRadians, double ratioX = 1.0, double ratioY = 1.0);
 	public:		Path& append(const Path& p);
 	public:		Path& addLine(double startX, double startY, double endX, double endY);
 	public:		Path& addRect(double left, double top, double width, double height); // FIX : <- phase out? only have addRect(Rect<double>)?
@@ -343,7 +344,6 @@ inline bool Path::empty() const { return instructions.empty(); }
 inline Path::size_type Path::size() const { return instructions.size(); }
 inline Path::const_iterator Path::begin() const { return instructions.begin(); }
 inline Path::const_iterator Path::end() const  { return instructions.end(); }
-
 inline UInt32 alphaToScale(UInt8 alpha) { return alpha + (alpha != 0 ? 1 : 0); }	// 0 = 0, 1..255 = 2..256
 // FIX: not correct (should be 0..1 = 0, 2..256 = 1..255
 inline UInt8 scaleToAlpha(UInt32 scale) { assert(0 <= scale && scale <= 256); return scale - (scale >> 8); }
@@ -515,10 +515,10 @@ inline Mask8::Pixel convert(const ARGB32&, const Mask8&, ARGB32::Pixel source) {
 inline ARGB32::Pixel convert(const Mask8&, const ARGB32&, Mask8::Pixel source) { return (static_cast<UInt32>(source) << 24) | (source << 16) | (source << 8) | source; }
 
 /**
-	   Span models a run of consecutive pixels. The run length and the "solid"
-	   and "opaque" flags are packed into a 32-bit field. When the span is solid,
-	   `pixels` points to a single color repeated for the entire run; otherwise
-	   it addresses an array containing one pixel per position.
+	Span models a run of consecutive pixels. The run length and the "solid"
+	and "opaque" flags are packed into a 32-bit field. When the span is solid,
+	`pixels` points to a single color repeated for the entire run; otherwise
+	it addresses an array containing one pixel per position.
 **/
 template<class T> class Span {
 	public:		Span();
@@ -543,14 +543,14 @@ template<class T> class Span {
 #endif
 
 /**
-	   SpanBuffer stores runs of pixels in two parallel arrays. When a span of
-	   length `n` is added, `n` entries are reserved in the span array. The
-	   first entry holds the span itself while the last entry duplicates it so
-	   the iterator can read the previous span's length when stepping
-	   backwards. Entries in between are unused but make pointer arithmetic work
-	   for both forward and backward iteration. Pixel data are appended to the
-	   pixel array in tandem—a solid span stores one color, whereas a variable
-	   span stores `n` colors.
+	SpanBuffer stores runs of pixels in two parallel arrays. When a span of
+	length `n` is added, `n` entries are reserved in the span array. The
+	first entry holds the span itself while the last entry duplicates it so
+	the iterator can read the previous span's length when stepping
+	backwards. Entries in between are unused but make pointer arithmetic work
+	for both forward and backward iteration. Pixel data are appended to the
+	pixel array in tandem—a solid span stores one color, whereas a variable
+	span stores `n` colors.
 **/
 template<class T> class SpanBuffer {
 	public:		class iterator;
@@ -641,7 +641,7 @@ template<class T> void Raster<T>::setPixel(int x, int y, const typename T::Pixel
 **/
 template<class T> class SelfContainedRaster : public Raster<T> {
 	public:		SelfContainedRaster();
-	public:		SelfContainedRaster(const IntRect& bounds, bool opaque = false);	/// Warning! If opaque is true you must never have transparent pixels in this raster.
+	public:		explicit SelfContainedRaster(const IntRect& bounds, bool opaque = false);	/// Warning! If opaque is true you must never have transparent pixels in this raster.
 	public:		SelfContainedRaster(const SelfContainedRaster& that);
 	public:		SelfContainedRaster& operator=(const SelfContainedRaster& that);
 	public:		Raster<T>& operator=(const Renderer<T>& source) { return Raster<T>::operator=(source); }
@@ -656,7 +656,7 @@ template<class T> class SelfContainedRaster : public Raster<T> {
 	Solid<ARGB32> blue(0xff0000ff);
 **/
 template<class T> class Solid : public Renderer<T> {
-	public:		Solid(const typename T::Pixel& pixel);
+	public:		explicit Solid(const typename T::Pixel& pixel);
 	public:		virtual IntRect calcBounds() const;
 	public:		virtual void render(int x, int y, int length, SpanBuffer<T>& output) const;
 	protected:	typename T::Pixel pixel;
@@ -669,7 +669,7 @@ template<class T> class Solid : public Renderer<T> {
 	RLERaster<Mask8> cache(area, mask);
 **/
 template<class T> class RLERaster : public Renderer<T> {
-	public:		RLERaster(const IntRect& bounds, const Renderer<T>& source = Solid<T>(T::transparent()));
+	public:		explicit RLERaster(const IntRect& bounds, const Renderer<T>& source = Solid<T>(T::transparent()));
 	public:		virtual IntRect calcBounds() const;
 	public:		virtual void render(int x, int y, int length, SpanBuffer<T>& output) const;
 	public:		void fill(const Renderer<T>& source);
@@ -742,7 +742,7 @@ template<class T> class Offsetter : public Renderer<T> {
 	UnaryOperator processes each pixel from a source renderer individually.
 **/
 template<class S, class T> class UnaryOperator : public Renderer<T> {
-	public:		UnaryOperator(const Renderer<S>& source);
+	public:		explicit UnaryOperator(const Renderer<S>& source);
 	public:		virtual void process(int count, const typename S::Pixel* source, typename T::Pixel* target, bool& opaque) const = 0;
 	protected:	void render(int x, int y, int length, SpanBuffer<S>& inputBuffer, SpanBuffer<T>& output) const;
 	protected:	template<class U> void render(int x, int y, int length, const Renderer<U>&, SpanBuffer<T>& output) const;
@@ -772,7 +772,7 @@ template<class T, class L> class Lookup : public UnaryOperator<Mask8, T> {
 	Inverter<ARGB32> neg(image);
 **/
 template<class T> class Inverter : public UnaryOperator<T, T> {
-	public:		Inverter(const Renderer<T>& source);
+	public:		explicit Inverter(const Renderer<T>& source);
 	public:		virtual IntRect calcBounds() const;
 	public:		virtual void process(int count, const typename T::Pixel* source, typename T::Pixel* target, bool& opaque) const;
 };
@@ -785,7 +785,7 @@ template<class T> class Inverter : public UnaryOperator<T, T> {
 **/
 template<class S, class T> class Converter : public UnaryOperator<S, T> {
 	public:		typedef UnaryOperator<S, T> super;
-	public:		Converter(const Renderer<S>& source);
+	public:		explicit Converter(const Renderer<S>& source);
 	public:		virtual IntRect calcBounds() const;
 	public:		virtual void process(int count, const typename S::Pixel* source, typename T::Pixel* target, bool& opaque) const;
 };
@@ -833,7 +833,7 @@ class RadialAscend : public Renderer<Mask8> {
 	Texture<ARGB32> tex(image, true, AffineTransformation().scale(2));
 **/
 template<class T> class Texture : public Renderer<T> {
-	public:		Texture(const Raster<T>& image, bool wrap = true, const AffineTransformation& transformation = AffineTransformation(), const IntRect& sourceRect = FULL_RECT);
+	public:		explicit Texture(const Raster<T>& image, bool wrap = true, const AffineTransformation& transformation = AffineTransformation(), const IntRect& sourceRect = FULL_RECT);
 	public:		virtual IntRect calcBounds() const;
 	public:		virtual void render(int x, int y, int length, SpanBuffer<T>& output) const;
 	public:		virtual ~Texture();
@@ -896,7 +896,7 @@ template<class A, class B> class Multiplier : public BinaryOperator<A, B> {
 	Optimizer analyzes spans from a renderer to minimize redundant output.
 **/
 template<class T> class Optimizer : public Renderer<T> {
-	public:		Optimizer(const Renderer<T>& source);
+	public:		explicit Optimizer(const Renderer<T>& source);
 	public:		virtual IntRect calcBounds() const;
 	public:		virtual void render(int x, int y, int length, SpanBuffer<T>& output) const;
 	protected:	static const typename T::Pixel* outputVariable(const typename T::Pixel* b, const typename T::Pixel* e, bool opaque, SpanBuffer<T>& output);
@@ -955,7 +955,7 @@ class PolygonMask : public Renderer<Mask8> {
 	public:		virtual IntRect calcBounds() const;
 	public:		virtual void render(int x, int y, int length, SpanBuffer<Mask8>& output) const;
 	public:		void rewind() const;
-	public: 	bool isValid() const;	/// false if path had out-of-range vertices
+	public:		bool isValid() const;	/// false if path had out-of-range vertices
 	
 	protected:	struct Segment {
 					int topY;			/// Starting y in fixed fraction format (fraction precision = POLYGON_FRACTION_BITS).
