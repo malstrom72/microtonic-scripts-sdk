@@ -5,7 +5,7 @@
 	
 	\version
 	
-	Version 0.984
+	Version 0.985
 	
 	\page Copyright
 	
@@ -58,10 +58,10 @@ namespace Pika {
 
 #if (PIKA_UNICODE)
 	#define STR(s) L##s
-	#define PIKA_SCRIPT_VERSION L"0.984"
+	#define PIKA_SCRIPT_VERSION L"0.985"
 #else
 	#define STR(x) x
-	#define PIKA_SCRIPT_VERSION "0.984"
+	#define PIKA_SCRIPT_VERSION "0.985"
 #endif
 
 typedef unsigned char uchar;
@@ -454,9 +454,10 @@ template<class Config> struct Script {
 		public:		virtual void setTracer(Precedence traceLevel, const Value& tracerFunction) throw();					///< Called by the standard library function "trace" to assign a PikaScript tracer function and a trace level. (Also called by the standard trace() on exceptions.) \details You may want to overload this member function if you change the tracing mechanism and need control over the trace level for example.
 		public:		bool doTrace(Precedence level) const throw() { return level <= traceLevel; }						///< \details This function is called *a lot*. For performance reasons it is good if it becomes inlined, so we are not declaring it virtual. If you want to customize which events that will be traced, try cleverly implementing your own trace() and setTracer() member functions instead.
 		public:		String generateLabel();																				///< Each "sub-frame" requires a unique "frame label". \details This function creates it by "incrementing" Root::autoLabel, character by character, using '0' to '9' and upper and lower case 'a' to 'z', growing the string when necessary.
-		public:		void setMaxDepth(int maxDepth) throw() { this->maxDepth = maxDepth; }								///< Sets how deep expressions and calls may nest before "Recursion too deep" is thrown. \details Every level uses native stack. The default of 300 is safe on a 1 MB stack; raise it in proportion if the thread running PikaScript has a larger stack. While errors are traced only an eighth of the depth is allowed, since the tracer runs on top of the stack while unwinding.
+		public:		void setMaxDepth(int maxDepth) throw();																///< Sets how deep expressions and calls may nest before "Recursion too deep" is thrown. \details Every level uses native stack. The default of 300 is safe on a 1 MB stack; raise it in proportion if the thread running PikaScript has a larger stack. While errors are traced only an eighth of the depth is allowed, since the tracer runs on top of the stack while unwinding.
 		protected:	int depth;																							///< Current nesting depth of expressions and calls.
 		protected:	int maxDepth;																						///< See setMaxDepth().
+		protected:	int depthLimit;																						///< `maxDepth`, or an eighth of it while errors are traced.
 		protected:	Precedence traceLevel;																				///< Calls to trace() will only happen when the "precedence level" is less or equal to this. \details E.g. if traceLevel is CALL, only function calls and caught exceptions will be traced.
 		protected:	Value tracerFunction;																				///< Pika-script tracer function (used by the default trace() implementation).
 		protected:	bool isInsideTracer;																				///< Set to prevent recursive calling of tracer (used by the default trace() implementation).
@@ -647,7 +648,7 @@ typedef Script<StdConfig> StdScript;
 	
 	\version
 	
-	Version 0.984
+	Version 0.985
 	
 	\page Copyright
 	
@@ -1373,7 +1374,7 @@ TMPL bool Script<CFG>::Frame::expr(StringIt& p, const StringIt& e, XValue& v, bo
 		~DepthGuard() { --depth; }
 		int& depth;
 	} depthGuard(root.depth);
-	if (root.depth > (root.doTrace(TRACE_ERROR) ? root.maxDepth / 8 : root.maxDepth))									// Error tracing makes unwinding deeper.
+	if (root.depth > root.depthLimit)
 		throw Xception(STR("Recursion too deep"));
 	if (p < e && maybeWhite(*p)) white(p, e);
 	if (!dry && root.doTrace(thres)) tick(p, v, thres, false);
@@ -1479,8 +1480,8 @@ TMPL void Script<CFG>::Frame::registerNative(const String& identifier, Native* n
 
 /* --- Root --- */
 
-TMPL Script<CFG>::Root::Root(Variables& vars) : Frame(vars, *this, 0), depth(0), maxDepth(300), traceLevel(NO_TRACE)
-		, isInsideTracer(false), autoLabelStart(autoLabel + 29) {
+TMPL Script<CFG>::Root::Root(Variables& vars) : Frame(vars, *this, 0), depth(0), maxDepth(300), depthLimit(300)
+		, traceLevel(NO_TRACE), isInsideTracer(false), autoLabelStart(autoLabel + 29) {
 	std::fill_n(autoLabel, 32, ':');
 }
 
@@ -1500,6 +1501,12 @@ TMPL T_TYPE(String) Script<CFG>::Root::generateLabel() {
 TMPL void Script<CFG>::Root::setTracer(Precedence traceLevel, const Value& tracerFunction) throw() {
 	this->traceLevel = traceLevel;
 	this->tracerFunction = tracerFunction;
+	setMaxDepth(maxDepth);
+}
+
+TMPL void Script<CFG>::Root::setMaxDepth(int maxDepth) throw() {
+	this->maxDepth = maxDepth;
+	depthLimit = (doTrace(TRACE_ERROR) ? maxDepth / 8 : maxDepth);														// Error tracing makes unwinding deeper.
 }
 
 TMPL void Script<CFG>::Root::trace(Frame& frame, const String& source, SizeType offset, bool lvalue, const Value& value
@@ -1795,7 +1802,7 @@ TMPL Script<CFG>::Variables::~Variables() { }
 	
 	\version
 	
-	Version 0.984
+	Version 0.985
 	
 	\page Copyright
 	
@@ -2192,7 +2199,7 @@ bool unitTest();
 	
 	\version
 	
-	Version 0.984
+	Version 0.985
 	
 	\page Copyright
 	
@@ -2300,7 +2307,7 @@ template<class Super, unsigned int CACHE_SIZE = 11> class QuickVars : public Sup
 	
 	\version
 	
-	Version 0.984
+	Version 0.985
 	
 	\page Copyright
 	
@@ -2360,7 +2367,7 @@ template struct Script<StdConfig>;
 	
 	\version
 	
-	Version 0.984
+	Version 0.985
 	
 	\page Copyright
 	
@@ -2449,7 +2456,7 @@ REGISTER_UNIT_TEST(QStrings::unitTest)
 #endif
 const char* BUILT_IN_DEBUG =
 	"/*\n"
-	"\tdebug.pika v0.984\n"
+	"\tdebug.pika v0.985\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2712,7 +2719,7 @@ const char* BUILT_IN_DEBUG =
 
 const char* BUILT_IN_HELP =
 	"/*\n"
-	"\thelp.pika v0.984\n"
+	"\thelp.pika v0.985\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2922,7 +2929,7 @@ const char* BUILT_IN_INTERACTIVE =
 	"#! /usr/local/bin/PikaCmd\n"
 	"\n"
 	"/*\n"
-	"\tinteractive.pika v0.984\n"
+	"\tinteractive.pika v0.985\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3042,7 +3049,7 @@ const char* BUILT_IN_INTERACTIVE =
 
 const char* BUILT_IN_STDLIB =
 	"/*\n"
-	"\tstdlib.pika v0.984\n"
+	"\tstdlib.pika v0.985\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3345,7 +3352,7 @@ const char* BUILT_IN_STDLIB =
 
 	\version
 
-	Version 0.984
+	Version 0.985
 	
 	\page Copyright
 
@@ -3375,7 +3382,7 @@ const char* BUILT_IN_STDLIB =
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define PIKA_CMD_VERSION "0.984"
+#define PIKA_CMD_VERSION "0.985"
 #define PIKA_UNICODE 0
 #define QUICKER_SCRIPT 1
 
@@ -3574,14 +3581,16 @@ struct TimeOutException { };
 
 class LibFuzzRoot : public Script::FullRoot {
 	typedef Script::FullRoot Super;
-	public:		LibFuzzRoot() : userLevel(Pika::NO_TRACE), deadline(std::clock() + LIBFUZZ_TIME_LIMIT)
+	public:		LibFuzzRoot() : userLevel(Pika::NO_TRACE), deadline(std::clock() + LIBFUZZ_TIME_LIMIT), ticks(0)
 						, callDepth(0) {
+					setMaxDepth(2400);																					// 8 MB stack like PikaCmd. The deadline keeps errors traced, which allows an eighth.
 					updateTracer();
 				}
 	public:		virtual void trace(Frame& frame, const Script::String& source, Script::SizeType offset, bool lvalue
 						, const Script::Value& value, Pika::Precedence level, bool exit) {
 					if (level <= userLevel) Super::trace(frame, source, offset, lvalue, value, level, exit);
-					if (level <= Pika::TRACE_LOOP && std::clock() > deadline) throw TimeOutException();					// Every tick: one statement can grow a string exponentially.
+					if (level <= Pika::TRACE_LOOP && (++ticks & 15) == 0 && std::clock() > deadline)					// Often: a statement can grow a string exponentially. Not every tick: clock() can be slow.
+						throw TimeOutException();
 					if (level == Pika::TRACE_CALL) {
 						if (!exit && callDepth >= 20) {
 							throw CallDepthException();
@@ -3602,6 +3611,7 @@ class LibFuzzRoot : public Script::FullRoot {
 	protected:	Pika::Precedence userLevel;
 	protected:	Script::Value userTracer;
 	protected:	std::clock_t deadline;
+	protected:	unsigned int ticks;
 	protected:	int callDepth;
 };
 
