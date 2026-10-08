@@ -1,8 +1,10 @@
 @ECHO OFF
+REM BuildCpp.cmd version 2026-10-05
 SETLOCAL ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
 
 IF "%CPP_TARGET%"=="" SET CPP_TARGET=release
 IF "%CPP_MODEL%"=="" SET CPP_MODEL=native
+IF NOT DEFINED CPP_COMPILER SET CPP_COMPILER=cl
 
 IF "%~1"=="debug" (
 	SET CPP_TARGET=debug
@@ -75,7 +77,8 @@ SET CPP_OPTIONS=/W3 /EHsc /D "WIN32" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" 
 
 IF "%name%"=="" (
 	ECHO BuildCpp [debug^|beta^|release] [x86^|x64^|arm64^|native] ^<output.exe^> ^<source files and other compiler arguments^>
-	ECHO You can also use the environment variables: CPP_MSVC_VERSION, CPP_TARGET, CPP_MODEL and CPP_OPTIONS
+	ECHO You can also use the environment variables: CPP_MSVC_VERSION, CPP_TARGET, CPP_MODEL, CPP_OPTIONS and CPP_COMPILER
+	ECHO ^(CPP_COMPILER defaults to cl; set it to clang-cl, quoted if its path has spaces, to compile with LLVM^)
 	EXIT /B 1
 )
 
@@ -135,10 +138,10 @@ IF NOT DEFINED VCINSTALLDIR (
 
 SET temppath=%TEMP:"=%\%name%_%RANDOM%
 MKDIR "%temppath%" >NUL 2>&1
-ECHO Compiling %name% %CPP_TARGET% %CPP_MODEL% using %VCINSTALLDIR%
+ECHO Compiling %name% %CPP_TARGET% %CPP_EFFECTIVE_MODEL% using %CPP_COMPILER% from %VCINSTALLDIR%
 ECHO %CPP_OPTIONS% /Fe%args%
 ECHO.
-cl %CPP_OPTIONS% /errorReport:queue /Fo"%temppath%\\" /Fe%args% >"%temppath%\buildlog.txt"
+%CPP_COMPILER% %CPP_OPTIONS% /errorReport:queue /Fo"%temppath%\\" /Fe%args% >"%temppath%\buildlog.txt" 2>&1
 IF ERRORLEVEL 1 (
 	TYPE "%temppath%\buildlog.txt"
 	ECHO Compilation of %name% failed
