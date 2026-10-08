@@ -5,7 +5,7 @@
 	
 	\version
 	
-	Version 0.983
+	Version 0.984
 	
 	\page Copyright
 	
@@ -58,10 +58,10 @@ namespace Pika {
 
 #if (PIKA_UNICODE)
 	#define STR(s) L##s
-	#define PIKA_SCRIPT_VERSION L"0.983"
+	#define PIKA_SCRIPT_VERSION L"0.984"
 #else
 	#define STR(x) x
-	#define PIKA_SCRIPT_VERSION "0.983"
+	#define PIKA_SCRIPT_VERSION "0.984"
 #endif
 
 typedef unsigned char uchar;
@@ -415,6 +415,7 @@ template<class Config> struct Script {
 		protected:	bool pre(StringIt& p, const StringIt& e, XValue& v, bool dry);
 		protected:	bool post(StringIt& p, const StringIt& e, XValue& v, bool dry, Precedence thres);
 		protected:	bool expr(StringIt& p, const StringIt& e, XValue& v, bool emptyOk, bool dry, Precedence thres);
+		protected:	void statements(StringIt& p, const StringIt& e, XValue& v);
 		protected:	bool termExpr(StringIt& p, const StringIt& e, XValue& v, bool emptyOk, bool dry, Precedence thres
 							, Char term);
 		protected:	static Int intDiv(Int x, Int y);
@@ -446,12 +447,16 @@ template<class Config> struct Script {
 		FullRoot instead.
 	*/
 	class Root : public Frame {
+		friend class Frame;
 		public:		Root(Variables& vars);
 		public:		virtual void trace(Frame& frame, const String& source, SizeType offset, bool lvalue
 							, const Value& value, Precedence level, bool exit);											///< Overload this member function if you want to customize the tracing mechanism in PikaScript. \details The default implementation calls the PikaScript function Root::tracerFunction that you can assign with the standard library function "trace". See the standard library documentation on "trace" for more information on the arguments to this member function.
 		public:		virtual void setTracer(Precedence traceLevel, const Value& tracerFunction) throw();					///< Called by the standard library function "trace" to assign a PikaScript tracer function and a trace level. (Also called by the standard trace() on exceptions.) \details You may want to overload this member function if you change the tracing mechanism and need control over the trace level for example.
 		public:		bool doTrace(Precedence level) const throw() { return level <= traceLevel; }						///< \details This function is called *a lot*. For performance reasons it is good if it becomes inlined, so we are not declaring it virtual. If you want to customize which events that will be traced, try cleverly implementing your own trace() and setTracer() member functions instead.
 		public:		String generateLabel();																				///< Each "sub-frame" requires a unique "frame label". \details This function creates it by "incrementing" Root::autoLabel, character by character, using '0' to '9' and upper and lower case 'a' to 'z', growing the string when necessary.
+		public:		void setMaxDepth(int maxDepth) throw() { this->maxDepth = maxDepth; }								///< Sets how deep expressions and calls may nest before "Recursion too deep" is thrown. \details Every level uses native stack. The default of 300 is safe on a 1 MB stack; raise it in proportion if the thread running PikaScript has a larger stack. While errors are traced only an eighth of the depth is allowed, since the tracer runs on top of the stack while unwinding.
+		protected:	int depth;																							///< Current nesting depth of expressions and calls.
+		protected:	int maxDepth;																						///< See setMaxDepth().
 		protected:	Precedence traceLevel;																				///< Calls to trace() will only happen when the "precedence level" is less or equal to this. \details E.g. if traceLevel is CALL, only function calls and caught exceptions will be traced.
 		protected:	Value tracerFunction;																				///< Pika-script tracer function (used by the default trace() implementation).
 		protected:	bool isInsideTracer;																				///< Set to prevent recursive calling of tracer (used by the default trace() implementation).
@@ -642,7 +647,7 @@ typedef Script<StdConfig> StdScript;
 	
 	\version
 	
-	Version 0.983
+	Version 0.984
 	
 	\page Copyright
 	
@@ -1363,6 +1368,13 @@ TMPL void Script<CFG>::Frame::tick(const StringIt& p, const XValue& v, Precedenc
 
 TMPL bool Script<CFG>::Frame::expr(StringIt& p, const StringIt& e, XValue& v, bool emptyOk, bool dry, Precedence thres) {
 	assert(p <= e);
+	struct DepthGuard {
+		DepthGuard(int& depth) : depth(depth) { ++depth; }
+		~DepthGuard() { --depth; }
+		int& depth;
+	} depthGuard(root.depth);
+	if (root.depth > (root.doTrace(TRACE_ERROR) ? root.maxDepth / 8 : root.maxDepth))									// Error tracing makes unwinding deeper.
+		throw Xception(STR("Recursion too deep"));
 	if (p < e && maybeWhite(*p)) white(p, e);
 	if (!dry && root.doTrace(thres)) tick(p, v, thres, false);
 	if (pre(p, e, v, dry)) {
@@ -1382,48 +1394,52 @@ TMPL bool Script<CFG>::Frame::termExpr(StringIt& p, const StringIt& e, XValue& v
 	return nonEmpty;
 }
 
+TMPL void Script<CFG>::Frame::statements(StringIt& p, const StringIt& e, XValue& v) {
+	while (p < e) {
+		expr(p, e, v, true, false, STATEMENT);
+		if (p < e) {
+			if (*p != ';') throw Xception(STR("Syntax error"));
+			++p;
+		}
+	}
+	v = XValue(false, rvalue(v));
+}
+
 TMPL T_TYPE(Value) Script<CFG>::Frame::evaluate(const String source) {
+	struct SourceGuard {
+		SourceGuard(const String*& current, const String* source) : current(current), old(current) { current = source; }
+		~SourceGuard() { current = old; }
+		const String*& current;
+		const String* const old;
+	} sourceGuard(this->source, &source);
 	XValue v;
-	const String* oldSource = this->source;
-	this->source = &source;
+	StringIt p = source.begin(), e = source.end();
+	// No catch and rethrow unless tracing: with MSVC every rethrow costs stack while unwinding deep recursion.
+	if (!root.doTrace(TRACE_ERROR)) {
+		statements(p, e, v);
+		return v.second;
+	}
+	if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, false);
 	try {
-		StringIt p = source.begin(), e = source.end();
-		if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, false);
 		try {
-			try {
-				while (p < e) {
-					expr(p, e, v, true, false, STATEMENT);
-					if (p < e) {
-						if (*p != ';') throw Xception(STR("Syntax error"));
-						++p;
-					}
-				}
-				v = XValue(false, rvalue(v));
-			} catch (const Xception& x) {
-				if (root.doTrace(TRACE_ERROR)) tick(p, XValue(false, x.getError()), TRACE_ERROR, previous == 0);
-				throw;
-			} catch (const std::exception& x) {
-				if (root.doTrace(TRACE_ERROR)) {
-					const char* s = x.what();
-					String err = String(std::basic_string<Char>(s, s + strlen(s)));
-					tick(p, XValue(false, err), TRACE_ERROR, previous == 0);
-				}
-				throw;
-			} catch (...) {
-				if (root.doTrace(TRACE_ERROR))
-					tick(p, XValue(false, STR("Unknown exception")), TRACE_ERROR, previous == 0);
-				throw;
-			}
+			statements(p, e, v);
+		} catch (const Xception& x) {
+			if (root.doTrace(TRACE_ERROR)) tick(p, XValue(false, x.getError()), TRACE_ERROR, previous == 0);
+			throw;
+		} catch (const std::exception& x) {
+			const char* s = x.what();
+			if (root.doTrace(TRACE_ERROR))
+				tick(p, XValue(false, String(std::basic_string<Char>(s, s + strlen(s)))), TRACE_ERROR, previous == 0);
+			throw;
 		} catch (...) {
-			if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
+			if (root.doTrace(TRACE_ERROR)) tick(p, XValue(false, STR("Unknown exception")), TRACE_ERROR, previous == 0);
 			throw;
 		}
-		if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
 	} catch (...) {
-		this->source = oldSource;
+		if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
 		throw;
 	}
-	this->source = oldSource;
+	if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
 	return v.second;
 }
 
@@ -1463,8 +1479,8 @@ TMPL void Script<CFG>::Frame::registerNative(const String& identifier, Native* n
 
 /* --- Root --- */
 
-TMPL Script<CFG>::Root::Root(Variables& vars) : Frame(vars, *this, 0), traceLevel(NO_TRACE), isInsideTracer(false)
-		, autoLabelStart(autoLabel + 29) {
+TMPL Script<CFG>::Root::Root(Variables& vars) : Frame(vars, *this, 0), depth(0), maxDepth(300), traceLevel(NO_TRACE)
+		, isInsideTracer(false), autoLabelStart(autoLabel + 29) {
 	std::fill_n(autoLabel, 32, ':');
 }
 
@@ -1779,7 +1795,7 @@ TMPL Script<CFG>::Variables::~Variables() { }
 	
 	\version
 	
-	Version 0.983
+	Version 0.984
 	
 	\page Copyright
 	
@@ -2176,7 +2192,7 @@ bool unitTest();
 	
 	\version
 	
-	Version 0.983
+	Version 0.984
 	
 	\page Copyright
 	
@@ -2284,7 +2300,7 @@ template<class Super, unsigned int CACHE_SIZE = 11> class QuickVars : public Sup
 	
 	\version
 	
-	Version 0.983
+	Version 0.984
 	
 	\page Copyright
 	
@@ -2344,7 +2360,7 @@ template struct Script<StdConfig>;
 	
 	\version
 	
-	Version 0.983
+	Version 0.984
 	
 	\page Copyright
 	
@@ -2433,7 +2449,7 @@ REGISTER_UNIT_TEST(QStrings::unitTest)
 #endif
 const char* BUILT_IN_DEBUG =
 	"/*\n"
-	"\tdebug.pika v0.983\n"
+	"\tdebug.pika v0.984\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2696,7 +2712,7 @@ const char* BUILT_IN_DEBUG =
 
 const char* BUILT_IN_HELP =
 	"/*\n"
-	"\thelp.pika v0.983\n"
+	"\thelp.pika v0.984\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2906,7 +2922,7 @@ const char* BUILT_IN_INTERACTIVE =
 	"#! /usr/local/bin/PikaCmd\n"
 	"\n"
 	"/*\n"
-	"\tinteractive.pika v0.983\n"
+	"\tinteractive.pika v0.984\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3026,7 +3042,7 @@ const char* BUILT_IN_INTERACTIVE =
 
 const char* BUILT_IN_STDLIB =
 	"/*\n"
-	"\tstdlib.pika v0.983\n"
+	"\tstdlib.pika v0.984\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3329,7 +3345,7 @@ const char* BUILT_IN_STDLIB =
 
 	\version
 
-	Version 0.983
+	Version 0.984
 	
 	\page Copyright
 
@@ -3359,12 +3375,16 @@ const char* BUILT_IN_STDLIB =
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define PIKA_CMD_VERSION "0.983"
+#define PIKA_CMD_VERSION "0.984"
 #define PIKA_UNICODE 0
 #define QUICKER_SCRIPT 1
 
 #if (!defined(PLATFORM_STRING))
 	#error Must define PLATFORM_STRING
+#endif
+
+#if defined(_MSC_VER)
+	#pragma comment(linker, "/STACK:8388608")																			// 8 MB like macOS and Linux, see setMaxDepth() in main().
 #endif
 
 #include <cstdlib>
@@ -3545,22 +3565,23 @@ Script::String getEnvironmentVar(const Script::String& var) {
 	#include <crtdbg.h>
 #endif
 
+#if !defined(LIBFUZZ_TIME_LIMIT)
+	#define LIBFUZZ_TIME_LIMIT (CLOCKS_PER_SEC / 10)																	// CPU time per input. Corpus replays in normal builds use less.
+#endif
+
 struct CallDepthException { };
 struct TimeOutException { };
 
 class LibFuzzRoot : public Script::FullRoot {
 	typedef Script::FullRoot Super;
-	public:		LibFuzzRoot() : userLevel(Pika::NO_TRACE), counter(0), deadline(std::clock() + CLOCKS_PER_SEC / 10)
+	public:		LibFuzzRoot() : userLevel(Pika::NO_TRACE), deadline(std::clock() + LIBFUZZ_TIME_LIMIT)
 						, callDepth(0) {
 					updateTracer();
 				}
 	public:		virtual void trace(Frame& frame, const Script::String& source, Script::SizeType offset, bool lvalue
 						, const Script::Value& value, Pika::Precedence level, bool exit) {
 					if (level <= userLevel) Super::trace(frame, source, offset, lvalue, value, level, exit);
-					if (level <= Pika::TRACE_LOOP && ++counter >= 100) {
-						counter = 0;
-						if (std::clock() > deadline) throw TimeOutException();
-					}
+					if (level <= Pika::TRACE_LOOP && std::clock() > deadline) throw TimeOutException();					// Every tick: one statement can grow a string exponentially.
 					if (level == Pika::TRACE_CALL) {
 						if (!exit && callDepth >= 20) {
 							throw CallDepthException();
@@ -3580,7 +3601,6 @@ class LibFuzzRoot : public Script::FullRoot {
 				}
 	protected:	Pika::Precedence userLevel;
 	protected:	Script::Value userTracer;
-	protected:	int counter;
 	protected:	std::clock_t deadline;
 	protected:	int callDepth;
 };
@@ -3638,6 +3658,7 @@ int main(int argc, const char* argv[]) {
 		if (pos == std::string::npos) pikaCmdDir.clear();
 		else pikaCmdDir = pikaCmdDir.substr(0, pos + 1);
 		Script::FullRoot root;
+		root.setMaxDepth(2400);																							// Eight times the default for the 8 MB stack.
 		root.registerNative("load", overloadedLoad);
 		root.registerNative("loadBinary", loadBinary);
 		root.registerNative("saveBinary", saveBinary);

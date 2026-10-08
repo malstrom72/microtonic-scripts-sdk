@@ -1,5 +1,5 @@
 /*
-	unittests.pika v0.983
+	unittests.pika v0.984
 
 	PikaScript is released under the "New Simplified BSD License". http://www.opensource.org/licenses/bsd-license.php
 	
@@ -636,6 +636,15 @@ assert(> try(> invoke('max', , @nothing, 0, 2000000000)) !== void);			// A huge 
 
 assert(> try(> trace(>void, 50)) !== void);									// Undefined behavior: an out-of-range level was cast to the enum (found by fuzzing).
 assert(> try(> trace(>void, -1)) !== void);
+
+// 0.983 -> 0.984
+
+::deep = function { ::deep() };
+assert(> try(>::deep()) === 'Recursion too deep');							// Deep recursion overflowed the native stack.
+assert(> try(>evaluate(repeat('(', 20000) # 1 # repeat(')', 20000))) === 'Recursion too deep');
+::deep = function { if ($0 > 0) ::deep($0 - 1) else 'ok' };
+assert(> ::deep(30) === 'ok');
+delete(@::deep);
 
 //////////////////////////
 
