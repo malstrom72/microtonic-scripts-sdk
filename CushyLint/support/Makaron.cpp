@@ -4,6 +4,7 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
+#include <cstring>
 #include "Makaron.h"
 
 /*
@@ -30,8 +31,8 @@ const char* Exception::what() const throw() {
 	try {
 		if (errorWithLine.empty()) {
 			std::ostringstream ss;
-			ss << "Makaron error: " << error << " (" << file << (file.empty() ? "line " : " line ") << line
-					<< ", column " << column << ")";
+			ss << "Makaron error: " << error << " (" << std::string(file.begin(), file.end())
+					<< (file.empty() ? "line " : " line ") << line << ", column " << column << ")";
 			errorWithLine = ss.str();
 		}
 		return errorWithLine.c_str();
@@ -58,9 +59,9 @@ std::pair<int, int> calculateLineAndColumn(const String& text, size_t offset) {
 	return std::make_pair(line, column);
 }
 
-Span::Span(const String& sourceCode, const String& fileName)
+Span::Span(const String& sourceCode, const WideString& fileName)
 	: source(std::make_shared<const String>(sourceCode))
-	, file(std::make_shared<const String>(fileName))
+	, file(std::make_shared<const WideString>(fileName))
 	, begin(source->begin())
 	, end(source->end()) {
 }
@@ -311,20 +312,29 @@ void Context::parseArgumentList(std::vector<String>& arguments) {
 	}
 }
 
-static bool standardIncludeLoader(const String& fileName, String& contents) {
-	std::ifstream fileStream(fileName);
-	if (!fileStream.good()) {
-		return false;
-	}
-	fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
-	std::istreambuf_iterator<Char> it(fileStream);
-	std::istreambuf_iterator<Char> end;
-	contents = String(it, end);
-	return true;
+static bool standardIncludeLoader(const WideString& fileName, String& contents) {
+    std::ifstream fileStream;
+
+#if defined(_WIN32) || defined(_WIN64)
+    // Windows-specific code
+    fileStream.open(fileName.c_str(), std::ios::in | std::ios::binary);
+#else
+    // Convert std::wstring to std::string (assuming UTF-8 encoding)
+    std::string narrowFilePath(fileName.begin(), fileName.end());
+    fileStream.open(narrowFilePath.c_str(), std::ios::in | std::ios::binary);
+#endif
+
+    if (!fileStream.is_open()) {
+        return false;
+    }
+    fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
+    contents.assign(std::istreambuf_iterator<char>(fileStream), std::istreambuf_iterator<char>());
+    return true;
 }
 
 Context::Context(int depthLimiter, Context* parentContext)
-		: parentContext(parentContext), depthLimiter(depthLimiter), processed(0), offsets(0)
+		: parentContext(parentContext), rootContext(parentContext != 0 ? parentContext->rootContext : this)
+		, depthLimiter(depthLimiter), outputLimiter(OUTPUT_LIMIT), processed(0), offsets(0)
 		, loader(parentContext != 0 ? parentContext->loader : standardIncludeLoader) {
 }
 
@@ -480,6 +490,7 @@ void Context::invokeMacro() {
 		error(std::string("\"") + name + "\" is undefined");
 	} else if (foundDefinition != 0) {
 		assert(processed != 0);
+		spend(foundDefinition->size());
 		(*processed) += *foundDefinition;
 		if (arguments.size() != 0) {
 			error(std::string("Incorrect number of arguments for ") + name);
@@ -546,7 +557,15 @@ void Context::produce(const StringIt& b, const StringIt& e) {
 		entry.inputLength = 0;
 		offsets->push_back(entry);
 	}
+	spend(e - b);
 	processed->append(b, e);
+}
+
+void Context::spend(size_t byteCount) {
+	if (byteCount > rootContext->outputLimiter) {
+		error("Output size limit reached");
+	}
+	rootContext->outputLimiter -= byteCount;
 }
 
 enum Instruction {
@@ -560,9 +579,10 @@ static const char* INSTRUCTIONS[6] = {
 void Context::includeFile() {
 	skipWhite();
 	const String fileName = parseExpression("\n\r");
+	const WideString wideFileName = std::wstring(fileName.begin(), fileName.end());
 	optionalLineBreak();
 	String source;
-	if (!loader(fileName, source)) {
+	if (!loader(wideFileName, source)) {
 		error(std::string("Could not load include file: ") + fileName);
 	}
 
@@ -570,7 +590,7 @@ void Context::includeFile() {
 	const StringIt previousP = p;
 	--depthLimiter;
 	try {
-		process(Span(source, fileName), *processed, offsets);
+		process(Span(source, wideFileName), *processed, offsets);
 	}
 	catch (...) {
 		++depthLimiter;
@@ -633,7 +653,7 @@ void Context::process(const Span& input, String& output, std::vector<OffsetMapEn
 
 			try {
 				switch (instruction) {
-					case LITERAL_AT: (*processed) += '@'; break;
+					case LITERAL_AT: spend(1); (*processed) += '@'; break;
 					case DEFINE_MACRO: macroDefinition(); break;
 					case DEFINE_STRING: stringDefinition(false); break;
 					case REDEFINE_STRING: stringDefinition(true); break;
@@ -664,7 +684,7 @@ void Context::process(const Span& input, String& output, std::vector<OffsetMapEn
 
 void Context::setIncludeLoader(const LoaderFunction& loaderFunction) { loader = loaderFunction; }
 
-String process(const String& source, const String& fileName) {
+String process(const String& source, const WideString& fileName) {
 	String output;
 	Context(DEFAULT_RECURSION_DEPTH_LIMIT).process(Span(source, fileName), output, 0);
 	return output;
@@ -693,7 +713,7 @@ RangeVector findInputRanges(const std::vector<OffsetMapEntry>& offsetMap, size_t
 
 static bool checkExpected(const char* source, const char* expected) {
 	try {
-		const String processed = process(source, "unit test");
+		const String processed = process(source, L"unit test");
 		if (processed != expected) {
 			return false;
 		}
@@ -708,7 +728,7 @@ static bool checkExpected(const char* source, const char* expected) {
 static bool checkError(const char* source, const char* expectedError, size_t expectedOffset, int expectedLine
 		, int expectedColumn) {
 	try {
-		process(source, "unit test");
+		process(source, L"unit test");
 	}
 	catch (const Exception& x) {
 		if (x.getError() != expectedError) {
@@ -1026,6 +1046,11 @@ bool unitTest() {
 			"@begin x @x @end\n"
 			"@x"
 			, "Recursion depth limit reached", 9, 1, 10));
+
+	assert(checkError(
+			"@begin a(x) @a(@x@x@x@x@x@x@x@x) @end\n"
+			"@a(y)"
+			, "Output size limit reached", 21, 1, 22));
 	
 	assert(checkError(
 			"@begin a @begin (local)x@end @global@local @end@define global=y\n"
