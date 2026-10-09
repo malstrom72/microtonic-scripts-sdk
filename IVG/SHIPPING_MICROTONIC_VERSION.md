@@ -1,7 +1,8 @@
-# Shipping Microtonic IVG Snapshot
+# Vendored IVG Snapshot
 
-This directory is a curated vendored copy of the IVG source tree used as the
-reference for the shipping Microtonic IVG implementation.
+This directory is a curated vendored copy of the IVG source tree. It follows the IVG-2
+freeze on IVG main (the IVG-1/2 line that Microtonic and Synplant use, not IVG-3), so
+the SDK validates scripts with the renderer the next product releases use.
 
 Imported from `malstrom72/IVG` commit:
 
@@ -9,13 +10,14 @@ Imported from `malstrom72/IVG` commit:
 651fdabd4384007738d66266898d55b77242babe
 ```
 
-Do not update this directory to latest upstream IVG unless Microtonic's shipped
-IVG implementation is updated too.
+The pinned freeze may be newer than the IVG in released Microtonic and Synplant builds.
+Differences are expected to be small, such as a few anti-aliased pixels along curve edges.
+Move the pin only to a new IVG-2 freeze from IVG main, and update both script SDKs together.
 
 ## Curated Subset
 
 This is intentionally not a full copy of the upstream Git repository. It keeps
-only the pieces needed to document and verify the shipped IVG implementation:
+only the pieces needed to document and verify the IVG implementation:
 
 - Core IVG and ImpD sources in `src/`.
 - Required `IVG2PNG` dependencies in `externals/NuX`, `externals/libpng`, and
