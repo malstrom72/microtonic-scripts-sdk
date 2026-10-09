@@ -76,7 +76,7 @@ Here is a brief list of the technologies used in Microtonic GUIs:
     - [Microtonic User Guide](docs/Microtonic%20User%20Guide.md)
 
 - `IVG`: curated vendored snapshot of the IVG source, renderer tools, IVGFiddle output, IVGFontConverter, dependencies,
-  and documentation used for the shipping Microtonic IVG implementation. The IVG/ImpD/ivgfont docs are mirrored into
+  and documentation, pinned to the IVG-2 freeze on IVG main (see `IVG/SHIPPING_MICROTONIC_VERSION.md`). The IVG/ImpD/ivgfont docs are mirrored into
   the top-level `docs/` by [`tools/sync-ivg-docs.sh`](tools/sync-ivg-docs.sh).
 
 - `JSConsole.mtscript`: an interactive Javascript console for Microtonic.
