@@ -22,20 +22,30 @@ The documentation in this repository was written for Microtonic version 3.3.4 (b
 
 ## Prerequisites
 
-For everyday scripting work (writing `.cushy` files, running CushyLint, validating JavaScript, and
-authoring IVG icons), no extra tools are required beyond what is bundled in this repository. The
-CushyLint and IVG2PNG binaries are prebuilt for both macOS and Windows and will be used as-is.
+Writing `.cushy` files, running CushyLint and rendering IVG icons with IVG2PNG need nothing beyond what is
+bundled in this repository. The CushyLint and IVG2PNG binaries are prebuilt for Windows and macOS and used as-is
+(on macOS, CushyLint's binaries are built for Apple silicon; see the C++ compiler note below for Intel Macs).
 
-**[Node.js](https://nodejs.org/)** is the only tool you may need to install, and only for three tasks:
+**[Node.js](https://nodejs.org/)** is the only tool you may need to install, for these tasks:
 
-- **JavaScript validation** (`tools/validate-js.sh`): runs ESLint via `npx` to catch syntax and style errors in `.js` and `.mtscript` files. ESLint understands the ECMAScript 3 subset used by Microtonic's scripting engine, so it catches mistakes that would only surface at runtime inside the plugin.
+- **JavaScript validation** (`tools/validate-js.sh`): runs ESLint via `npx` to catch syntax errors, undefined
+  globals and unsupported constructs in `.js` and `.mtscript` files before they reach the plugin. Microtonic's
+  engine is ECMAScript 3 with some ECMAScript 5 features, so ESLint parses scripts as ECMAScript 5 and additionally
+  rejects getter/setter literals and `with`.
+- **The live scripting bridge** (`tools/jsconsole-bridge-mcp/`): the MCP server that lets an AI assistant run code
+  in a running Microtonic. See [Live Scripting Bridge](#live-scripting-bridge).
 - **IVGFontConverter**: converts TrueType/OpenType fonts to the `.ivgfont` format used by Cushy and IVG. Requires Node.js to run `IVGFontConverter.node.js`.
 - **svg2ivg**: converts SVG drafts into IVG with the pinned
   `IVG/tools/svg2ivg.js` converter.
 
 The following tools are only needed for **SDK maintenance** tasks, not for everyday scripting:
 
-- **C++ compiler** (Xcode/`g++` on macOS, MSVC on Windows): only needed if the prebuilt `IVG2PNG` binary in `tools/IVG2PNG/` cannot run on your platform (e.g. a Linux machine, or after an upstream update). The validation scripts auto-build from source in that case. `IVG2PNG` renders `.ivg` files to PNG for visual validation and is sourced from the upstream [IVG repository](https://github.com/malstrom72/IVG).
+- **C++ compiler** (Xcode Command Line Tools on macOS, MSVC on Windows): only needed when a prebuilt binary cannot
+  run on your machine, in which case CushyLint and the validation scripts build it from source on first use. That
+  happens on Linux, after the bundled sources are updated, and on Intel Macs: CushyLint's `PikaCmd` and `MakaronCmd`
+  in `CushyLint/build/` are built for Apple silicon only, while `IVG2PNG` is a universal binary. `IVG2PNG` renders
+  `.ivg` files to PNG for visual validation and is sourced from the upstream
+  [IVG repository](https://github.com/malstrom72/IVG).
 - **Python 3**: required to run `tools/bootstrap-docling.sh`, which installs [Docling](https://github.com/DS4SD/docling) into a local virtual environment. Docling is used for the one-off task of converting the Microtonic PDF user guide to Markdown (`tools/convert-user-guide.sh`).
 - **Pandoc**: required to regenerate the checked-in HTML copies of Markdown reference docs.
 
@@ -135,7 +145,7 @@ In Cushy, it's often possible to write mathematical expressions where numerical 
 `$` may be used to insert the default value for the field. E.g., `updateRate: $*2` would set `updateRate` to twice the
 default. For rectangles such as view bounds you can also use the following variables: `t`, `l`, `w`, `h`, `r`, `b`
 for _top_, _left_, _width_, _height_, _right_ and _bottom_ of the default rectangle. E.g.
-`bounds: { l+10,t+10,h-20,w-20 }`. The default rectangle for a view bound is the full bounding box of the parent view. 
+`bounds: { l+10,t+10,w-20,h-20 }`. The default rectangle for a view bound is the full bounding box of the parent view. 
 
 The _Numbstrict_ format can be challenging to write correctly, especially when containing deeply nested hierarchical
 views and actions. Therefore we created _CushyLint_, a command-line tool to check the syntax of a `.cushy` file against
@@ -256,6 +266,26 @@ reload reruns JavaScript files but keeps the current JavaScript engine and exist
 JSConsole reload button, or typing `reset`, performs a full JavaScript engine reset, which clears memory and starts from
 a clean scripting environment. Closing the Microtonic GUI window also destroys the entire JavaScript environment, so
 reopening the GUI starts with no previous script globals, like a full reset.
+
+### Live Scripting Bridge
+
+The bridged JSConsole can also take code from outside Microtonic, so an AI assistant can evaluate JavaScript in the
+running engine, inspect and drive an open GUI script, and reload edited files without GUI automation. Every
+Microtonic script shares one global space, so code sent over the bridge sees the globals of the script you are working
+on.
+
+- The MCP server is `tools/jsconsole-bridge-mcp/server.js` (Node.js). This repository's `.mcp.json` registers it as
+  `microtonic-bridge` for MCP clients such as Claude Code.
+- It provides three tools: `mt_eval` runs code and returns the value and `print()` output, `mt_status` checks whether
+  the bridge is actually responding, and `mt_reload` reloads scripts and waits for an `until` expression to confirm
+  the new code is live.
+- To enable it, install the bridged `JSConsole.mtscript` (see [JSConsole](#jsconsole)), open it in Microtonic and type
+  `bridge on`. Run `mt_status` to confirm it reports `bridge: LIVE`.
+- Requests and replies are exchanged through a fixed shared folder (`C:/Users/Public/Sonic Charge/Microtonic/` on
+  Windows, `/Users/Shared/Sonic Charge/Microtonic/` on macOS, in `jsconsole-bridge/`). Calls run one at a time.
+
+See [`tools/jsconsole-bridge-mcp/README.md`](tools/jsconsole-bridge-mcp/README.md) for setup with other MCP clients,
+the protocol and troubleshooting.
 
 ### Development Scripts Folder
 
