@@ -813,13 +813,14 @@ references). External `.ivg` files can be validated and rasterized by the
 vendored `IVG2PNG` renderer:
 
 ```sh
-tools/validate-static-ivg.sh
+tools/validate-static-ivg.sh "path/to/MyTool.mtscript"
 ```
 
-This script renders every static `.ivg` under `Microtonic Resources/` and
-`examples/` to PNG and fails if any file cannot be parsed or rasterized. Files
-that reference GUI variables are reported as dynamic and skipped — they need
-separate review.
+This script renders every static `.ivg` under the given folders to PNG and fails
+if any file cannot be parsed or rasterized. Without a path it checks only the
+SDK's own `Microtonic Resources/` and `examples/`. Files that reference GUI
+variables are reported as dynamic and skipped; they need separate review. See
+[`validation.md`](validation.md#static-ivg-validation) for the full workflow.
 
 Inline `code:` snippets cannot be fed to `IVG2PNG` without manual extraction.
 

@@ -93,6 +93,17 @@ Use the SDK checkout as the source of truth for docs, examples, schemas,
 resources, packaging, and validation.
 ```
 
+Also create a root `CLAUDE.md` for Claude Code, which reads `CLAUDE.md` rather
+than `AGENTS.md`. It imports `AGENTS.md` so the instructions live in one place:
+
+```md
+# Project Claude Instructions
+
+Follow [`AGENTS.md`](AGENTS.md):
+
+@AGENTS.md
+```
+
 ### Live Debugging Bridge
 
 The SDK ships a JSConsole file bridge and a small MCP server
@@ -103,8 +114,8 @@ available from the start.
 
 Recommended bootstrap phase order:
 
-1. Create `AGENTS.md`, `.mcp.json` for Claude Code compatibility, `scripts/`,
-   and `references/microtonic-scripts-sdk/`.
+1. Create `AGENTS.md`, `CLAUDE.md`, `.mcp.json` for Claude Code compatibility,
+   `scripts/`, and `references/microtonic-scripts-sdk/`.
 2. Identify the exact live scripts folder. **Check the standard path on disk
    first** — do not lead with `DIRS.SCRIPTS` or *Open Scripts Folder* on a cold
    bootstrap. There is no bridge yet, so `DIRS.SCRIPTS` is unavailable, and

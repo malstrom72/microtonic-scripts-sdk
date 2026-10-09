@@ -162,18 +162,8 @@ example above also lints cleanly without the second CLI resource argument.
 - CushyLint does not validate or rasterize IVG drawing code. Check IVG syntax
   and behavior against `docs/IVG Documentation.md` and the vendored `IVG/`
   source when exact shipped behavior matters.
-- For static `.ivg` files, build and run the vendored `IVG2PNG` renderer:
-
-  ```sh
-  tools/validate-static-ivg.sh
-  ```
-
-  This renders SDK `.ivg` resources to PNG files under
-  `/tmp/microtonic-static-ivg-validation` by default and fails if any static
-  IVG cannot be parsed or rasterized. IVG files that depend on Cushy or GUI
-  variables are reported as dynamic and skipped by this static renderer pass.
-  The validator passes `--fonts IVG/fonts` to `IVG2PNG`, so static IVG files can
-  use the bundled external font faces `sans-serif`, `serif`, and `monospace`.
+- For `.ivg` files, run the static IVG validator on your package; see
+  [Static IVG Validation](#static-ivg-validation).
 - Inline Cushy vector snippets still need separate review or extraction before
   `IVG2PNG` can render them.
 
@@ -185,18 +175,46 @@ strokes, and transparency are visible. Do not build an SVG approximation just
 to preview an IVG or rely on generic image tools: ImageMagick installations
 without a reliable SVG delegate can silently drop stroked paths.
 
+CushyLint does not parse or rasterize IVG source. Run the static IVG validator
+on your package before trusting a new icon or vector. From a project root that
+has the SDK under `references/`:
+
+```sh
+references/microtonic-scripts-sdk/tools/validate-static-ivg.sh "scripts/MyTool.mtscript"     # macOS / Linux
+references\microtonic-scripts-sdk\tools\validate-static-ivg.cmd "scripts\MyTool.mtscript"    # Windows
+```
+
+Usage is `validate-static-ivg [--out <dir>] [<path> ...]`. Each path is an
+`.ivg` file or a folder searched recursively, relative to the current
+directory. Without paths it checks the SDK's own `Microtonic Resources` and
+`examples`. PNGs and logs go to `--out`, by default
+`microtonic-static-ivg-validation` in the temp folder (`$TMPDIR`, else `/tmp`,
+on macOS/Linux; `%TEMP%` on Windows).
+
+The validator renders each self-contained static `.ivg` to PNG with
+`tools/IVG2PNG/`, rebuilding it first if the prebuilt binary cannot run on this
+machine, and passes the bundled fonts so static IVG files can use
+`sans-serif`, `serif`, and `monospace`. Files that depend on Cushy or GUI
+variables are reported as dynamic and skipped. Files that use filesystem IVG
+`include` statements are also skipped (`Could not include file`; the
+command-line renderer has no include loader), as are helper files with no
+top-level `bounds`. Any other parse or render error fails the run.
+
 ## Testing Dynamic IVG Designs
 
 Dynamic IVG files (those that use `$variable` references bound from Cushy) are
 skipped by the static renderer. To verify a dynamic IVG design before running
 it in Microtonic, create a companion `_test.ivg` file with all `$variable`
-references replaced by representative hardcoded values, and render it directly:
+references replaced by representative hardcoded values, and pass it to the
+validator above, or render it directly. From the SDK root (prefix the tool and
+font paths with `references/microtonic-scripts-sdk/` from a project; use
+`IVG2PNG.exe` on Windows):
 
 ```sh
-IVG/output/IVG2PNG --fonts IVG/fonts "path/to/MyFile_test.ivg" "/tmp/MyFile_test.png"
+tools/IVG2PNG/IVG2PNG --fonts IVG/fonts "path/to/MyFile_test.ivg" "/tmp/MyFile_test.png"
 ```
 
-The test IVG must open with a `bounds` declaration so the renderer knows the
+The test IVG must open with `format` and `bounds` so the renderer knows the
 canvas size:
 
 ```
@@ -218,7 +236,7 @@ When testing transparent or stroke-only glyphs, pass a realistic background
 color to the renderer:
 
 ```sh
-IVG/output/IVG2PNG --fonts IVG/fonts --background "#202020" "path/to/MyGlyph_test.ivg" "/tmp/MyGlyph_test.png"
+tools/IVG2PNG/IVG2PNG --fonts IVG/fonts --background "#202020" "path/to/MyGlyph_test.ivg" "/tmp/MyGlyph_test.png"
 ```
 
 For comparing variants, render each variant as its own `_test.ivg` strip with
