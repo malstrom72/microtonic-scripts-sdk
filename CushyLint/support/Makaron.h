@@ -12,16 +12,19 @@
 namespace Makaron {
 
 const int DEFAULT_RECURSION_DEPTH_LIMIT = 20;
+const size_t OUTPUT_LIMIT = 64 * 1024 * 1024;	// bytes a context and every context it creates may produce together
 
 typedef char Char;
+typedef wchar_t WideChar;
 typedef std::basic_string<Char> String;
+typedef std::basic_string<WideChar> WideString;
 typedef String::const_iterator StringIt;
 
 class Exception : public std::exception {
-	public:		Exception(const std::string& error, const std::string& file, size_t offset, int line, int column)
+	public:		Exception(const std::string& error, const std::wstring& file, size_t offset, int line, int column)
 						: error(error), file(file), offset(offset), line(line), column(column) { }
 				std::string getError() const { return error; }
-				std::string getFile() const { return file; }
+				std::wstring getFile() const { return file; }
 				size_t getOffset() const { return offset; }	// To get recursive source ranges, use the length of the generated output with findInputRanges instead.
 				int getLineNumber() const { return line; }
 				int getColumnNumber() const { return column; }
@@ -29,7 +32,7 @@ class Exception : public std::exception {
 				virtual ~Exception() throw() { }
 	
 	protected:	const std::string error;
-				const std::string file;
+				const std::wstring file;
 				const size_t offset;
 				const int line;
 				const int column;
@@ -38,7 +41,7 @@ class Exception : public std::exception {
 
 class Span {
 	friend class Context;
-	public:		Span(const String& sourceCode, const String& fileName);
+	public:		Span(const String& sourceCode, const WideString& fileName);
 				Span(const Span& s, const StringIt& b, const StringIt& e) : source(s.source), file(s.file)
 						, begin(b), end(e) {
 					assert(begin >= source->begin() && end <= source->end());
@@ -49,7 +52,7 @@ class Span {
 
 	protected:	Span() { }
 				std::shared_ptr<const String> source;
-				std::shared_ptr<const String> file;
+				std::shared_ptr<const WideString> file;
 				StringIt begin;
 				StringIt end;
 };
@@ -66,7 +69,7 @@ class Span {
 	earliest element is the "outermost" (e.g. the first macro call) and the last element is the "innermost".
 */
 struct OffsetMapEntry {
-	std::shared_ptr<const String> file;
+	std::shared_ptr<const WideString> file;
 	size_t outputPoint;
 	size_t outputStretch;
 	size_t inputFrom;
@@ -80,42 +83,50 @@ class Context {
 					Context* context;
 				};
 	
-	public:		typedef std::function<bool (const String& fileName, String& contents)> LoaderFunction;
+	public:		typedef std::function<bool (const WideString& fileName, String& contents)> LoaderFunction;
 	
-				Context(int depthLimiter = DEFAULT_RECURSION_DEPTH_LIMIT, Context* parentContext = 0);
-				bool defineMacro(const String& name, const std::vector<String>& parameterNames, const Span& span, Context* context);
-				bool defineString(const String& name, const String& definiton);
-				bool redefineString(const String& name, const String& definiton);
-				void process(const Span& input, String& output, std::vector<OffsetMapEntry>* offsetMap);
-				void setIncludeLoader(const LoaderFunction& loaderFunction);
+				Context(int depthLimiter = DEFAULT_RECURSION_DEPTH_LIMIT,
+						Context* parentContext = 0);		/// init with depth limit and parent
+				bool defineMacro(const String& name, const std::vector<String>& parameterNames,
+						const Span& span, Context* context);		/// register macro; false if name exists
+				bool defineString(const String& name, const String& definiton);		/// define string constant; false if name used
+				bool redefineString(const String& name, const String& definiton);		/// replace string; false if missing
+				void process(const Span& input, String& output,
+						std::vector<OffsetMapEntry>* offsetMap);		/// expand input; fill offsets if provided
+				void setIncludeLoader(const LoaderFunction& loaderFunction);		/// set loader used by @include
 	
-	protected:	static bool isWhite(const Char c);
-				static bool isLeadingIdentifierChar(const Char c);
-				static bool isIdentifierChar(const Char c);
-				void error(const std::string error);
-				bool eof() const;
-				void skipWhite();
-				void skipHorizontalWhite();
-				void optionalLineBreak();
-				void skipBracketsAndStrings(int depth);
-				bool parseToken(const char* token);
-				String parseIdentifier();
-				String parseSymbol();
-				StringIt skipNested(const char* open, const char* close, bool skipLeadingWhite);
-				Span parseNested(const char* open, const char* close, bool skipLeadingWhite);
-				String parseExpression(const char* terminators);
-				void parseArgumentList(std::vector<String>& arguments);
-				void parseParameterNames(std::vector<String>& parameterNames);
-				void stringDefinition(bool redefine);
-				void macroDefinition();
-				bool testCondition();
-				void ifStatement();
-				void invokeMacro();
-				void includeFile();
-				void produce(const StringIt& b, const StringIt& e);
+	protected:	static bool isWhite(const Char c);		/// true if `c` is whitespace
+				static bool isLeadingIdentifierChar(const Char c);		/// true if `c` can start identifier
+				static bool isIdentifierChar(const Char c);		/// true if `c` is identifier char
+				void error(const std::string error);		/// throw `Exception` at current location
+				bool eof() const;		/// true when parser reached end
+				void skipWhite();		/// skip all whitespace
+				void skipHorizontalWhite();		/// skip spaces and tabs
+				void optionalLineBreak();		/// skip optional line break
+				void skipBracketsAndStrings(int depth);		/// skip bracketed or quoted blocks
+				bool parseToken(const char* token);		/// consume token if present
+				String parseIdentifier();		/// read identifier; empty if none
+				String parseSymbol();		/// read identifier or `(expr)`
+				StringIt skipNested(const char* open, const char* close,
+						bool skipLeadingWhite);		/// skip nested pair and return end
+				Span parseNested(const char* open, const char* close,
+						bool skipLeadingWhite);		/// span inside nested pair
+				String parseExpression(const char* terminators);		/// parse expression until terminator
+				void parseArgumentList(std::vector<String>& arguments);		/// parse comma-separated args
+				void parseParameterNames(std::vector<String>& parameterNames);		/// parse comma-separated names
+				void stringDefinition(bool redefine);		/// handle string @define/@redefine
+				void macroDefinition();		/// parse and store macro
+				bool testCondition();		/// evaluate @if/@elif expression
+				void ifStatement();		/// process @if...@endif
+				void invokeMacro();		/// expand macro or string
+				void includeFile();		/// handle @include directive
+				void produce(const StringIt& b, const StringIt& e);		/// append source slice to output
+				void spend(size_t byteCount);		// counts output toward the shared limit; throws when it is reached
 
 				Context* const parentContext;
+				Context* const rootContext;
 				int depthLimiter;
+				size_t outputLimiter;	// bytes left to produce, used in `rootContext` only
 				LoaderFunction loader;
 				std::map<String, Macro> macros;
 				std::map<String, String> strings;
@@ -135,11 +146,12 @@ typedef std::vector< std::pair<size_t, size_t> > RangeVector;
 	Notice that you can use this routine when an error occurs to get a full "call stack" of source ranges. Just pass the
 	length of the generated output to `outputOffset`.
 */
-RangeVector findInputRanges(const std::vector<OffsetMapEntry>& offsetMap, size_t outputOffset);
+RangeVector findInputRanges(const std::vector<OffsetMapEntry>& offsetMap,
+				size_t outputOffset);	/// map output offset to input ranges
 
-std::pair<int, int> calculateLineAndColumn(const String& text, size_t offset);
-String process(const String& source, const String& fileName);
-bool unitTest();
+std::pair<int, int> calculateLineAndColumn(const String& text, size_t offset);	/// get line and column for `offset`
+String process(const String& source, const WideString& fileName);	/// convenience wrapper using default context
+bool unitTest();	/// run built-in tests
 
 } // namespace Makaron
 
