@@ -5,7 +5,7 @@
 	
 	\version
 	
-	Version 0.985
+	Version 0.986
 	
 	\page Copyright
 	
@@ -58,10 +58,10 @@ namespace Pika {
 
 #if (PIKA_UNICODE)
 	#define STR(s) L##s
-	#define PIKA_SCRIPT_VERSION L"0.985"
+	#define PIKA_SCRIPT_VERSION L"0.986"
 #else
 	#define STR(x) x
-	#define PIKA_SCRIPT_VERSION "0.985"
+	#define PIKA_SCRIPT_VERSION "0.986"
 #endif
 
 typedef unsigned char uchar;
@@ -648,7 +648,7 @@ typedef Script<StdConfig> StdScript;
 	
 	\version
 	
-	Version 0.985
+	Version 0.986
 	
 	\page Copyright
 	
@@ -841,7 +841,7 @@ template<class S> S doubleToString(double d, int precision) {
 		x = (x - ix) * 10.0;
 	}
 	if (x >= 5) {																										// If remainder is >= 5, increment trailing 9's...
-		while (dp[-1] == '9') *--dp = '0';
+		while (dp > bp && dp[-1] == '9') *--dp = '0';
 		if (dp == bp) *--bp = '1'; else dp[-1]++;																		// If we are at spare position, set to '1' and include, otherwise, increment last non-9.
 	}
 	*pp = '.';
@@ -1802,7 +1802,7 @@ TMPL Script<CFG>::Variables::~Variables() { }
 	
 	\version
 	
-	Version 0.985
+	Version 0.986
 	
 	\page Copyright
 	
@@ -2199,7 +2199,7 @@ bool unitTest();
 	
 	\version
 	
-	Version 0.985
+	Version 0.986
 	
 	\page Copyright
 	
@@ -2307,7 +2307,7 @@ template<class Super, unsigned int CACHE_SIZE = 11> class QuickVars : public Sup
 	
 	\version
 	
-	Version 0.985
+	Version 0.986
 	
 	\page Copyright
 	
@@ -2367,7 +2367,7 @@ template struct Script<StdConfig>;
 	
 	\version
 	
-	Version 0.985
+	Version 0.986
 	
 	\page Copyright
 	
@@ -2456,7 +2456,7 @@ REGISTER_UNIT_TEST(QStrings::unitTest)
 #endif
 const char* BUILT_IN_DEBUG =
 	"/*\n"
-	"\tdebug.pika v0.985\n"
+	"\tdebug.pika v0.986\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2719,7 +2719,7 @@ const char* BUILT_IN_DEBUG =
 
 const char* BUILT_IN_HELP =
 	"/*\n"
-	"\thelp.pika v0.985\n"
+	"\thelp.pika v0.986\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2929,7 +2929,7 @@ const char* BUILT_IN_INTERACTIVE =
 	"#! /usr/local/bin/PikaCmd\n"
 	"\n"
 	"/*\n"
-	"\tinteractive.pika v0.985\n"
+	"\tinteractive.pika v0.986\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3049,7 +3049,7 @@ const char* BUILT_IN_INTERACTIVE =
 
 const char* BUILT_IN_STDLIB =
 	"/*\n"
-	"\tstdlib.pika v0.985\n"
+	"\tstdlib.pika v0.986\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3352,7 +3352,7 @@ const char* BUILT_IN_STDLIB =
 
 	\version
 
-	Version 0.985
+	Version 0.986
 	
 	\page Copyright
 
@@ -3382,7 +3382,7 @@ const char* BUILT_IN_STDLIB =
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define PIKA_CMD_VERSION "0.985"
+#define PIKA_CMD_VERSION "0.986"
 #define PIKA_UNICODE 0
 #define QUICKER_SCRIPT 1
 
