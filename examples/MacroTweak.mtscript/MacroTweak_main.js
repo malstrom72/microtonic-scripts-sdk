@@ -12,6 +12,8 @@ if (!this.macroTweak) {
 
 Object.assign(macroTweak, {
 	resetBlocked: 0,
+	undoPending: false,
+	dragAborted: false,
 	checkAndReset: function() {
 		if (this.resetBlocked === 0) {
 			var elementId = getElementId(this.channelsChoice === 'selected' ? 'drumPatch' : 'preset');
@@ -39,60 +41,72 @@ Object.assign(macroTweak, {
 		}
 	},
 
-	updateActiveDrumPatch: function(channel) {
-		setElement('drumPatch', this.tweakedPreset.drumPatches[channel]);
-		this.lastElementId = getElementId('drumPatch');
-	},
-
-	updateActivePreset: function() {
-		this.tweakedPreset.modified = true;
-		setElement('preset', this.tweakedPreset);
-		this.lastElementId = getElementId('preset');
-	},
-
 	identity: function() {
 		return getElementId(this.channelsChoice === 'selected' ? 'drumPatch' : 'preset');
 	},
 
-	tweak: function(undoName, tweaker) {
-		saveUndo("Change " + undoName, true);
-		switch (this.channelsChoice) {
-			case 'all': {
-				for (var i = 0; i < CHANNEL_COUNT; ++i) {
-					var sp = this.sourcePreset.drumPatches[i];
-					var dp = this.tweakedPreset.drumPatches[i];
-					tweaker(sp, dp);
-				}
-				this.updateActivePreset();
-				break;
-			}
-
-			case 'unmuted': {
-				for (var i = 0; i < CHANNEL_COUNT; ++i) {
-					if (this.sourcePreset.mutes[i] < 0.5) {
-						var sp = this.sourcePreset.drumPatches[i];
-						var dp = this.tweakedPreset.drumPatches[i];
-						tweaker(sp, dp);
-					}
-				}
-				this.updateActivePreset();
-				break;
-			}
-
-			case 'selected': {
-				var channel = selected('channel');
-				var sp = this.sourcePreset.drumPatches[channel];
-				var dp = this.tweakedPreset.drumPatches[channel];
-				tweaker(sp, dp);
-				this.updateActiveDrumPatch(channel);
-				break;
+	sameDrumPatch: function(a, b) {
+		for (var key in a) {
+			if (key !== 'id' && typeof a[key] === 'number' && a[key] !== b[key]) {
+				return false;
 			}
 		}
+		return true;
+	},
+
+	/*
+		Each tweak starts from the current document, not from tweakedPreset, so changes made elsewhere during a drag
+		(transport, pattern chains, mutes) are not written back over. If the drum patches themselves were changed
+		elsewhere (undo, edits, another program), the rest of the drag is ignored and the knobs reset on release.
+	*/
+	tweak: function(undoName, tweaker) {
+		if (this.dragAborted) {
+			return;
+		}
+		var channel = selected('channel');
+		var selectedOnly = (this.channelsChoice === 'selected');
+		var current = getElement(selectedOnly ? 'drumPatch' : 'preset');
+		if (this.resetBlocked > 0 && this.identity() !== this.lastElementId) {
+			var unchanged = true;
+			if (selectedOnly) {
+				unchanged = this.sameDrumPatch(this.tweakedPreset.drumPatches[channel], current);
+			} else {
+				for (var i = 0; i < CHANNEL_COUNT && unchanged; ++i) {
+					unchanged = this.sameDrumPatch(this.tweakedPreset.drumPatches[i], current.drumPatches[i]);
+				}
+			}
+			if (!unchanged) {
+				this.dragAborted = true;
+				return;
+			}
+		}
+
+		saveUndo("Change " + undoName, !this.undoPending);
+		this.undoPending = false;
+
+		if (selectedOnly) {
+			tweaker(this.sourcePreset.drumPatches[channel], current);
+			setElement('drumPatch', current);
+			this.tweakedPreset.drumPatches[channel] = getElement('drumPatch');
+		} else {
+			for (var i = 0; i < CHANNEL_COUNT; ++i) {
+				if (this.channelsChoice === 'all' || this.sourcePreset.mutes[i] < 0.5) {
+					tweaker(this.sourcePreset.drumPatches[i], current.drumPatches[i]);
+				}
+			}
+			current.modified = true;
+			setElement('preset', current);
+			this.tweakedPreset = getElement('preset');
+		}
+		this.lastElementId = this.identity();
 	},
 
 	touch: function(mouseDown) {
 		if (mouseDown) {
-			++this.resetBlocked;
+			if (this.resetBlocked++ === 0) {
+				this.undoPending = true;
+				this.dragAborted = false;
+			}
 		} else if (--this.resetBlocked === 0) {
 			this.checkAndReset();
 		}
