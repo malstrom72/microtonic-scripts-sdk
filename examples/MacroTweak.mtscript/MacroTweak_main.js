@@ -46,8 +46,9 @@ Object.assign(macroTweak, {
 	},
 
 	sameDrumPatch: function(a, b) {
-		for (var key in a) {
-			if (key !== 'id' && typeof a[key] === 'number' && a[key] !== b[key]) {
+		for (var i = 0; i < DRUM_PATCH_PARAMS.length; ++i) {
+			var name = DRUM_PATCH_PARAMS[i].NAME;
+			if (a[name] !== b[name]) {
 				return false;
 			}
 		}
