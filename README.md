@@ -22,20 +22,30 @@ The documentation in this repository was written for Microtonic version 3.3.4 (b
 
 ## Prerequisites
 
-For everyday scripting work (writing `.cushy` files, running CushyLint, validating JavaScript, and
-authoring IVG icons), no extra tools are required beyond what is bundled in this repository. The
-CushyLint and IVG2PNG binaries are prebuilt for both macOS and Windows and will be used as-is.
+Writing `.cushy` files, running CushyLint and rendering IVG icons with IVG2PNG need nothing beyond what is
+bundled in this repository. The CushyLint and IVG2PNG binaries are prebuilt for Windows and macOS and used as-is
+(on macOS, CushyLint's binaries are built for Apple silicon; see the C++ compiler note below for Intel Macs).
 
-**[Node.js](https://nodejs.org/)** is the only tool you may need to install, and only for three tasks:
+**[Node.js](https://nodejs.org/)** is the only tool you may need to install, for these tasks:
 
-- **JavaScript validation** (`tools/validate-js.sh`): runs ESLint via `npx` to catch syntax and style errors in `.js` and `.mtscript` files. ESLint understands the ECMAScript 3 subset used by Microtonic's scripting engine, so it catches mistakes that would only surface at runtime inside the plugin.
+- **JavaScript validation** (`tools/validate-js.sh`): runs ESLint via `npx` to catch syntax errors, undefined
+  globals and unsupported constructs in `.js` and `.mtscript` files before they reach the plugin. Microtonic's
+  engine is ECMAScript 3 with some ECMAScript 5 features, so ESLint parses scripts as ECMAScript 5 and additionally
+  rejects getter/setter literals and `with`.
+- **The live scripting bridge** (`tools/jsconsole-bridge-mcp/`): the MCP server that lets an AI assistant run code
+  in a running Microtonic. See [Live Scripting Bridge](#live-scripting-bridge).
 - **IVGFontConverter**: converts TrueType/OpenType fonts to the `.ivgfont` format used by Cushy and IVG. Requires Node.js to run `IVGFontConverter.node.js`.
 - **svg2ivg**: converts SVG drafts into IVG with the pinned
   `IVG/tools/svg2ivg.js` converter.
 
 The following tools are only needed for **SDK maintenance** tasks, not for everyday scripting:
 
-- **C++ compiler** (Xcode/`g++` on macOS, MSVC on Windows): only needed if the prebuilt `IVG2PNG` binary in `tools/IVG2PNG/` cannot run on your platform (e.g. a Linux machine, or after an upstream update). The validation scripts auto-build from source in that case. `IVG2PNG` renders `.ivg` files to PNG for visual validation and is sourced from the upstream [IVG repository](https://github.com/malstrom72/IVG).
+- **C++ compiler** (Xcode Command Line Tools on macOS, MSVC on Windows): only needed when a prebuilt binary cannot
+  run on your machine, in which case CushyLint and the validation scripts build it from source on first use. That
+  happens on Linux, after the bundled sources are updated, and on Intel Macs: CushyLint's `PikaCmd` and `MakaronCmd`
+  in `CushyLint/build/` are built for Apple silicon only, while `IVG2PNG` is a universal binary. `IVG2PNG` renders
+  `.ivg` files to PNG for visual validation and is sourced from the upstream
+  [IVG repository](https://github.com/malstrom72/IVG).
 - **Python 3**: required to run `tools/bootstrap-docling.sh`, which installs [Docling](https://github.com/DS4SD/docling) into a local virtual environment. Docling is used for the one-off task of converting the Microtonic PDF user guide to Markdown (`tools/convert-user-guide.sh`).
 - **Pandoc**: required to regenerate the checked-in HTML copies of Markdown reference docs.
 
@@ -51,7 +61,7 @@ Here is a brief list of the technologies used in Microtonic GUIs:
   [Numbstrict repository](https://github.com/malstrom72/Numbstrict).
 - _Numbstrict_: an object notation format similar to (but not compatible with) JSON, from the
   [Numbstrict repository](https://github.com/malstrom72/Numbstrict).
-- _NuXJScript_: our JavaScript engine, fully ECMAScript 3 compliant with features from ECMAScript 5.
+- _NuXJS_: our JavaScript engine, fully ECMAScript 3 compliant with features from ECMAScript 5.
 - _PikaScript_: our legacy script language used by older Microtonic scripts and offline tools.
 
 ## Repository Structure
@@ -75,15 +85,27 @@ Here is a brief list of the technologies used in Microtonic GUIs:
     - [Microtonic JS Reference](docs/Microtonic%20JS%20Reference.md)
     - [Microtonic User Guide](docs/Microtonic%20User%20Guide.md)
 
+- `examples`: complete example scripts, with screenshots in `examples/screenshots`.
+
 - `IVG`: curated vendored snapshot of the IVG source, renderer tools, IVGFiddle output, IVGFontConverter, dependencies,
-  and documentation, pinned to the IVG-2 freeze on IVG main (see `IVG/SHIPPING_MICROTONIC_VERSION.md`). The IVG/ImpD/ivgfont docs are mirrored into
-  the top-level `docs/` by [`tools/sync-ivg-docs.sh`](tools/sync-ivg-docs.sh).
+  and documentation, pinned to the IVG-2 freeze on IVG main (see `IVG/SHIPPING_MICROTONIC_VERSION.md`). The
+  IVG/ImpD/ivgfont docs are mirrored into the top-level `docs/` by [`tools/sync-ivg-docs.sh`](tools/sync-ivg-docs.sh).
 
 - `JSConsole.mtscript`: an interactive Javascript console for Microtonic.
 
 - `legacy`: contains documentation for the legacy scripting engine (based on _PikaScript_).
 
-- `tools`: utilities for maintaining generated documentation and repository support files.
+- `Microtonic Resources`: a copy of Microtonic's built-in resources (Cushy, IVG, Makaron and schema files, images,
+  patterns and drum patches) for reference. The validators also check it.
+
+- `tools`:
+    - `validate-js.sh`, `validate-examples.sh` and `validate-static-ivg.sh`/`.cmd`: validators for JavaScript, the
+      examples and static IVG files.
+    - `IVG2PNG`: the prebuilt IVG renderer, and `build-ivg2png.sh`/`.cmd` to build it from source.
+    - `jsconsole-bridge-mcp`: the MCP server for the [live scripting bridge](#live-scripting-bridge), registered in
+      `.mcp.json`.
+    - `install-jsconsole.js` and `locate-scripts-folder.ps1`: install JSConsole and find the Microtonic Scripts folder.
+    - Utilities for maintaining the generated documentation.
 
 - `tmLanguages`: syntax highlighting support for Sonic Charge formats and languages.
 
@@ -135,13 +157,14 @@ In Cushy, it's often possible to write mathematical expressions where numerical 
 `$` may be used to insert the default value for the field. E.g., `updateRate: $*2` would set `updateRate` to twice the
 default. For rectangles such as view bounds you can also use the following variables: `t`, `l`, `w`, `h`, `r`, `b`
 for _top_, _left_, _width_, _height_, _right_ and _bottom_ of the default rectangle. E.g.
-`bounds: { l+10,t+10,h-20,w-20 }`. The default rectangle for a view bound is the full bounding box of the parent view. 
+`bounds: { l+10,t+10,w-20,h-20 }`. The default rectangle for a view bound is the full bounding box of the parent view. 
 
 The _Numbstrict_ format can be challenging to write correctly, especially when containing deeply nested hierarchical
 views and actions. Therefore we created _CushyLint_, a command-line tool to check the syntax of a `.cushy` file against
-the official "schema" specification. Simple run `CushyLint` (Mac) or `CushyLint.bat` (Windows) from a command-line
+the official "schema" specification. Simply run `CushyLint` (Mac) or `CushyLint.bat` (Windows) from a command-line
 prompt with the single argument specifying a single `.cushy` file path to check or a directory if you want to check
-multiple files. Directories must end with a slash (`/` or `\`).
+multiple files. Directories must end with a slash (`/` or `\`). Use absolute paths, because CushyLint runs from its own
+directory.
 
 The files are checked against the official `cushy.schema` file in the `CushyLint` directory, plus any other `.schema`
 files existing in the directory next to the `.cushy` file that you are checking. The `cushy.schema` file is designed to
@@ -184,7 +207,9 @@ tools/validate-static-ivg.sh        # macOS / Linux
 tools\validate-static-ivg.cmd       # Windows
 ```
 
-The rendered PNGs are written to a temp directory by default (`/tmp/microtonic-static-ivg-validation` on macOS/Linux, `%TEMP%\microtonic-static-ivg-validation` on Windows). IVG files that depend on Cushy or GUI variables are reported as dynamic and skipped by this static renderer pass.
+The rendered PNGs are written to `microtonic-static-ivg-validation` in the temp directory by default (`$TMPDIR`, else
+`/tmp`, on macOS/Linux and `%TEMP%` on Windows). IVG files that depend on Cushy or GUI variables, use `include`
+statements, or are helper files with no top-level `bounds` are reported as skipped by this static renderer pass.
 
 If the prebuilt binary cannot run on your platform, the scripts automatically rebuild `IVG2PNG` from source using `tools/build-ivg2png.sh` (macOS/Linux) or `tools\build-ivg2png.cmd` (Windows, requires MSVC).
 
@@ -256,6 +281,26 @@ reload reruns JavaScript files but keeps the current JavaScript engine and exist
 JSConsole reload button, or typing `reset`, performs a full JavaScript engine reset, which clears memory and starts from
 a clean scripting environment. Closing the Microtonic GUI window also destroys the entire JavaScript environment, so
 reopening the GUI starts with no previous script globals, like a full reset.
+
+### Live Scripting Bridge
+
+The bridged JSConsole can also take code from outside Microtonic, so an AI assistant can evaluate JavaScript in the
+running engine, inspect and drive an open GUI script, and reload edited files without GUI automation. Every
+Microtonic script shares one global space, so code sent over the bridge sees the globals of the script you are working
+on.
+
+- The MCP server is `tools/jsconsole-bridge-mcp/server.js` (Node.js). This repository's `.mcp.json` registers it as
+  `microtonic-bridge` for MCP clients such as Claude Code.
+- It provides three tools: `mt_eval` runs code and returns the value and `print()` output, `mt_status` checks whether
+  the bridge is actually responding, and `mt_reload` reloads scripts and waits for an `until` expression to confirm
+  the new code is live.
+- To enable it, install the bridged `JSConsole.mtscript` (see [JSConsole](#jsconsole)), open it in Microtonic and type
+  `bridge on`. Run `mt_status` to confirm it reports `bridge: LIVE`.
+- Requests and replies are exchanged through a fixed shared folder (`C:/Users/Public/Sonic Charge/Microtonic/` on
+  Windows, `/Users/Shared/Sonic Charge/Microtonic/` on macOS, in `jsconsole-bridge/`). Calls run one at a time.
+
+See [`tools/jsconsole-bridge-mcp/README.md`](tools/jsconsole-bridge-mcp/README.md) for setup with other MCP clients,
+the protocol and troubleshooting.
 
 ### Development Scripts Folder
 
