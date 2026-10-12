@@ -32,6 +32,8 @@ Keep your own scripts in a separate project and use this SDK as a reference:
 ```text
 my-microtonic-scripts/
   AGENTS.md
+  CLAUDE.md
+  .mcp.json
   scripts/
     MyUtility.js
     MyTool.mtscript/
@@ -50,8 +52,8 @@ inside the SDK, unless you are deliberately contributing SDK examples.
 
 When bootstrapping an empty project, keep the user-facing sequence clear:
 
-1. Create the project scaffold: `AGENTS.md`, `.mcp.json` for Claude Code
-   compatibility, `scripts/`, and `references/microtonic-scripts-sdk/`.
+1. Create the project scaffold: `AGENTS.md`, `CLAUDE.md`, `.mcp.json` for
+   Claude Code compatibility, `scripts/`, and `references/microtonic-scripts-sdk/`.
 2. Identify the exact live scripts folder. **Check the standard path on disk
    first** (macOS `/Library/Application Support/Sonic Charge/Microtonic Scripts`;
    Windows via the locator). Do not lead with `DIRS.SCRIPTS` or *Open Scripts
@@ -238,9 +240,13 @@ Either way this is a one-time setup. Once the folder exists, `install-jsconsole.
 (above) is the way to refresh the console; it also prints option A's command if
 pointed at a folder that does not exist yet.
 
-## Minimal Project `AGENTS.md`
+## Minimal Project `AGENTS.md` and `CLAUDE.md`
 
-In your project root, add an `AGENTS.md` like this:
+Create both files in your project root. Codex and most other agents read
+`AGENTS.md`; Claude Code reads `CLAUDE.md`, which imports `AGENTS.md` so the
+instructions live in one place.
+
+`AGENTS.md`:
 
 ```md
 # Project Agent Instructions
@@ -250,7 +256,17 @@ For Microtonic scripting work, follow:
 `references/microtonic-scripts-sdk/agents/microtonic-script-writer/instructions.md`
 
 Use the SDK checkout as the source of truth for docs, examples, schemas,
-resources, and CushyLint validation.
+resources, packaging, and validation.
+```
+
+`CLAUDE.md`:
+
+```md
+# Project Claude Instructions
+
+Follow [`AGENTS.md`](AGENTS.md):
+
+@AGENTS.md
 ```
 
 Claude and ChatGPT can use the same starter prompt. The SDK also includes thin
