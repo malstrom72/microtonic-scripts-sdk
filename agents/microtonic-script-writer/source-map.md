@@ -54,8 +54,9 @@ Use these repository files as the grounding map for Microtonic scripting work.
 - [`JSConsole.mtscript`](../../JSConsole.mtscript): JavaScript console package
   and a useful reference for script package structure.
 - [`tools/jsconsole-bridge-mcp/README.md`](../../tools/jsconsole-bridge-mcp/README.md):
-  MCP bridge setup, `mt_eval` usage, launching scripts with `run(...)`, and
-  reload/reset behavior over the live JSConsole bridge.
+  MCP bridge setup, `mt_status`, `mt_eval` and `mt_reload` usage, launching
+  scripts with `run(...)`, and reload/reset behavior over the live JSConsole
+  bridge.
 - [`examples/EuclideanBeat.mtscript`](../../examples/EuclideanBeat.mtscript):
   Euclidean pattern generation and GUI package structure.
 - [`examples/FMTool.mtscript`](../../examples/FMTool.mtscript): patch editing
@@ -64,6 +65,14 @@ Use these repository files as the grounding map for Microtonic scripting work.
   control workflow.
 - [`examples/MixConsole.mtscript`](../../examples/MixConsole.mtscript): channel
   utility UI and drag interactions.
+- [`examples/PolyChain.mtscript`](../../examples/PolyChain.mtscript): chained
+  pattern generation and GUI-to-document sync after undo.
+- [`examples/BeatSpace.mtscript`](../../examples/BeatSpace.mtscript): generated
+  drum patches and patterns, pads, and recognizing generated output.
+- [`examples/BeatDrop.mtscript`](../../examples/BeatDrop.mtscript): timer-driven
+  game-like interaction that writes pattern triggers.
+- [`examples/Pick New Patches.js`](../../examples/Pick%20New%20Patches.js):
+  GUI-less script that replaces drum patches from the factory library.
 - [`examples/screenshots/`](../../examples/screenshots): screenshots of
   Microtonic and official example script windows for visual alignment,
   proportions, control density, contrast, saturation, accent treatment, and

@@ -64,6 +64,7 @@ Use this layout unless the user asks for something else:
 ```text
 my-microtonic-scripts/
   AGENTS.md
+  CLAUDE.md
   .mcp.json
   scripts/
   references/
@@ -208,11 +209,12 @@ enabled = true
 ```
 
 Then restart Codex or reopen the project so it reloads its MCP configuration.
-After restart, verify whether Codex exposes `mt_status` and `mt_eval` before
-claiming the bridge is available. If those tools are absent, Codex has not loaded
-the MCP server; do not keep asking for blind restarts. If the assistant cannot
-edit `~/.codex/config.toml`, print the exact TOML block with the resolved
-absolute `server.js` path and tell the user to add it manually.
+After restart, verify whether Codex exposes `mt_status`, `mt_eval` and
+`mt_reload` before claiming the bridge is available. If those tools are absent,
+Codex has not loaded the MCP server; do not keep asking for blind restarts. If
+the assistant cannot edit `~/.codex/config.toml`, print the exact TOML block
+with the resolved absolute `server.js` path and tell the user to add it
+manually.
 
 The server is zero-dependency (needs only Node) and stateless with respect to
 the project: it brokers files in a fixed, machine-global folder
@@ -352,10 +354,11 @@ and the SDK's JSConsole is installed, make the remaining setup explicit:
    it again in this project, and approve the project MCP server prompt if it
    appears." For Codex, do not claim that project `.mcp.json` will be discovered
    by restarting unless the current Codex environment actually exposes the
-   bridge tools after doing so. First search/check for `mt_status` and `mt_eval`.
-   If they are absent, report: "Codex has not loaded the Microtonic bridge tools.
-   Project `.mcp.json` is not enough for Codex; configure
-   `~/.codex/config.toml` with the Microtonic bridge server." For another
+   bridge tools after doing so. First search/check for `mt_status`, `mt_eval`
+   and `mt_reload`. If they are absent, report: "Codex has not loaded the
+   Microtonic bridge tools. Project `.mcp.json` is not enough for Codex;
+   configure `~/.codex/config.toml` with the Microtonic bridge server." For
+   another
    MCP-capable assistant, name that app and tell the user how to reload its
    project tools. Do not pretend bridge tools are available until the MCP server
    has actually been loaded.
