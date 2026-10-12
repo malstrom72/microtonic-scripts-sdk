@@ -7,7 +7,7 @@ the SDK validates scripts with the renderer the next product releases use.
 Imported from `malstrom72/IVG` commit:
 
 ```text
-651fdabd4384007738d66266898d55b77242babe
+d869556e2835a41d0696e3e1098aa198e3c15c86
 ```
 
 The pinned freeze may be newer than the IVG in released Microtonic and Synplant builds.
@@ -38,10 +38,5 @@ included.
 
 ## Local Patches
 
-- `tools/ivgfiddle/output/setupModule.js` waits for the modularized Emscripten
-  runtime instance before initializing the editor and running IVG. This avoids
-  calling `runIVG()` while the global `Module` value still points at the
-  generated factory function, which can otherwise fail with
-  `Module.lengthBytesUTF8 is not a function`.
 - `README.md` does not link to the omitted `tests/svg/` sample corpus or the omitted
   `docs/CodingStyle.md`.

@@ -756,7 +756,12 @@ static void strokeOneSide(Path& stroked, double direction, const StrokeSegment* 
 	}
 }
 
-Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double miterLimit, double curveQuality) {
+/*
+	Stops once the output holds more than limit instructions, leaving it unfinished, so that a caller can refuse a
+	stroke before it grows large. The overshoot is a few joints or end-caps at most.
+*/
+Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double miterLimit, double curveQuality
+		, size_type limit) {
 	assert(0.0 <= width);
 	assert(BUTT <= endCaps && endCaps <= SQUARE);
 	assert(BEVEL <= joints && joints <= MITER);
@@ -764,7 +769,7 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 	assert(0.0 < curveQuality);
 	
 	Path stroked;
-	stroked.instructions.reserve(instructions.size() * 3);
+	stroked.instructions.reserve(minValue(instructions.size() * 3, limit));
 	width = maxValue(width, EPSILON);
 
 	double rcpWidth = 2.0 / width;
@@ -779,7 +784,7 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 	std::vector<StrokeSegment> segs;
 	segs.reserve(instructions.size() + 2);
 	
-	for (const_iterator it = instructions.begin(), e = instructions.end(); it != e;) {
+	for (const_iterator it = instructions.begin(), e = instructions.end(); it != e && stroked.size() <= limit;) {
 		segs.clear();
 		for (; it != e && it->first != LINE; ++it) {
 			lv = it->second;
@@ -811,7 +816,7 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 		stroked.instructions.push_back(Instruction());			// We fill in the first vertex later.
 		
 		if (isClosed) {
-			for (size_type i = 0; i < count - 1; ++i) {
+			for (size_type i = 0; i < count - 1 && stroked.size() <= limit; ++i) {
 				strokeOneSide(stroked, 1.0, &segs[i], &segs[i + 1], joints, miterLimitW, rx, ry);
 			}
 			strokeOneSide(stroked, 1.0, &segs[count - 1], &segs[0], joints, miterLimitW, rx, ry);
@@ -819,7 +824,7 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 			stroked.instructions[firstVertexIndex] = Instruction(MOVE, stroked.getPosition());
 			firstVertexIndex = stroked.size();
 			stroked.instructions.push_back(Instruction());
-			for (size_type i = count - 1; i > 0; --i) {
+			for (size_type i = count - 1; i > 0 && stroked.size() <= limit; --i) {
 				strokeOneSide(stroked, -1.0, &segs[i], &segs[i - 1], joints, miterLimitW, rx, ry);
 			}
 			strokeOneSide(stroked, -1.0, &segs[0], &segs[count - 1], joints, miterLimitW, rx, ry);
@@ -832,11 +837,11 @@ Path& Path::stroke(double width, EndCapStyle endCaps, JointStyle joints, double 
 				segs[count].v.y += segs[count - 1].d.y;
 				++segs[count - 1].l;
 			}
-			for (size_type i = 0; i < count - 1; ++i) {
+			for (size_type i = 0; i < count - 1 && stroked.size() <= limit; ++i) {
 				strokeOneSide(stroked, 1.0, &segs[i], &segs[i + 1], joints, miterLimitW, rx, ry);
 			}
 			strokeEnd(stroked, 1.0, &segs[count - 1], endCaps, rx, ry);
-			for (size_type i = count - 1; i >= 1; --i) {
+			for (size_type i = count - 1; i >= 1 && stroked.size() <= limit; --i) {
 				strokeOneSide(stroked, -1.0, &segs[i], &segs[i - 1], joints, miterLimitW, rx, ry);
 			}
 			strokeEnd(stroked, -1.0, &segs[0], endCaps, rx, ry);

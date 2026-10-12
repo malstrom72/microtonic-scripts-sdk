@@ -66,7 +66,7 @@ class IVGExecutorWithExternalFonts : public IVGExecutor {
 			    String fontCode;
 			    {
 			        std::string path = fontPath.empty() ? (fontName8Bit + ".ivgfont") : (fontPath + "/" + fontName8Bit + ".ivgfont");
-			        std::ifstream fileStream(path.c_str());
+			        std::ifstream fileStream(path.c_str(), std::ios::binary);
 			        if (!fileStream.good()) {
 			            return std::vector<const Font*>();
 			        }
@@ -96,6 +96,7 @@ class IVGExecutorWithExternalFonts : public IVGExecutor {
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <crtdbg.h>
 
 /*
 	On Windows a stack overflow leaves no stack for AddressSanitizer and libFuzzer to report it on, so the input that
@@ -107,14 +108,19 @@ extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) {
 	SetThreadStackGuarantee(&guarantee);
 	_set_error_mode(_OUT_TO_STDERR);
 	_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
 	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 	return 0;
 }
 #endif
 
+// A tighter budget than the default keeps every input within libFuzzer's 2 GB and the replays fast.
 struct FuzzerExecutor : public IVGExecutor {
 	FuzzerExecutor(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform = NuXPixels::AffineTransformation())
-			: IVGExecutor(canvas, initialTransform) { }
+			: IVGExecutor(canvas, initialTransform, ResourceBudget(1e7, 1e9)) { }
 	virtual void trace(IMPD::Interpreter& interpreter, const IMPD::WideString& s) { }
 };
 
@@ -176,7 +182,7 @@ int main(int argc, const char* argv[]) {
 
 		std::string ivgContents;
 		{
-			std::ifstream inStream(inputPath);
+			std::ifstream inStream(inputPath, std::ios::binary);														// Text mode on Windows stops at a Ctrl-Z byte.
 			if (!inStream.good()) throw std::runtime_error("Could not open input IVG file");
 			ivgContents.assign(std::istreambuf_iterator<char>(inStream), std::istreambuf_iterator<char>());
 			if (!inStream.good()) throw std::runtime_error("Could not read input IVG file");

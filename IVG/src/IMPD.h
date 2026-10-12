@@ -64,17 +64,12 @@ const int ESCAPE_CODE_COUNT = 7;
 WideString convertUniToWideString(const UniString& s);
 UniString convertWideToUniString(const WideString& s);
 
-/**
-	Narrows each character to a Char, for error messages. Unescaped strings hold the script's UTF-8 bytes one per
-	character, so this gives the original text back.
-**/
-template<class S> String narrowToString(const S& s) {
-	String narrowed(s.size(), '\0');
-	for (size_t i = 0; i < s.size(); ++i) {
-		narrowed[i] = static_cast<Char>(s[i]);
-	}
-	return narrowed;
-}
+/*
+	For error messages. Scripts are ASCII and write other characters as escapes, so ASCII is kept as is and every
+	other character becomes the \u or \U escape that writes it.
+*/
+String narrowToString(const UniString& s);
+String narrowToString(const WideString& s);
 
 /**
 	Helper representing a pair of iterators into a string.

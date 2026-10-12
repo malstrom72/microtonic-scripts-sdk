@@ -130,6 +130,25 @@ UniString convertWideToUniString(const WideString& s) {
 	}
 }
 
+String narrowToString(const UniString& s) {
+	String narrowed;
+	for (UniString::const_iterator it = s.begin(); it != s.end(); ++it) {
+		const int32_t c = static_cast<int32_t>(*it);
+		if (c < 0x80) {
+			narrowed += static_cast<Char>(c);
+		} else if (c <= 0xFFFF) {
+			narrowed += "\\u" + Interpreter::toString(c, 16, 4);
+		} else {
+			narrowed += "\\U" + Interpreter::toString(c, 16, 8);
+		}
+	}
+	return narrowed;
+}
+
+String narrowToString(const WideString& s) {
+	return narrowToString(convertWideToUniString(s));
+}
+
 /* --- STLMapVariables --- */
 
 bool STLMapVariables::declare(const String& var, const String& value) {
@@ -757,7 +776,9 @@ StringIt Interpreter::parseDouble(StringIt p, const StringIt& e, double& v) {
 				i = (i < 0 ? -100000 : 100000);
 				while (t != e && *t >= '0' && *t <= '9') ++t;
 			}
-			d *= pow(10, static_cast<double>(i));
+			if (d != 0.0) {																								// Zero times a huge power would be zero times infinity.
+				d *= pow(10, static_cast<double>(i));
+			}
 			q = t;
 		}
 	}

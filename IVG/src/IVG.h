@@ -66,12 +66,25 @@ namespace IVG {
 
 using NuXPixels::Rect; // Rect is a typedef in Carbon which can confuse the compiler so we do an explicit using for it.
 
-const int PATH_INSTRUCTION_LIMIT = 1000000;
-
 inline double square(double d) { return d * d; }
 
 void checkBounds(const NuXPixels::IntRect& bounds);
+void checkBoundsBeforeScaling(double left, double top, double width, double height);									// Scaled bounds, in double so they cannot overflow.
 void checkTextureTransformation(const NuXPixels::AffineTransformation& xf, const char* what);
+
+/*
+	Limits the work a document can cause, counted in path segments and pixels rather than time. Work is charged before
+	it is done; going over throws "Path segment budget exceeded" or "Pixel budget exceeded". The defaults are far beyond
+	what real documents use.
+*/
+class ResourceBudget {
+	public:		ResourceBudget(double pathSegments = 1e8, double pixels = 1e10);
+	public:		void chargePathSegments(double count);
+	public:		void chargePixels(double count);
+	public:		NuXPixels::Path::size_type calcPathSegmentLimit() const;												// The largest path that can still be charged.
+	public:		double pathSegmentsLeft;
+	public:		double pixelsLeft;
+};
 
 /**
 	Small helper that wraps a pointer which might live on the heap.
@@ -261,6 +274,10 @@ class Canvas {
 	public:		virtual void blendWithMask8(const NuXPixels::Renderer<NuXPixels::Mask8>& source) { (void)source; assert(0); }
 	public:		virtual void defineBounds(const NuXPixels::IntRect& newBounds) = 0;			///< Defines the physical boundaries of the canvas (i.e. outer bounds disregarding any current transformations). Never called more than once.
 	public:		virtual NuXPixels::IntRect getBounds() const = 0;							///< Returns the outer boundaries of the canvas. A canvas may throw if bounds has not been set yet.
+	public:		virtual double calcRasterArea(const NuXPixels::IntRect& newBounds) const {								// Pixels defineBounds would allocate.
+					(void)newBounds;
+					return 0.0;
+				}
 	public:		virtual ~Canvas() { }
 	public:		template<class PIXEL_TYPE> void blend(const NuXPixels::Renderer<PIXEL_TYPE>& source);
 };
@@ -285,8 +302,9 @@ class MaskMakerCanvas : public Canvas {
 class Context {
 	friend class PatternBase;
 	
-	public:		Context(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform);
-	public:		Context(Canvas& canvas, Context& parentContext);
+	public:		Context(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform
+						, ResourceBudget& budget);
+	public:		Context(Canvas& canvas, Context& parentContext);														// Shares the parent's budget.
 	public:		void resetState();
 	public:		double calcCurveQuality() const;
 	public:		State& accessState() { return state; }
@@ -296,8 +314,10 @@ class Context {
 	public:		void stroke(const NuXPixels::Path& path, Stroke& stroke, const Rect<double>& paintSourceBounds, double widthMultiplier);
 	public:		void fill(const NuXPixels::Path& path, Paint& fill, bool evenOddFillRule, const Rect<double>& paintSourceBounds);
 	public:		void draw(const NuXPixels::Path& path);
+	public:		ResourceBudget& accessBudget() const { return budget; }
 
 	protected:	Canvas& canvas;
+	protected:	ResourceBudget& budget;
 	protected:	State initState;
 	protected:	State state;
 };
@@ -317,7 +337,8 @@ struct Image {
 **/
 class IVGExecutor : public IMPD::Executor {
 	public:		IVGExecutor(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform
-						= NuXPixels::AffineTransformation());
+						= NuXPixels::AffineTransformation(), const ResourceBudget& budget = ResourceBudget());
+	public:		const ResourceBudget& getBudget() const { return budget; }												// What is left after running.
 	public:		virtual bool format(IMPD::Interpreter& interpreter, const IMPD::FormatInfo& formatInfo);
 	public:		virtual bool execute(IMPD::Interpreter& interpreter, const IMPD::String& instruction
 						, const IMPD::String& arguments);
@@ -361,6 +382,7 @@ class IVGExecutor : public IMPD::Executor {
 	protected:	void parseStroke(IMPD::Interpreter& impd, IMPD::ArgumentsContainer& args, Stroke& stroke);
 	protected:	std::vector<const Font*> lookupExternalOrInternalFonts(IMPD::Interpreter& impd
 						, const IMPD::WideString& name, const IMPD::UniString& forString);
+	protected:	ResourceBudget budget;																					// Declared before rootContext, which refers to it.
 	protected:	Context rootContext;
 	protected:	Context* currentContext;
 	protected:	typedef std::map<IMPD::WideString, Font> FontMap;
@@ -546,7 +568,15 @@ template<class PIXEL_TYPE> class PatternPainter : public PatternBase {
 							, NuXPixels::AffineTransformation().transform(xf))
 							* static_cast<const NuXPixels::Renderer<NuXPixels::Mask8>&>(FadedMask(mask, withPaint.opacity)));
 				}
+	public:		virtual double calcRasterArea(const NuXPixels::IntRect& newBounds) const {
+					return static_cast<double>(newBounds.width) * newBounds.height * scale * scale;
+				}
 	public:		virtual void defineBounds(const NuXPixels::IntRect& newBounds) {
+					if (scale != 1) {
+						checkBoundsBeforeScaling(static_cast<double>(newBounds.left) * scale
+								, static_cast<double>(newBounds.top) * scale, static_cast<double>(newBounds.width) * scale
+								, static_cast<double>(newBounds.height) * scale);
+					}
 					NuXPixels::IntRect physicalBounds(newBounds.left * scale, newBounds.top * scale
 						, newBounds.width * scale, newBounds.height * scale);
 					if (image.get() != 0) IMPD::Interpreter::throwRunTimeError("Multiple bounds declarations");
@@ -584,9 +614,11 @@ class SelfContainedARGB32Canvas : public Canvas {
 	public:		virtual void blendWithARGB32(const NuXPixels::Renderer<NuXPixels::ARGB32>& source);
 	public:		virtual void defineBounds(const NuXPixels::IntRect& newBounds);
 	public:		virtual NuXPixels::IntRect getBounds() const;
+	public:		virtual double calcRasterArea(const NuXPixels::IntRect& newBounds) const;
 	public:		NuXPixels::SelfContainedRaster<NuXPixels::ARGB32>* accessRaster();
 	public:		NuXPixels::SelfContainedRaster<NuXPixels::ARGB32>* relinquishRaster();
 	protected:	void checkBoundsDeclared() const;
+	protected:	NuXPixels::IntRect calcScaledBounds(const NuXPixels::IntRect& newBounds) const;
 	protected:	std::unique_ptr< NuXPixels::SelfContainedRaster<NuXPixels::ARGB32> > raster;
 	protected:	const double rescaleBounds;
 };

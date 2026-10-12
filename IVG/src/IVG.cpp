@@ -92,7 +92,31 @@ void checkTextureTransformation(const AffineTransformation& xf, const char* what
 	}
 }
 
-static void checkBoundsBeforeScaling(double left, double top, double width, double height) {
+/* --- ResourceBudget --- */
+
+ResourceBudget::ResourceBudget(double pathSegments, double pixels)
+		: pathSegmentsLeft(pathSegments), pixelsLeft(pixels) { }
+
+void ResourceBudget::chargePathSegments(double count) {
+	pathSegmentsLeft -= count;
+	if (pathSegmentsLeft < 0.0) {
+		Interpreter::throwRunTimeError("Path segment budget exceeded");
+	}
+}
+
+void ResourceBudget::chargePixels(double count) {
+	pixelsLeft -= count;
+	if (pixelsLeft < 0.0) {
+		Interpreter::throwRunTimeError("Pixel budget exceeded");
+	}
+}
+
+// Clamped to [0, INT_MAX], which also fits a 32-bit size_type, so the conversion is always defined.
+Path::size_type ResourceBudget::calcPathSegmentLimit() const {
+	return static_cast<Path::size_type>(max(0.0, min(pathSegmentsLeft, 2147483647.0)));
+}
+
+void checkBoundsBeforeScaling(double left, double top, double width, double height) {
 	if (left < -32768.0 || left > 32767.0) {
 		Interpreter::throwRunTimeError(String("rescaled bounds left out of range [-32768..32767]: ")
 				+ Interpreter::toString(left));
@@ -182,7 +206,13 @@ static Mask8::Pixel parseOpacity(const Interpreter& impd, const StringRange& r) 
 	return static_cast<Mask8::Pixel>(i);
 }
 
-bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, const char*& errorString) {
+/*
+	Stops early, with what it has built so far, once the path holds more than maxSize instructions, so that a long
+	svg string cannot build a huge path before a ResourceBudget sees it. The caller then charges the path, which
+	fails. Every command and every implicit repeat of one checks first, so the overshoot is one curve or arc at most.
+*/
+static bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, const char*& errorString
+		, Path::size_type maxSize) {
 	assert(curveQuality > 0.0);
 	StringIt p = svgSource.begin();
 	StringIt e = svgSource.end();
@@ -196,7 +226,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 		return false;
 	}
 
-	while (p != e) {
+	while (p != e && path.size() <= maxSize) {
 		p = eatSpace(p, e);
 		if (p != e) {
 			Char c = *p++;
@@ -218,7 +248,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 					}
 					v = toAbsoluteVertex(path, isRelative, v);
 					path.moveTo(v.x, v.y);
-					while (parseCoordinatePair(p, e, v, true)) {
+					while (path.size() <= maxSize && parseCoordinatePair(p, e, v, true)) {
 						v = toAbsoluteVertex(path, isRelative, v);
 						path.lineTo(v.x, v.y);
 					}
@@ -234,7 +264,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 					do {
 						v = toAbsoluteVertex(path, isRelative, v);
 						path.lineTo(v.x, v.y);
-					} while (parseCoordinatePair(p, e, v, true));
+					} while (path.size() <= maxSize && parseCoordinatePair(p, e, v, true));
 					break;
 				}
 
@@ -242,7 +272,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 					Vertex pos(path.getPosition());
 					double v;
 					StringIt q = eatSpace(p, e);
-					while (parseSingleCoordinate(q, e, v)) {
+					while (path.size() <= maxSize && parseSingleCoordinate(q, e, v)) {
 						p = q;
 						if (c == 'H') {
 							if (isRelative) pos.x += v;
@@ -262,7 +292,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 					Vertex ecp;
 					Vertex v;
 					StringIt q = p;
-					while (parseCoordinatePair(q, e, bcp, !first)
+					while (path.size() <= maxSize && parseCoordinatePair(q, e, bcp, !first)
 							&& parseCoordinatePair(q, e, ecp, true)
 							&& parseCoordinatePair(q, e, v, true)) {
 						first = false;
@@ -280,7 +310,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 					Vertex ecp;
 					Vertex v;
 					StringIt q = p;
-					while (parseCoordinatePair(q, e, ecp, !first)
+					while (path.size() <= maxSize && parseCoordinatePair(q, e, ecp, !first)
 							&& parseCoordinatePair(q, e, v, true)) {
 						first = false;
 						p = q;
@@ -298,7 +328,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 					Vertex cp;
 					Vertex v;
 					StringIt q = p;
-					while (parseCoordinatePair(q, e, cp, !first)
+					while (path.size() <= maxSize && parseCoordinatePair(q, e, cp, !first)
 							&& parseCoordinatePair(q, e, v, true)) {
 						first = false;
 						p = q;
@@ -313,7 +343,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 				case 'T': { // FIX : is T without arguments allowed here?
 					Vertex v;
 					StringIt q = p;
-					while (parseCoordinatePair(q, e, v, !first)) {
+					while (path.size() <= maxSize && parseCoordinatePair(q, e, v, !first)) {
 						first = false;
 						p = q;
 						Vertex pos(path.getPosition());
@@ -332,7 +362,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 					bool sweepFlag;
 					Vertex v;
 					StringIt q = p;
-					while (parseCoordinatePair(q, e, radii, !first)
+					while (path.size() <= maxSize && parseCoordinatePair(q, e, radii, !first)
 							&& ((void)(q = eatSpaceAndComma(q, e)), parseSingleCoordinate(q, e, xAxisRotation))
 							&& ((void)(q = eatSpaceAndComma(q, e)), parseFlag(q, e, largeArcFlag))
 							&& ((void)(q = eatSpaceAndComma(q, e)), parseFlag(q, e, sweepFlag))
@@ -366,7 +396,7 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 									return false;
 								}
 								double l = dx * dx + (aspectRatio * dy) * (aspectRatio * dy);
-								double b = max(4.0 * radii.x * radii.x / l - 1.0, EPSILON);
+								double b = max(4.0 * radii.x * radii.x / l - 1.0, 0.0);
 								double a = sweepSign * sqrt(b * 0.25);
 								double centerX = startPos.x + dx * 0.5 + a * dy * aspectRatio;
 								double centerY = startPos.y + dy * 0.5 - a * dx / aspectRatio;
@@ -398,6 +428,14 @@ bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, 
 	}
 	return true;
 }
+
+bool buildPathFromSVG(const String& svgSource, double curveQuality, Path& path, const char*& errorString) {
+	return buildPathFromSVG(svgSource, curveQuality, path, errorString, static_cast<Path::size_type>(-1));
+}
+
+static bool buildPathForString(const UniString& string, const std::vector<const Font*>& fonts, double size
+		, const AffineTransformation& glyphTransform, double letterSpacing, double curveQuality, Path& path
+		, double& advance, const char*& errorString, UniChar lastCharacter, Path::size_type maxSize);
 
 /* --- MaskMakerCanvas --- */
 
@@ -831,7 +869,8 @@ template<class PIXEL_TYPE> void Canvas::parsePaintOfType(Interpreter& impd, IVGE
 
 /* --- Context --- */
 
-Context::Context(Canvas& canvas, const AffineTransformation& initialTransform) : canvas(canvas) {
+Context::Context(Canvas& canvas, const AffineTransformation& initialTransform, ResourceBudget& budget)
+		: canvas(canvas), budget(budget) {
 	initState.transformation = initialTransform;
 	state.transformation = initState.transformation;
 	initState.textStyle.fill.painter = new ColorPainter<ARGB32>(0xFF000000);
@@ -839,29 +878,32 @@ Context::Context(Canvas& canvas, const AffineTransformation& initialTransform) :
 }
 
 Context::Context(Canvas& canvas, Context& parentContext)
-		: canvas(canvas), initState(parentContext.state), state(parentContext.state) { }
+		: canvas(canvas), budget(parentContext.budget), initState(parentContext.state), state(parentContext.state) { }
 
+/*
+	Charges the path, then what dashing and stroke expansion produce, then the pixels, each before the work it pays for.
+	Dashing and stroke expansion stop at the budget.
+*/
 void Context::stroke(const Path& path, Stroke& stroke, const Rect<double>& paintSourceBounds, double widthMultiplier) {
 	if (stroke.paint.isVisible() && stroke.width > EPSILON) {
+		budget.chargePathSegments(static_cast<double>(path.size()));
 		Path strokePath(path);
 		if (stroke.gap > EPSILON) {
 			double l = stroke.dash + stroke.gap;
 			double dashOffset = fmod(fmod(stroke.dashOffset, l) + l, l);  // floor modulo trick
-			strokePath.dash(stroke.dash, stroke.gap, dashOffset, PATH_INSTRUCTION_LIMIT);
-			if (strokePath.size() >= PATH_INSTRUCTION_LIMIT) {
-				Interpreter::throwRunTimeError("Path instruction limit exceeded");
-			}
-		}
-		if (strokePath.size() * 3 >= PATH_INSTRUCTION_LIMIT) {
-			Interpreter::throwRunTimeError("Path instruction limit exceeded");
+			strokePath.dash(stroke.dash, stroke.gap, dashOffset, budget.calcPathSegmentLimit() + 1);
+			budget.chargePathSegments(static_cast<double>(strokePath.size()));
 		}
 		strokePath.stroke(stroke.width * widthMultiplier, stroke.caps, stroke.joints, stroke.miterLimit
-				, calcCurveQuality());
+				, calcCurveQuality(), budget.calcPathSegmentLimit() + 1);
+		budget.chargePathSegments(static_cast<double>(strokePath.size()));
 		strokePath.transform(state.transformation);
 		PolygonMask polygonMask(strokePath, canvas.getBounds());
 		if (!polygonMask.isValid()) {
 			Interpreter::throwRunTimeError("Vertices outside valid coordinate range");
 		}
+		const IntRect painted = polygonMask.calcBounds().calcIntersection(canvas.getBounds());
+		budget.chargePixels(static_cast<double>(painted.width) * painted.height);
 		stroke.paint.doPaint(*this, paintSourceBounds, CombinedMask(polygonMask, state.mask, state.options.gammaTable));
 	}
 }
@@ -871,6 +913,7 @@ void Context::fill(const Path& path, Paint& fill, bool evenOddFillRule, const Re
 		const FillRule* fillRule = evenOddFillRule
 				? static_cast<const FillRule*>(&PolygonMask::evenOddFillRule)
 				: static_cast<const FillRule*>(&PolygonMask::nonZeroFillRule);
+		budget.chargePathSegments(static_cast<double>(path.size()));
 		Path fillPath(path);
 		fillPath.closeAll();
 		fillPath.transform(state.transformation);
@@ -878,6 +921,8 @@ void Context::fill(const Path& path, Paint& fill, bool evenOddFillRule, const Re
 		if (!polygonMask.isValid()) {
 			Interpreter::throwRunTimeError("Vertices outside valid coordinate range");
 		}
+		const IntRect painted = polygonMask.calcBounds().calcIntersection(canvas.getBounds());
+		budget.chargePixels(static_cast<double>(painted.width) * painted.height);
 		fill.doPaint(*this, paintSourceBounds, CombinedMask(polygonMask, state.mask, state.options.gammaTable));
 	}
 }
@@ -938,8 +983,9 @@ enum IVGInstruction {
 
 /* --- IVGExecutor --- */
 
-IVGExecutor::IVGExecutor(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform)
-		: rootContext(canvas, initialTransform), currentContext(&rootContext) { }
+IVGExecutor::IVGExecutor(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform
+		, const ResourceBudget& budget)
+		: budget(budget), rootContext(canvas, initialTransform, this->budget), currentContext(&rootContext) { }
 
 void IVGExecutor::parseStroke(Interpreter& impd, ArgumentsContainer& args, Stroke& stroke) {
 	const String* s;
@@ -1093,7 +1139,7 @@ void IVGExecutor::executeDefine(Interpreter& impd, ArgumentsContainer& args) {
 		}
 
 		SelfContainedARGB32Canvas offscreenCanvas(resolution);
-		Context imageContext(offscreenCanvas, AffineTransformation().scale(resolution));
+		Context imageContext(offscreenCanvas, AffineTransformation().scale(resolution), currentContext->accessBudget());
 		runInNewContext(impd, imageContext, definition);
 		Image& image = definedImages[name];
 		image.xResolution = resolution;
@@ -1323,6 +1369,8 @@ void IVGExecutor::executeImage(Interpreter& impd, ArgumentsContainer& args) {
 	if (state.mask != 0) {
 		renderer = &maskMultiplier;
 	}
+	const IntRect painted = renderer->calcBounds().calcIntersection(canvas.getBounds());
+	currentContext->accessBudget().chargePixels(static_cast<double>(painted.width) * painted.height);
 	canvas.blend(*renderer);
 }
 
@@ -1393,8 +1441,12 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			if (s != 0) {
 				Path p;
 				const char* errorString;
-				if (!buildPathFromSVG(*s, currentContext->calcCurveQuality(), p, errorString)) {
+				const Path::size_type pathSegmentLimit = currentContext->accessBudget().calcPathSegmentLimit();
+				if (!buildPathFromSVG(*s, currentContext->calcCurveQuality(), p, errorString, pathSegmentLimit)) {
 					impd.throwBadSyntax(errorString);
+				}
+				if (p.size() > pathSegmentLimit) {
+					Interpreter::throwRunTimeError("Path segment budget exceeded");
 				}
 				args.throwIfAnyUnfetched();
 				currentContext->draw(p);
@@ -1436,6 +1488,10 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			}
 			if (wipePaint.isVisible()) {
 				State& state = currentContext->accessState();
+				const IntRect canvasBounds = currentContext->accessCanvas().getBounds();
+				const IntRect painted = (state.mask != 0
+						? canvasBounds.calcIntersection((*state.mask).calcBounds()) : canvasBounds);
+				currentContext->accessBudget().chargePixels(static_cast<double>(painted.width) * painted.height);
 				if (state.mask != 0) wipePaint.doPaint(*currentContext, Rect<double>(), *state.mask);
 				else wipePaint.doPaint(*currentContext, Rect<double>(), Solid<Mask8>(0xFF));
 			}
@@ -1527,7 +1583,9 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			if (s != 0) inverted = impd.toBool(*s);
 
 			args.throwIfAnyUnfetched();
-			MaskMakerCanvas maskMaker(currentContext->accessCanvas().getBounds());
+			const IntRect maskBounds = currentContext->accessCanvas().getBounds();
+			currentContext->accessBudget().chargePixels(static_cast<double>(maskBounds.width) * maskBounds.height);
+			MaskMakerCanvas maskMaker(maskBounds);
 			Context maskContext(maskMaker, *currentContext);
 			State& maskState = maskContext.accessState();
 			maskState.pen = Stroke();
@@ -1546,8 +1604,11 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			StringVector elems;
 			impd.parseList(args.fetchRequired(0), elems, true, false, 4, 4);
 			args.throwIfAnyUnfetched();
-			currentContext->accessCanvas().defineBounds(IntRect(impd.toInt(elems[0]), impd.toInt(elems[1])
-					, impd.toInt(elems[2]), impd.toInt(elems[3])));
+			const IntRect newBounds(impd.toInt(elems[0]), impd.toInt(elems[1]), impd.toInt(elems[2])
+					, impd.toInt(elems[3]));
+			Canvas& canvas = currentContext->accessCanvas();
+			currentContext->accessBudget().chargePixels(max(canvas.calcRasterArea(newBounds), 0.0));					// Negative bounds fail in defineBounds, but must not refund first.
+			canvas.defineBounds(newBounds);
 			break;
 		}
 		
@@ -1630,9 +1691,13 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 			double advance;
 			const char* errorString;
 			Path textPath;
+			const Path::size_type pathSegmentLimit = currentContext->accessBudget().calcPathSegmentLimit();
 			bool success = buildPathForString(text, fonts, state.textStyle.size, state.textStyle.glyphTransform
 					, state.textStyle.letterSpacing, currentContext->calcCurveQuality(), textPath, advance
-					, errorString);
+					, errorString, 0, pathSegmentLimit);
+			if (textPath.size() > pathSegmentLimit) {
+				Interpreter::throwRunTimeError("Path segment budget exceeded");
+			}
 			if (!success) {
 				trace(impd, WideString(errorString, errorString + strlen(errorString)));
 			}
@@ -1693,7 +1758,7 @@ void SelfContainedARGB32Canvas::checkBoundsDeclared() const {
 	if (raster.get() == 0) Interpreter::throwRunTimeError("Undeclared bounds");
 }
 
-void SelfContainedARGB32Canvas::defineBounds(const IntRect& newBounds) {
+IntRect SelfContainedARGB32Canvas::calcScaledBounds(const IntRect& newBounds) const {
 	IntRect scaledBounds = newBounds;
 	if (rescaleBounds != 1.0) {
 		const double left = newBounds.left * rescaleBounds;
@@ -1703,10 +1768,20 @@ void SelfContainedARGB32Canvas::defineBounds(const IntRect& newBounds) {
 		checkBoundsBeforeScaling(left, top, width, height);
 		scaledBounds = expandToIntRect(Rect<double>(left, top, width, height));
 	}
+	return scaledBounds;
+}
+
+void SelfContainedARGB32Canvas::defineBounds(const IntRect& newBounds) {
+	const IntRect scaledBounds = calcScaledBounds(newBounds);
 	if (raster.get() != 0) Interpreter::throwRunTimeError("Multiple bounds declarations");
 	checkBounds(scaledBounds);
 	raster.reset(new SelfContainedRaster<ARGB32>(scaledBounds));
 	(*raster) = Solid<ARGB32>(ARGB32::transparent());
+}
+
+double SelfContainedARGB32Canvas::calcRasterArea(const IntRect& newBounds) const {
+	const IntRect scaledBounds = calcScaledBounds(newBounds);
+	return static_cast<double>(scaledBounds.width) * scaledBounds.height;
 }
 
 void SelfContainedARGB32Canvas::blendWithARGB32(const Renderer<ARGB32>& source) { checkBoundsDeclared(); (*raster) |= source; }
@@ -1765,9 +1840,10 @@ struct BuildPathFontInfo {
 	double effectiveQuality;
 };
 
-bool buildPathForString(const UniString& string, const std::vector<const Font*>& fonts, double size
+// Stops early once the path holds more than maxSize instructions, like buildPathFromSVG with a limit.
+static bool buildPathForString(const UniString& string, const std::vector<const Font*>& fonts, double size
 		, const AffineTransformation& glyphTransform, double letterSpacing, double curveQuality, Path& path
-		, double& advance, const char*& errorString, UniChar lastCharacter) {
+		, double& advance, const char*& errorString, UniChar lastCharacter, Path::size_type maxSize) {
 	assert(!fonts.empty());
 	std::vector<BuildPathFontInfo> fontInfos;
 	fontInfos.reserve(fonts.size());
@@ -1782,7 +1858,7 @@ bool buildPathForString(const UniString& string, const std::vector<const Font*>&
 	bool success = true;
 	advance = 0.0;
 	const Font* lastFont = 0;
-	for (UniString::const_iterator it = string.begin(); it != string.end(); ++it) {
+	for (UniString::const_iterator it = string.begin(); it != string.end() && path.size() <= maxSize; ++it) {
 		UniChar thisCharacter = *it;
 		Path glyphPath;
 		const IVG::Font::Glyph* glyph = 0;
@@ -1799,7 +1875,8 @@ bool buildPathForString(const UniString& string, const std::vector<const Font*>&
 			glyph = fonts[0]->findGlyph(thisCharacter);
 		}
 		const char* thisError = 0;
-		if (glyph != 0 && IVG::buildPathFromSVG(glyph->svgPath, fontInfoIt->effectiveQuality, glyphPath, thisError)) {
+		if (glyph != 0 && IVG::buildPathFromSVG(glyph->svgPath, fontInfoIt->effectiveQuality, glyphPath, thisError
+				, maxSize - path.size())) {
 			advance += (*fontIt == lastFont
 					? (*fontIt)->findKerningAdjust(lastCharacter, thisCharacter) * fontInfoIt->mpu * size : 0.0);
 			lastFont = *fontIt;
@@ -1815,6 +1892,13 @@ bool buildPathForString(const UniString& string, const std::vector<const Font*>&
 		}
 	}
 	return success;
+}
+
+bool buildPathForString(const UniString& string, const std::vector<const Font*>& fonts, double size
+		, const AffineTransformation& glyphTransform, double letterSpacing, double curveQuality, Path& path
+		, double& advance, const char*& errorString, UniChar lastCharacter) {
+	return buildPathForString(string, fonts, size, glyphTransform, letterSpacing, curveQuality, path, advance
+			, errorString, lastCharacter, static_cast<Path::size_type>(-1));
 }
 
 /* --- FontParser --- */
