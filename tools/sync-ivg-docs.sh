@@ -34,14 +34,11 @@ elif [ -n "${1:-}" ]; then
 fi
 
 status=0
+rendered="$(mktemp)"
+trap 'rm -f "$rendered"' EXIT
 
 compare_or_copy() {
 	local from="$1" to="$2" label="$3"
-	if [ ! -e "$from" ]; then
-		echo "missing source: $from" >&2
-		status=1
-		return
-	fi
 	if [ "$check" -eq 1 ]; then
 		if ! cmp -s "$from" "$to"; then
 			echo "out of sync: $label" >&2
@@ -51,14 +48,22 @@ compare_or_copy() {
 		if cmp -s "$from" "$to" 2>/dev/null; then
 			echo "unchanged $label"
 		else
+			mkdir -p "$(dirname "$to")"
 			cp "$from" "$to"
 			echo "synced    $label"
 		fi
 	fi
 }
 
+# The IVG docs give tool commands relative to the IVG repo root; in this SDK the tools are under IVG/.
 for f in "${files[@]}"; do
-	compare_or_copy "$src/$f" "$dst/$f" "$f"
+	if [ ! -e "$src/$f" ]; then
+		echo "missing source: $src/$f" >&2
+		status=1
+		continue
+	fi
+	perl -pe 's#node tools/#node IVG/tools/#g' "$src/$f" >"$rendered"	# perl keeps CRLF checkouts intact; Git Bash sed does not
+	compare_or_copy "$rendered" "$dst/$f" "$f"
 done
 
 # Mirror the doc images referenced by the markdown/html above.
@@ -69,7 +74,7 @@ done < <(find "$src/images" -type f -print0)
 
 if [ "$check" -eq 1 ]; then
 	if [ "$status" -ne 0 ]; then
-		echo "docs/ is out of sync with $src — run tools/sync-ivg-docs.sh" >&2
+		echo "docs/ is out of sync with $src; run tools/sync-ivg-docs.sh" >&2
 	else
 		echo "docs/ is in sync with $src"
 	fi
