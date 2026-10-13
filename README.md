@@ -207,6 +207,13 @@ tools/validate-static-ivg.sh        # macOS / Linux
 tools\validate-static-ivg.cmd       # Windows
 ```
 
+To check your own files instead, pass `.ivg` files or folders (searched recursively) relative to the current directory,
+and optionally `--out <dir>` for the PNGs and logs:
+
+```sh
+tools/validate-static-ivg.sh [--out <dir>] [<path> ...]
+```
+
 The rendered PNGs are written to `microtonic-static-ivg-validation` in the temp directory by default (`$TMPDIR`, else
 `/tmp`, on macOS/Linux and `%TEMP%` on Windows). IVG files that depend on Cushy or GUI variables, use `include`
 statements, or are helper files with no top-level `bounds` are reported as skipped by this static renderer pass.
