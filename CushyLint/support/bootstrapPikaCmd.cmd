@@ -1,5 +1,6 @@
 @ECHO OFF
 SETLOCAL ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
+SET "scriptFile=%~f0"
 CD /D "%~dp0"
 
 SET "supportDir=%CD%"
@@ -42,14 +43,23 @@ IF "%needsRebuild%"=="1" (
 
 EXIT /B 0
 
+REM Hashes the source, the build script and this script, like bootstrapPikaCmd.sh, so a change to how PikaCmd is
+REM built also triggers a rebuild. Hashing file contents only (not paths) keeps a committed stamp valid in any checkout.
 :hashSource
-FOR /F "usebackq skip=1 tokens=1" %%H IN (`CERTUTIL -hashfile "%sourceFile%" SHA256`) DO (
+SET "hashInput=%TEMP%\pikacmd-%RANDOM%-%RANDOM%.hashinput"
+DEL /Q "%hashInput%" >NUL 2>&1
+FOR %%F IN ("%sourceFile%" "%buildScript%" "%scriptFile%") DO (
+	CERTUTIL -hashfile "%%~fF" SHA256 | FINDSTR /I /R "^[0-9a-f][0-9a-f]*$" >>"%hashInput%" || EXIT /B 1
+)
+FOR /F "usebackq skip=1 tokens=1" %%H IN (`CERTUTIL -hashfile "%hashInput%" SHA256`) DO (
 	SET "line=%%H"
 	IF NOT "!line:~0,8!"=="CertUtil" (
+		DEL /Q "%hashInput%" >NUL 2>&1
 		ECHO !line!
 		EXIT /B 0
 	)
 )
+DEL /Q "%hashInput%" >NUL 2>&1
 EXIT /B 1
 
 :checkStamp
