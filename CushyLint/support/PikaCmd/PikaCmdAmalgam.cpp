@@ -5,7 +5,7 @@
 	
 	\version
 	
-	Version 0.986
+	Version 0.987
 	
 	\page Copyright
 	
@@ -58,10 +58,10 @@ namespace Pika {
 
 #if (PIKA_UNICODE)
 	#define STR(s) L##s
-	#define PIKA_SCRIPT_VERSION L"0.986"
+	#define PIKA_SCRIPT_VERSION L"0.987"
 #else
 	#define STR(x) x
-	#define PIKA_SCRIPT_VERSION "0.986"
+	#define PIKA_SCRIPT_VERSION "0.987"
 #endif
 
 typedef unsigned char uchar;
@@ -648,7 +648,7 @@ typedef Script<StdConfig> StdScript;
 	
 	\version
 	
-	Version 0.986
+	Version 0.987
 	
 	\page Copyright
 	
@@ -973,7 +973,8 @@ template<class S> const STLValue<S> STLValue<S>::operator[](const STLValue& i) c
 /* --- Frame --- */
 
 TMPL Script<CFG>::Frame::Frame(Variables& vars, Root& root, Frame* previous) : vars(vars), root(root)
-		, previous(previous), closure(this), label(previous == 0 ? String(STR("::")) : root.generateLabel()) { }
+		, previous(previous), closure(this), source(0)
+		, label(previous == 0 ? String(STR("::")) : root.generateLabel()) { }
 
 TMPL T_TYPE(Value) Script<CFG>::Frame::rvalue(const XValue& v, bool fallback) {
 	return !v.first ? v.second : get(v.second, fallback);
@@ -1324,7 +1325,8 @@ TMPL bool Script<CFG>::Frame::post(StringIt& p, const StringIt& e, XValue& v, bo
 							if (!dry) {
 								String s = rvalue(v);
 								long i = !gotIndex ? 0L : long(rvalue(index));
-								long n = gotCount ? long(rvalue(count)) + mini(i, 0L) : String::npos;
+								const long c = (gotCount ? long(rvalue(count)) : 0L);
+								long n = gotCount ? (c < 0 ? -1L : c + mini(i, 0L)) : String::npos;						// c < 0 first: c + i could overflow.
 								v = XValue(false, i <= long(s.size()) && (!gotCount || n >= 0L)
 										? Value(s.substr(maxi(i, 0L), n)) : Value());
 							}
@@ -1415,30 +1417,33 @@ TMPL T_TYPE(Value) Script<CFG>::Frame::evaluate(const String source) {
 	} sourceGuard(this->source, &source);
 	XValue v;
 	StringIt p = source.begin(), e = source.end();
-	// No catch and rethrow unless tracing: with MSVC every rethrow costs stack while unwinding deep recursion.
-	if (!root.doTrace(TRACE_ERROR)) {
-		statements(p, e, v);
-		return v.second;
-	}
 	if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, false);
-	try {
+	String error;																										// Xceptions are thrown again below, outside the catch. On MSVC a throw inside a catch
+	bool failed = false;																								// keeps stack at every level while unwinding (see docs/CodingStyle.md, Local additions).
+	if (!root.doTrace(TRACE_ERROR)) {																					// Other exceptions are caught only while tracing, since they are rethrown in place.
+		try { statements(p, e, v); } catch (const Xception& x) { error = x.getError(); failed = true; }
+	} else {
 		try {
 			statements(p, e, v);
 		} catch (const Xception& x) {
-			if (root.doTrace(TRACE_ERROR)) tick(p, XValue(false, x.getError()), TRACE_ERROR, previous == 0);
-			throw;
+			error = x.getError();
+			failed = true;
 		} catch (const std::exception& x) {
 			const char* s = x.what();
 			if (root.doTrace(TRACE_ERROR))
 				tick(p, XValue(false, String(std::basic_string<Char>(s, s + strlen(s)))), TRACE_ERROR, previous == 0);
+			if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
 			throw;
 		} catch (...) {
 			if (root.doTrace(TRACE_ERROR)) tick(p, XValue(false, STR("Unknown exception")), TRACE_ERROR, previous == 0);
+			if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
 			throw;
 		}
-	} catch (...) {
+	}
+	if (failed) {
+		if (root.doTrace(TRACE_ERROR)) tick(p, XValue(false, error), TRACE_ERROR, previous == 0);
 		if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
-		throw;
+		throw Xception(error);																							// By design a plain Xception, also for subclasses.
 	}
 	if (root.doTrace(TRACE_CALL)) tick(p, v, TRACE_CALL, true);
 	return v.second;
@@ -1640,10 +1645,10 @@ TMPL T_TYPE(String) Script<CFG>::lib::input(const String& prompt) {
 TMPL T_TYPE(Value) Script<CFG>::lib::invoke(Frame& f) {
 	Value source = f.get(STR("$2")), arg4 = f.getOptional(STR("$4"));
 	long offset = long(f.getOptional(STR("$3"), 0));
-	long n = arg4.isVoid() ? long(f.get(source[String(STR("n"))])) - offset : long(arg4);
+	long n = arg4.isVoid() ? long(ulong(long(f.get(source[String(STR("n"))]))) - ulong(offset)) : long(arg4);			// ulong wraps instead of overflowing.
 	if (n < 0) throw Xception(STR("Too few array elements"));
 	std::vector<Value> a;
-	for (long i = 0; i < n; ++i) a.push_back(f.get(source[i + offset]));												// Not `a(n)`: a huge `n` must fail on a missing element, not allocate.
+	for (long i = 0; i < n; ++i) a.push_back(f.get(source[long(ulong(i) + ulong(offset))]));							// Not `a(n)`: a huge `n` must fail on a missing element, not allocate.
 	return f.call(f.getOptional(STR("$0")), f.getOptional(STR("$1")), long(a.size()), a.empty() ? 0 : &a[0]);
 }
 
@@ -1802,7 +1807,7 @@ TMPL Script<CFG>::Variables::~Variables() { }
 	
 	\version
 	
-	Version 0.986
+	Version 0.987
 	
 	\page Copyright
 	
@@ -2199,7 +2204,7 @@ bool unitTest();
 	
 	\version
 	
-	Version 0.986
+	Version 0.987
 	
 	\page Copyright
 	
@@ -2307,7 +2312,7 @@ template<class Super, unsigned int CACHE_SIZE = 11> class QuickVars : public Sup
 	
 	\version
 	
-	Version 0.986
+	Version 0.987
 	
 	\page Copyright
 	
@@ -2367,7 +2372,7 @@ template struct Script<StdConfig>;
 	
 	\version
 	
-	Version 0.986
+	Version 0.987
 	
 	\page Copyright
 	
@@ -2456,7 +2461,7 @@ REGISTER_UNIT_TEST(QStrings::unitTest)
 #endif
 const char* BUILT_IN_DEBUG =
 	"/*\n"
-	"\tdebug.pika v0.986\n"
+	"\tdebug.pika v0.987\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2719,7 +2724,7 @@ const char* BUILT_IN_DEBUG =
 
 const char* BUILT_IN_HELP =
 	"/*\n"
-	"\thelp.pika v0.986\n"
+	"\thelp.pika v0.987\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -2881,7 +2886,7 @@ const char* BUILT_IN_HELP =
 	"describe('#strings', 'ordinal',\t\t\"+code = ordinal('character')\",\t\t\t\t\t\t\"Returns the ordinal (i.e. the character code) of the single character string 'character'. Depending on how PikaScript is configured, the character code is an ASCII or Unicode value. If 'character' cannot be converted to a character code the exception 'Value is not single character: {character}' will be thrown.\\n\\nInverse: char(+code).\", \"ordinal('A') == 65\\nordinal(char(211)) == 211\", 'char');\n"
 	"describe('#strings', 'precision',\t\"'string' = precision(+value, +precision)\",\t\t\t\"Converts +value to a decimal number string (in scientific E notation if required). +precision is the maximum number of digits to include in the output. Scientific E notation (e.g. 1.3e+3) will be used if +precision is smaller than the number of digits required to express +value in decimal notation. The maximum number of characters returned is +precision plus 7 (for possible minus sign, decimal point and exponent).\", \"precision(12345, 3) === '1.23e+4'\\nprecision(9876, 8) === '9876'\\nprecision(9876.54321, 8) === '9876.5432'\\nprecision(-0.000000123456, 5) === '-1.2346e-7'\\nprecision(+infinity, 1) === '+infinity'\", \"radix, trunc\");\n"
 	"describe('#strings', 'radix',\t\t\"'string' = radix(+value, +radix, [+minLength])\",\t\"Converts the integer +value to a string using a selectable radix between 2 (binary) and 16 (hexadecimal). +value is treated like an operand of the bitwise operators, i.e. as an unsigned integer where negative values become their two's complement. If +minLength is specified and the string becomes shorter than this, it will be padded with leading zeroes. May throw 'Radix out of range: {radix}' or 'Minimum length out of range: {minLength}'.\", \"radix(0xaa, 2, 12) === '000010101010'\\nradix(3735928559, 16) === 'deadbeef'\\nradix(0x2710, 10) === 10000\", 'precision');\n"
-	"describe('#strings', 'repeat',\t\t\"'repeated' = repeat('repeatme', +count)\",\t\t\t\"Concatenates 'repeatme' +count number of times.\", \"repeat(' ', 5) === '     '\\nrepeat('-#-', 10) === '-#--#--#--#--#--#--#--#--#--#-'\");\n"
+	"describe('#strings', 'repeat',\t\t\"'repeated' = repeat('repeatme', +count)\",\t\t\t\"Concatenates 'repeatme' +count number of times. A negative or infinite +count throws 'Invalid repeat count: {count}'.\", \"repeat(' ', 5) === '     '\\nrepeat('-#-', 10) === '-#--#--#--#--#--#--#--#--#--#-'\");\n"
 	"describe('#strings', 'replace',\t\t\"'processed' = replace('source', 'what', 'with', [>findFunction = search], [+dropCount = length(what)], [>replaceFunction = >$1])\",\t\"Replaces all occurrences of 'what' with 'with' in the 'source' string.\\n\\nThe optional >findFunction allows you to modify how the function finds occurrences of 'what' and +dropCount determines how many characters are replaced on each occurrence. The default >findFunction is ::search (and +dropCount is the number of characters in 'what'), which means that 'what' represents a substring to substitute. If you want this function to substitute any occurrence of any character in 'what', you can let >findFunction be ::find and +dropCount be 1. Similarly, you may use ::span to substitute occurrences of all characters not present in 'what'.\\n\\nFinally, >replaceFunction lets you customize how substrings should be replaced. It will be called with two arguments, the source substring in $0 and 'with' in $1, and it is expected to return the replacement substring.\", \"replace('Barbazoo', 'zoo', 'bright') === 'Barbabright'\\nreplace('Barbalama', 'lm', 'p', find, 1) === 'Barbapapa'\\nreplace('Bqaxrbzzabypeillme', 'Bbarel', '', span, 1) === 'Barbabelle'\\nreplace('B03102020', '0123', 'abmr', find, 1, >$1{$0}) === 'Barbamama'\", \"bake, find, search, span\");\n"
 	"describe('#strings', 'reverse',\t\t\"'backwards' = reverse('string')\",\t\t\t\t\t\"Returns 'string' reversed.\", \"reverse('stressed') === 'desserts'\");\n"
 	"describe('#strings', 'rfind',\t\t\"+offset = rfind('string', 'chars')\",\t\t\t\t\"As find(), but finds the last occurrence of any character of 'chars' instead of the first. -1 is returned if no character was found (unlike find() which returns the length of 'string').\", \"rfind('abcd', 'd') == 3\\nrfind('abcdcba', 'dc') == 4\\nrfind('nomatch', 'xyz') == -1\", 'find, rsearch, rspan');\n"
@@ -2929,7 +2934,7 @@ const char* BUILT_IN_INTERACTIVE =
 	"#! /usr/local/bin/PikaCmd\n"
 	"\n"
 	"/*\n"
-	"\tinteractive.pika v0.986\n"
+	"\tinteractive.pika v0.987\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3049,7 +3054,7 @@ const char* BUILT_IN_INTERACTIVE =
 
 const char* BUILT_IN_STDLIB =
 	"/*\n"
-	"\tstdlib.pika v0.986\n"
+	"\tstdlib.pika v0.987\n"
 	"\t\n"
 	"\tPikaScript is released under the BSD 2-Clause License. https://opensource.org/licenses/BSD-2-Clause\n"
 	"\t\n"
@@ -3148,7 +3153,10 @@ const char* BUILT_IN_STDLIB =
 	"\t( out )\n"
 	"};\n"
 	"chop = function { $0{:length($0) - $1} };\n"
-	"repeat = function { $1 *= length($0); for (s = $0; length(s) < $1;) s #= s; ( s{:$1} ) };\n"
+	"repeat = function {\n"
+	"\tif (!($1 >= 0 && $1 < +infinity)) throw('Invalid repeat count: ' # $1);\n"
+	"\t$1 *= length($0); for (s = $0; length(s) < $1;) s #= s; ( s{:$1} )\n"
+	"};\n"
 	"replace = function {\n"
 	"\tvargs(@src, @what, @with, , @findFunction, @dropCount, @replaceFunction);\n"
 	"\tdefaults(@findFunction, search, @dropCount, length(what), @replaceFunction, >$1);\n"
@@ -3352,7 +3360,7 @@ const char* BUILT_IN_STDLIB =
 
 	\version
 
-	Version 0.986
+	Version 0.987
 	
 	\page Copyright
 
@@ -3382,7 +3390,7 @@ const char* BUILT_IN_STDLIB =
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define PIKA_CMD_VERSION "0.986"
+#define PIKA_CMD_VERSION "0.987"
 #define PIKA_UNICODE 0
 #define QUICKER_SCRIPT 1
 
@@ -3525,6 +3533,12 @@ static std::string executablePath(const char* argv0) {	/// full path of the runn
 	return argv0;
 }
 
+Script::String loadBuiltIn(const Script::String& filename) {
+	for (int i = 0; i < sizeof (BUILT_IN_FILES) / sizeof (*BUILT_IN_FILES); ++i)
+		if (filename == BUILT_IN_FILES[i].first) return BUILT_IN_FILES[i].second;
+	throw Script::Xception(Script::String("Cannot open file for reading: ") += Pika::escape(filename));
+}
+
 Script::String overloadedLoad(const Script::String& filename) {
 	std::string name(Pika::toStdString(filename));	// Sorry, can't pass a wchar_t filename. MSVC supports it, but it is non-standard. So we convert to a std::string to be on the safe side.
 	{
@@ -3535,11 +3549,7 @@ Script::String overloadedLoad(const Script::String& filename) {
 		std::basic_ifstream<Script::Char> instream((pikaCmdDir + name).c_str());
 		if (instream.good()) return loadFile(instream, filename);
 	}
-	{
-		for (int i = 0; i < sizeof (BUILT_IN_FILES) / sizeof (*BUILT_IN_FILES); ++i)
-			if (filename == BUILT_IN_FILES[i].first) return BUILT_IN_FILES[i].second;
-	}
-	throw Script::Xception(Script::String("Cannot open file for reading: ") += Pika::escape(filename));
+	return loadBuiltIn(filename);
 }
 
 Script::String loadBinary(const Script::String& filename) {
@@ -3581,7 +3591,7 @@ struct TimeOutException { };
 
 class LibFuzzRoot : public Script::FullRoot {
 	typedef Script::FullRoot Super;
-	public:		LibFuzzRoot() : userLevel(Pika::NO_TRACE), deadline(std::clock() + LIBFUZZ_TIME_LIMIT), ticks(0)
+	public:		LibFuzzRoot() : userLevel(Pika::NO_TRACE), deadline(std::clock() + LIBFUZZ_TIME_LIMIT)
 						, callDepth(0) {
 					setMaxDepth(2400);																					// 8 MB stack like PikaCmd. The deadline keeps errors traced, which allows an eighth.
 					updateTracer();
@@ -3589,8 +3599,7 @@ class LibFuzzRoot : public Script::FullRoot {
 	public:		virtual void trace(Frame& frame, const Script::String& source, Script::SizeType offset, bool lvalue
 						, const Script::Value& value, Pika::Precedence level, bool exit) {
 					if (level <= userLevel) Super::trace(frame, source, offset, lvalue, value, level, exit);
-					if (level <= Pika::TRACE_LOOP && (++ticks & 15) == 0 && std::clock() > deadline)					// Often: a statement can grow a string exponentially. Not every tick: clock() can be slow.
-						throw TimeOutException();
+					if (level <= Pika::TRACE_LOOP && std::clock() > deadline) throw TimeOutException();					// Every tick: one statement can grow a string exponentially (e.g. repeat()).
 					if (level == Pika::TRACE_CALL) {
 						if (!exit && callDepth >= 20) {
 							throw CallDepthException();
@@ -3611,7 +3620,6 @@ class LibFuzzRoot : public Script::FullRoot {
 	protected:	Pika::Precedence userLevel;
 	protected:	Script::Value userTracer;
 	protected:	std::clock_t deadline;
-	protected:	unsigned int ticks;
 	protected:	int callDepth;
 };
 
@@ -3630,8 +3638,7 @@ extern "C" int LLVMFuzzerInitialize(int*, char***) {
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     try {
 		LibFuzzRoot root;
-		root.registerNative("load", overloadedLoad);
-		root.registerNative("getenv", getEnvironmentVar);
+		root.registerNative("load", loadBuiltIn);																		// No files or devices (e.g. /dev/stdin), only the built-in scripts.
 		root.assign("exitCode", Script::Value(0));
 		root.assign("PLATFORM", Script::String(TO_STRING(PLATFORM_STRING)));
 		// Scripts can call natives by name (e.g. `<input>` in interactive.pika), so stubbing variables is not enough.

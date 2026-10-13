@@ -111,7 +111,10 @@ function {
 	eraseFile(oddName);
 	assert(> !pathExists(oddName));
 	eraseFile(testDir # 'odd copy.txt');
-	if (PLATFORM == 'UNIX') assert(> quoteWildcardPath("a b*c?'d") === "'a b'*'c'?''\\''d'" && quotePath('-rf') === "'./-rf'");
+	if (PLATFORM == 'UNIX') {
+		assert(> quoteWildcardPath("a b*c?'d") === "a\\ b*c?\\'d" && quotePath('-rf') === "'./-rf'");
+		assert(> quoteWildcardPath('log[0-9].txt') === 'log[0-9].txt' && quoteWildcardPath('-x*') === './-x*' && quoteWildcardPath('') === "''");
+	};
 	if (PLATFORM == 'WINDOWS') assert(> try(>quotePath('a"b')) === 'Invalid character in path: ''a"b''');
 	assert(> pathExists(testDir # 'testfile1.txt'));
 	assert(> pathExists(testDir # '*.txt'));
