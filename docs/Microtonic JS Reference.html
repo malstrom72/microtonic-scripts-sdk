@@ -1281,11 +1281,12 @@ should avoid using these names. This is the list:
 <p>The error dialogs Microtonic shows for script errors, that is, errors
 the script does not catch itself, from actions, scheduled actions, GUI
 variable functions and the GUI, read the GUI variable
-<code>verboseErrors</code>. Like any GUI variable, it is looked up as a
-JavaScript variable, so a script turns it on with the global
-<code>verboseErrors = true;</code> (<code>JSConsole</code> does this when
-it starts). Without such a global it is false in release builds. When it
-is true, the dialog starts with what Microtonic was doing, for example
+<code>verboseErrors</code>. Like any GUI variable, it resolves to the
+JavaScript global of that name if there is one, so a script turns it on
+with <code>verboseErrors = true;</code> (<code>JSConsole</code> does this
+when it starts). <code>setCushyVariable('verboseErrors', 'true')</code>
+also works. If the variable does not exist at all, it is false in release
+builds. When it is true, the dialog starts with what Microtonic was doing, for example
 <code>Error performing action "scriptPopup":</code>, followed by a blank
 line and the error message. When it is false, the dialog shows only the
 error message. No error is hidden either way.</p>
