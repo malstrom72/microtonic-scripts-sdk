@@ -83,10 +83,11 @@ On Windows:
 CushyLint\CushyLint.bat "%cd%\<path-to-file.cushy>" "%cd%\Microtonic Resources"
 ```
 
-The second argument is the Microtonic resource directory. Use an absolute path
-because the CushyLint wrapper runs from the `CushyLint` directory internally.
-The resource directory contains `microtonic.schema`, Makaron support files, and
-GUI resources needed by Microtonic `.mtscript` packages.
+The second argument is the Microtonic resource directory. Use absolute paths for
+every argument because the CushyLint wrapper runs from the `CushyLint` directory
+internally, so a relative path does not validate. The resource directory
+contains `microtonic.schema`, Makaron support files, and GUI resources needed by
+Microtonic `.mtscript` packages.
 
 ## Directory
 

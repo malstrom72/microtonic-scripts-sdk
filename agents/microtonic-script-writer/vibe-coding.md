@@ -242,32 +242,11 @@ pointed at a folder that does not exist yet.
 
 ## Minimal Project `AGENTS.md` and `CLAUDE.md`
 
-Create both files in your project root. Codex and most other agents read
-`AGENTS.md`; Claude Code reads `CLAUDE.md`, which imports `AGENTS.md` so the
-instructions live in one place.
-
-`AGENTS.md`:
-
-```md
-# Project Agent Instructions
-
-For Microtonic scripting work, follow:
-
-`references/microtonic-scripts-sdk/agents/microtonic-script-writer/instructions.md`
-
-Use the SDK checkout as the source of truth for docs, examples, schemas,
-resources, packaging, and validation.
-```
-
-`CLAUDE.md`:
-
-```md
-# Project Claude Instructions
-
-Follow [`AGENTS.md`](AGENTS.md):
-
-@AGENTS.md
-```
+The assistant creates both files in your project root during bootstrap. Codex
+and most other agents read `AGENTS.md`, which points at the SDK's
+`instructions.md`; Claude Code reads `CLAUDE.md`, which imports `AGENTS.md` so
+the instructions live in one place. Their exact contents are in
+[`instructions.md`](instructions.md#project-bootstrap).
 
 Claude and ChatGPT can use the same starter prompt. The SDK also includes thin
 tool-specific wrappers under `agents/microtonic-script-writer/`, but the shared
@@ -306,8 +285,8 @@ Microtonic Resources for schema/resources, and run CushyLint before finishing.
 ## Validation
 
 For `.mtscript` packages with `.cushy` files, validate with CushyLint from the
-SDK root. Use absolute paths because the CushyLint wrapper runs from inside the
-`CushyLint` directory:
+project root. Use absolute paths because the CushyLint wrapper runs from inside
+the `CushyLint` directory:
 
 ```sh
 references/microtonic-scripts-sdk/CushyLint/CushyLint \
@@ -327,51 +306,12 @@ is a Claude Code project-server convention: for Claude Code, say to exit Claude
 Code, start it again in the project, and approve the project MCP server prompt
 if it appears.
 
-Do not assume Codex discovers project `.mcp.json` by restarting. Codex uses its
-own MCP server configuration; a project `.mcp.json` alone is not enough for
-Codex. First check which CLI is being invoked:
-
-```sh
-which -a codex
-codex --version
-codex mcp --help
-```
-
-If `codex mcp --help` shows `add`, `list`, `get`, and `remove`, register the
-bridge with that CLI using an absolute `server.js` path:
-
-```sh
-codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
-codex mcp list
-```
-
-If plain `codex` is an older binary whose `mcp` command only says "run Codex as
-an MCP server", but the Codex desktop app is installed, try the app-bundled CLI:
-
-```sh
-/Applications/Codex.app/Contents/Resources/codex mcp --help
-/Applications/Codex.app/Contents/Resources/codex mcp add microtonic-bridge -- node /ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
-/Applications/Codex.app/Contents/Resources/codex mcp list
-```
-
-If no available Codex CLI supports MCP management, add the bridge directly to
-`~/.codex/config.toml`, or ask the user for approval to edit that file because
-it is outside the project workspace:
-
-```toml
-[mcp_servers.microtonic-bridge]
-command = "node"
-args = ["/ABS/PATH/TO/references/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js"]
-enabled = true
-```
-
-Then restart Codex or reopen the project so it reloads its MCP configuration. In
-the resumed Codex session, first verify that `mt_status` and `mt_eval` are
-actually exposed as tools. If they are absent, say plainly that Codex has not
-loaded the Microtonic bridge tools and do not keep asking for blind restarts. If
-the assistant cannot edit `~/.codex/config.toml`, print the exact TOML block
-with the resolved absolute `server.js` path and tell the user to add it
-manually.
+Codex does not read a project `.mcp.json`; it needs the bridge registered in its
+own MCP configuration. The steps are in
+[`instructions.md`](instructions.md#live-debugging-bridge). In the resumed
+session, first verify that `mt_status`, `mt_eval` and `mt_reload` are actually
+exposed as tools. If they are absent, say plainly that the assistant has not
+loaded the Microtonic bridge tools and do not keep asking for blind restarts.
 
 When a restart/reload is known to load the bridge server, treat that restart as
 a handoff point: before ending the pre-restart session, give the user a resume

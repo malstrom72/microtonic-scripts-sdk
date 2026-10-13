@@ -415,7 +415,7 @@ with the name, the resource is loaded instead. Forward slash (`'/'`) in paths wo
 slash (`'\'`) only works on Windows. The script API does not expose binary file I/O, streaming reads, seeking, or partial
 file reads. Binary data must be encoded as text before it can be loaded.
 
-See also: [browse](#browse), [dir](#dir), [fullPath](#fullPath), [run](#run), [save](#save)
+See also: [browse](#browse), [dir](#dir), [fullPath](#fullpath), [run](#run), [save](#save)
 
 ### marshal
 
@@ -510,7 +510,7 @@ See also: [display](#display)
 
 Reads a string from the clipboard. On Windows, CR LF (`'\r\n'`) are automatically translated to LF (`'\n'`).
 
-See also: [writeClipboard](#writeClipboard)
+See also: [writeClipboard](#writeclipboard)
 
 ### run
 
