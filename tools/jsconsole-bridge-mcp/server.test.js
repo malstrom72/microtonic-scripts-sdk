@@ -202,6 +202,73 @@ test('notifications/cancelled stops a call, withdraws its request and sends no r
 	assert.equal(s.received.filter(function (m) { return m.id === cancelled.id; }).length, 0);
 });
 
+function readOwner(base) {
+	return JSON.parse(fs.readFileSync(path.join(base, 'server-owner.json'), 'utf8'));
+}
+
+test('a second server takes over the bridge and the first stands down', async function (t) {
+	const base = freshBase();
+	const first = startServer(base);
+	let second = null;
+	let fb = null;
+	t.after(function () { if (fb) fb.stop(); first.kill(); if (second) second.kill(); cleanup(base); });
+
+	await first.request('initialize', { capabilities: {} });
+	assert.equal(readOwner(base).pid, first.child.pid);
+	second = startServer(base);
+	await second.request('initialize', { capabilities: {} });
+	assert.equal(readOwner(base).pid, second.child.pid);
+
+	fb = startFakeBridge(base, function (req) { return { value: 'r:' + req.code }; });
+	const old = await first.request('tools/call', { name: EVAL, arguments: { code: 'old', timeout_ms: 1000 } });
+	assert.equal(old.result.isError, true);
+	assert.match(old.result.content[0].text, /another session took over the bridge/);
+	assertOnlyRealTools(old.result.content[0].text);
+
+	const r = await second.request('tools/call', { name: EVAL, arguments: { code: 'new', timeout_ms: 2000 } });
+	assert.equal(r.result.isError, false);
+	assert.match(r.result.content[0].text, /value: r:new/);
+	assert.equal(fb.seqs.length, 1, 'the server that stood down must not write request.json');
+
+	const status = await first.request('tools/call', { name: STATUS }, 4000);
+	assert.equal(status.result.isError, true);
+	assert.match(status.result.content[0].text, /STOOD DOWN/);
+	const reload = await first.request('tools/call', { name: RELOAD, arguments: { until: 'true' } }, 4000);
+	assert.equal(reload.result.isError, true);
+	assert.match(reload.result.content[0].text, /another session took over the bridge/);
+	assert.equal(fb.seqs.length, 1);
+});
+
+test('a server that stood down keeps refusing after the new owner exits', async function (t) {
+	const base = freshBase();
+	const first = startServer(base);
+	t.after(function () { first.kill(); cleanup(base); });
+
+	await first.request('initialize', { capabilities: {} });
+	const second = startServer(base);
+	await second.request('initialize', { capabilities: {} });
+	second.endStdin();
+	await second.waitExit();
+
+	const r = await first.request('tools/call', { name: EVAL, arguments: { code: '1', timeout_ms: 500 } });
+	assert.equal(r.result.isError, true);
+	assert.match(r.result.content[0].text, /another session took over the bridge/);
+	assert.equal(fs.existsSync(path.join(base, 'request.json')), false);
+});
+
+test('a server claims the bridge again if the owner file goes missing', async function (t) {
+	const base = freshBase();
+	const s = startServer(base);
+	const fb = startFakeBridge(base, function (req) { return { value: 'r:' + req.code }; });
+	t.after(function () { fb.stop(); s.kill(); cleanup(base); });
+
+	await s.request('initialize', { capabilities: {} });
+	fs.unlinkSync(path.join(base, 'server-owner.json'));
+	const r = await s.request('tools/call', { name: EVAL, arguments: { code: 'x', timeout_ms: 2000 } });
+	assert.match(r.result.content[0].text, /value: r:x/);
+	assert.equal(readOwner(base).pid, s.child.pid);
+});
+
 test(EVAL + ' round-trips a value and captured output', async function (t) {
 	const base = freshBase();
 	const s = startServer(base);

@@ -20,6 +20,11 @@
 //                          (`time` is epoch ms; `owner` is a token identifying the
 //                          instance that currently holds the bridge)
 //
+// Server side only (the bridge never reads it):
+//
+//   <base>/server-owner.json  the newest server writes on startup: { token, pid, time }
+//                             (a server that finds another token there stands down)
+//
 // The bridge never deletes files, so this host owns the directory: it `mkdir -p`s
 // <base> on startup, writes requests atomically, and pairs replies by a strictly
 // increasing `seq`. We base `seq` on epoch ms so it keeps climbing across restarts
@@ -31,6 +36,7 @@
 
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -104,6 +110,7 @@ const BASE = bridgeBase();
 const REQUEST_PATH = path.join(BASE, 'request.json');
 const RESPONSE_PATH = path.join(BASE, 'response.json');
 const PRESENCE_PATH = path.join(BASE, 'bridge.json');
+const OWNER_PATH = path.join(BASE, 'server-owner.json');
 
 let lastSeq = 0;
 
@@ -235,6 +242,48 @@ async function withdrawRequest(seq) {
 	}
 }
 
+/*
+	Only one server may drive the bridge folder at a time, or two would overwrite each other's
+	request.json. A starting server takes over by writing its token to server-owner.json. A server
+	that finds another token there has been taken over and stands down for good: it answers tool
+	calls with an error instead of writing requests. This mirrors the console's owner token in
+	bridge.json and leaves the console protocol unchanged.
+*/
+const OWNER_TOKEN = process.pid + '-' + crypto.randomBytes(8).toString('hex');
+let ownerClaimed = Promise.resolve();
+let stoodDownFor = null;	// the owner record that replaced ours
+
+async function claimOwnership() {
+	const tmp = path.join(BASE, 'server-owner.' + process.pid + '.tmp');
+	fs.writeFileSync(tmp, JSON.stringify({ token: OWNER_TOKEN, pid: process.pid, time: Date.now() }));
+	try {
+		await renameWithRetry(tmp, OWNER_PATH);
+	} catch (e) {
+		try { fs.unlinkSync(tmp); } catch (e2) { /* already gone */ }
+		throw e;
+	}
+}
+
+// Throws once another server has taken over. A missing or unreadable owner file is claimed again.
+async function checkOwnership() {
+	if (stoodDownFor === null) {
+		const owner = readJson(OWNER_PATH);
+		if (owner === null || typeof owner.token !== 'string') {
+			await claimOwnership();
+		} else if (owner.token !== OWNER_TOKEN) {
+			stoodDownFor = owner;
+			log('another server took over the bridge folder; standing down');
+		}
+	}
+	if (stoodDownFor !== null) {
+		const who = typeof stoodDownFor.pid === 'number' ? ' (server pid ' + stoodDownFor.pid + ')' : '';
+		throw new Error('another session took over the bridge' + who + ', so this server has stood '
+			+ 'down and sent nothing. Only one MCP server can drive the ' + CONSOLE + ' bridge at a '
+			+ 'time. To use the bridge from this session again, restart or reconnect its '
+			+ SERVER_NAME + ' MCP server, which takes the bridge back.');
+	}
+}
+
 //
 // Tool: <prefix>_eval — write a request atomically, poll for the matching reply.
 //
@@ -265,6 +314,7 @@ async function bridgeEval(args, token) {
 }
 
 async function bridgeEvalNow(code, timeout, deadline, token) {
+	await checkOwnership();
 	const seq = nextSeq();
 
 	// Atomic publish: write a temp file in the same dir, then rename over request.json.
@@ -398,6 +448,12 @@ async function bridgeStatus(token) {
 	if (!fs.existsSync(BASE)) {
 		lines.push('folder: missing (will be created on first ' + EVAL_TOOL + ')');
 		return { text: lines.join('\n'), isError: false };
+	}
+	try {
+		await checkOwnership();
+	} catch (e) {
+		lines.push('server: STOOD DOWN, ' + e.message);
+		return { text: lines.join('\n'), isError: true };
 	}
 	const presence = readJson(PRESENCE_PATH);
 
@@ -557,6 +613,7 @@ async function dispatch(msg) {
 		return;
 	}
 
+	await ownerClaimed;
 	switch (method) {
 		case 'initialize': {
 			const requested = msg.params && msg.params.protocolVersion;
@@ -607,6 +664,9 @@ async function dispatch(msg) {
 
 function main() {
 	ensureBase();
+	ownerClaimed = claimOwnership().catch(function (e) {
+		log('could not claim the bridge folder:', e.message);
+	});
 	log('ready. bridge folder:', BASE);
 
 	/*
