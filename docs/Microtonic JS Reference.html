@@ -1197,8 +1197,9 @@ putting functions and variables under a single JavaScript object with
 the same name as the script is good practice. Doing so prevents
 littering the variable space and you minimize the risk of colliding with
 other scripts. If you run your script with the <code>JSConsole</code>
-open, it will alert every time a global variable is created. This helps
-you catch mistakes such as missing the <code>var</code> keyword when
+open, it prints a <code>New global:</code> line every time a global
+variable is created, with or without <code>var</code>. This helps you
+catch mistakes such as missing the <code>var</code> keyword when
 declaring a variable.</p>
 <p>Microtonic caches resources while the GUI window is open, including
 JavaScript source files loaded by scripts. When editing a GUI script,
