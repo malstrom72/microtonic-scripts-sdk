@@ -163,8 +163,7 @@ The _Numbstrict_ format can be challenging to write correctly, especially when c
 views and actions. Therefore we created _CushyLint_, a command-line tool to check the syntax of a `.cushy` file against
 the official "schema" specification. Simply run `CushyLint` (Mac) or `CushyLint.bat` (Windows) from a command-line
 prompt with the single argument specifying a single `.cushy` file path to check or a directory if you want to check
-multiple files. Directories must end with a slash (`/` or `\`). Use absolute paths, because CushyLint runs from its own
-directory.
+multiple files. Directories must end with a slash (`/` or `\`). Relative paths are relative to the current directory.
 
 The files are checked against the official `cushy.schema` file in the `CushyLint` directory, plus any other `.schema`
 files existing in the directory next to the `.cushy` file that you are checking. The `cushy.schema` file is designed to
