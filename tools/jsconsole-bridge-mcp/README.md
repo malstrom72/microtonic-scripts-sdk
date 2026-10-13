@@ -104,8 +104,8 @@ folder. The quickest way to find that folder is the script menu in Microtonic â†
 On Windows, before the bridge exists, the SDK helper can usually locate the same
 folder from the Sonic Charge registry keys:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\locate-scripts-folder.ps1 -Verify
+```bat
+tools\locate-scripts-folder.cmd -Verify
 ```
 
 Treat that output as a candidate to confirm, not as a replacement for
@@ -135,6 +135,12 @@ user), use:
 
 ```sh
 claude mcp add microtonic-bridge -- node /ABS/PATH/TO/microtonic-scripts-sdk/tools/jsconsole-bridge-mcp/server.js
+```
+
+On Windows:
+
+```bat
+claude mcp add microtonic-bridge -- node C:\ABS\PATH\TO\microtonic-scripts-sdk\tools\jsconsole-bridge-mcp\server.js
 ```
 
 ### Other MCP clients

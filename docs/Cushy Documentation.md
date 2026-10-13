@@ -170,7 +170,8 @@ Numbstrict is easy to get subtly wrong in deeply nested view trees, so run **Cus
 loading them in Microtonic:
 
 ```sh
-CushyLint/CushyLint "$(pwd)/MyScript.mtscript/" "$(pwd)/Microtonic Resources"
+CushyLint/CushyLint "$(pwd)/MyScript.mtscript/" "$(pwd)/Microtonic Resources"           # macOS / Linux
+CushyLint\CushyLint.bat "%cd%\MyScript.mtscript/" "%cd%\Microtonic Resources"           # Windows
 ```
 
 Pass a directory path **with a trailing slash** so the companion `.schema` files are picked up. CushyLint checks syntax

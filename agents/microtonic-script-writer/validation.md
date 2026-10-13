@@ -1,17 +1,22 @@
 # Validation
 
+Every validator is a `.sh` script for macOS and Linux with a `.cmd` counterpart
+for Windows that takes the same arguments, prints the same output and exits with
+the same codes, so Windows needs no Git Bash.
+
 ## All Examples At Once
 
 To validate every bundled example package (Cushy schema, JavaScript, and static
 IVG) in one command, use the aggregate runner:
 
 ```sh
-tools/validate-examples.sh
+tools/validate-examples.sh      # macOS / Linux
+tools\validate-examples.cmd     # Windows
 ```
 
 It runs CushyLint over each `*.mtscript` package under `examples/` plus
-`JSConsole.mtscript`, then delegates to `tools/validate-js.sh` and
-`tools/validate-static-ivg.sh`. It runs all three sections even if one fails, so
+`JSConsole.mtscript`, then delegates to `tools/validate-js` and
+`tools/validate-static-ivg`. It runs all three sections even if one fails, so
 a single run surfaces every problem, and exits non-zero if anything fails. Use
 this as the regression gate after changing an example or the shared schema; use
 the per-language tools below when working on a single script.
@@ -28,9 +33,9 @@ small set of runtime additions such as string indexing, `JSON`, `Object.assign`,
 and `Date.now`. Generated `.js` files should therefore be checked as
 Microtonic scripts, not as modern browser or Node.js code.
 
-The simplest lightweight check is `tools/validate-js.sh`, which runs ESLint with
-the Microtonic config in `tools/eslint.microtonic.config.mjs`. The config uses
-ECMAScript 5 script syntax. Microtonic is ES3-based, but the shipped examples use
+The simplest lightweight check is `tools/validate-js.sh` (`tools\validate-js.cmd`
+on Windows), which runs ESLint with the Microtonic config in
+`tools/eslint.microtonic.config.mjs`. The config uses ECMAScript 5 script syntax. Microtonic is ES3-based, but the shipped examples use
 some ES5-era syntax that NuXJS accepts in practice, such as trailing commas in
 object literals and reserved words as property names. ESLint with `ecmaVersion:
 5` is therefore a better practical syntax gate than `ecmaVersion: 3`: it rejects
@@ -39,20 +44,23 @@ modern ES6+ syntax while accepting the syntax style already used by this SDK.
 Validate the built-in examples and JSConsole package with:
 
 ```sh
-tools/validate-js.sh
+tools/validate-js.sh       # macOS / Linux
+tools\validate-js.cmd      # Windows
 ```
 
 Validate a specific script package, directory, or file with:
 
 ```sh
-tools/validate-js.sh path/to/MyScript.mtscript
+tools/validate-js.sh path/to/MyScript.mtscript       # macOS / Linux
+tools\validate-js.cmd path\to\MyScript.mtscript      # Windows
 ```
 
 For the recommended external project layout, run the SDK wrapper from the
 project root and pass the user script folder:
 
 ```sh
-references/microtonic-scripts-sdk/tools/validate-js.sh scripts
+references/microtonic-scripts-sdk/tools/validate-js.sh scripts       # macOS / Linux
+references\microtonic-scripts-sdk\tools\validate-js.cmd scripts      # Windows
 ```
 
 The wrapper keeps the caller's working directory when paths are supplied, so
@@ -90,11 +98,19 @@ GUI resources needed by Microtonic `.mtscript` packages.
 
 ## Directory
 
-Directories must end with a slash:
+Directories must end with a slash.
 
 ```sh
-CushyLint/CushyLint "$(pwd)/examples/" "$(pwd)/Microtonic Resources"
+CushyLint/CushyLint "$(pwd)/examples/MacroTweak.mtscript/" "$(pwd)/Microtonic Resources"
 ```
+
+```bat
+CushyLint\CushyLint.bat "%cd%\examples\MacroTweak.mtscript/" "%cd%\Microtonic Resources"
+```
+
+Check one package directory at a time: CushyLint reads the `.schema` files next
+to the files it checks, so pointing it at `examples/` itself finds no package
+schemas and reports missing rules.
 
 ## Package Schema Header
 

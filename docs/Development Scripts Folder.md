@@ -64,9 +64,12 @@ On Windows, use `Open Scripts Folder` in Microtonic to confirm the exact folder.
 Before the bridge is installed, the SDK helper can usually locate the same folder from the Sonic Charge registry keys
 (it reads `SetupPath` from `HKLM\SOFTWARE\Sonic Charge\Microtonic` and appends `Microtonic Scripts`):
 
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\locate-scripts-folder.ps1 -Verify
+```bat
+tools\locate-scripts-folder.cmd -Verify
 ```
+
+The `.cmd` runs `locate-scripts-folder.ps1` with the execution policy bypassed for that script only, because Windows
+blocks running `.ps1` files by default.
 
 Treat that output as a candidate to confirm, not as a substitute for the exact folder opened by Microtonic. If the
 registry read fails, the engine may fall back to the plugin binary directory, which the helper cannot know.

@@ -124,7 +124,7 @@ Recommended bootstrap phase order:
    the folder exists, so neither can point at a folder that isn't there. On macOS
    the standard path is `/Library/Application Support/Sonic Charge/Microtonic
    Scripts`; on Windows it is normally under `C:\Program Files\Sonic Charge\
-   Microtonic Scripts`, and `tools/locate-scripts-folder.ps1 -Verify` can provide
+   Microtonic Scripts`, and `tools\locate-scripts-folder.cmd -Verify` can provide
    a candidate before the bridge exists.
    - **Standard path missing** → this is a fresh install with no `Microtonic
      Scripts` folder yet (the greyed-out puzzle menu confirms it). This is
@@ -320,9 +320,26 @@ step. **Offer the user a choice** rather than deciding for them:
   avoid a one-time Microtonic "wants to access Documents" prompt when it reads
   through the link.
 
-On Windows the standard folder is under `C:\Program Files\Sonic Charge\`, which
-also needs elevation; create it (or the junction) with an elevated shell, then
-run `install-jsconsole.js` against it.
+On Windows the standard folder is normally
+`C:\Program Files\Sonic Charge\Microtonic Scripts`; confirm it with
+`references\microtonic-scripts-sdk\tools\locate-scripts-folder.cmd -Verify`.
+Creating it also needs one elevated step. Run the chosen option from the project
+root in a Command Prompt opened with *Run as administrator*:
+
+- **A**:
+
+  ```bat
+  mkdir "C:\Program Files\Sonic Charge\Microtonic Scripts"
+  node references\microtonic-scripts-sdk\tools\install-jsconsole.js "C:\Program Files\Sonic Charge\Microtonic Scripts"
+  ```
+
+- **B** (a directory junction, which needs no Developer Mode):
+
+  ```bat
+  mkdir scripts
+  xcopy "references\microtonic-scripts-sdk\JSConsole.mtscript" "scripts\JSConsole.mtscript\" /E /I
+  mklink /J "C:\Program Files\Sonic Charge\Microtonic Scripts" "%CD%\scripts"
+  ```
 
 If `JSConsole.mtscript` is copied from the SDK checkout into project
 `scripts/`, update the copied package's `.schema` file to point back to the SDK
