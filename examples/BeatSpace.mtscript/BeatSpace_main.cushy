@@ -192,8 +192,6 @@ autoexecs: {
 			}
 			{
 				type: "hover"
-				variable: @script.pointHover
-				value: @index
 				enterAction: "@script.coordEnter", enterParams: @index
 				leaveAction: "@script.coordLeave", leaveParams: @index
 			}
