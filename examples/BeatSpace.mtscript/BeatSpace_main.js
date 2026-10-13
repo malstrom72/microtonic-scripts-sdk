@@ -235,6 +235,8 @@
 			diceRoll: 0,
 			diceNumbers: DICE_STRINGS[0],
 			constellation: 'M0,0',	// svg path
+			lastContextMenuAction: '',	// the last context menu choice, repeated by shift+right-click
+			lastContextMenuParams: '',
 
 			// The rest
 			loadedNetName: '',		// on a change the decoder will be reloaded
@@ -848,9 +850,6 @@
 		flares: '[]',		// [ [ x, y, age ], ... ]
 		coords: [],			// { text: string, muted: 'yes'|'no', enabled: 'yes'|'no' } * 8
 		pointHover: '',		// last hovered label's index; hover views set it on enter and never clear it
-
-		lastContextMenuAction: '',	// the last context menu choice, repeated by shift+right-click
-		lastContextMenuParams: '',
 		decoderName: (function() { return beatspace.decoder.name; }),
 		decoderDate: (function() { return beatspace.decoder.date.toISOString(); }),
 	});
