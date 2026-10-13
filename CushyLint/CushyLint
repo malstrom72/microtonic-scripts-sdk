@@ -1,5 +1,13 @@
 #!/bin/bash
 set -e
+# Paths are relative to the caller's directory, so make them absolute before the cd below.
+args=()
+for arg in "$@"; do
+	case "$arg" in
+		/*) args+=("$arg") ;;
+		*) args+=("$PWD/$arg") ;;
+	esac
+done
 cd "$(dirname "$0")"
 ./support/bootstrapPikaCmd.sh
-./build/PikaCmd ./CushyLint.pika "$@"
+./build/PikaCmd ./CushyLint.pika ${args[@]+"${args[@]}"}

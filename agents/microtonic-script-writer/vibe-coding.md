@@ -285,8 +285,7 @@ Microtonic Resources for schema/resources, and run CushyLint before finishing.
 ## Validation
 
 For `.mtscript` packages with `.cushy` files, validate with CushyLint from the
-project root. Use absolute paths because the CushyLint wrapper runs from inside
-the `CushyLint` directory:
+project root:
 
 ```sh
 references/microtonic-scripts-sdk/CushyLint/CushyLint \
