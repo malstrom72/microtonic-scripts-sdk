@@ -100,7 +100,7 @@ Object.assign(euclideanBeat, {
             var count = (this.lane === "triggers" ? euclideanBeat.stepCount : euclideanBeat.triggers.onsets.value);
             return Math.max(0, count - (this.variable === "rotation" ? 1 : 0));    // never -1 with no onsets
         },
-        get: function get() { return this.value; },
+        get: function get() { return '' + this.value; },
         set: function set(v) {
             var y = clamp(Math.round(+v), 0, this.max());
             if (y !== this.value) {

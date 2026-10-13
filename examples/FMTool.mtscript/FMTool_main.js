@@ -58,7 +58,7 @@ Object.assign(fmTool, {
 	}),
 	SourceParam: createClass({
 		constructor: function(paramName) { this.paramName = paramName; },
-		get: function() { return getParam(this.paramName + '.' + (selected('channel') + 1)); }
+		get: function() { return '' + getParam(this.paramName + '.' + (selected('channel') + 1)); }
 	})
 });
 
@@ -182,7 +182,7 @@ Object.assign(fmTool, {
 	pitchCent: Object.assign(new fmTool.GUIParam("Change Pitch", false), {
 		human: function() { return this.value.toFixed(2); }
 	}),
-	index: new fmTool.GUIParam("Change FM Index", false), // FIX : get: precision(fmTool.index, 4) };
+	index: new fmTool.GUIParam("Change FM Index", false),
 	ratioCoarse: new fmTool.GUIParam("Change FM Ratio", true),
 	ratioFine: new fmTool.GUIParam("Change FM Ratio", false),
 	unaccentedTransposition: Object.assign(new fmTool.GUIParam("Change Unaccented Transposition", false), {

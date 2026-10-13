@@ -1,1 +1,5 @@
-toggleCushy('FMTool.mtscript/FMTool_main');
+if (BUILD.NUMBER < 1048) {
+	display(translate("This script requires") + " Microtonic v3.3.4", "error");
+} else {
+	toggleCushy('FMTool.mtscript/FMTool_main');
+}

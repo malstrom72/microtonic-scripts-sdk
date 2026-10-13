@@ -847,6 +847,9 @@
 		points: '[]',		// [ [ index, x, y, enabled, muted ], ... ]
 		flares: '[]',		// [ [ x, y, age ], ... ]
 		coords: [],			// { text: string, muted: 'yes'|'no', enabled: 'yes'|'no' } * 8
+		pointHover: '',		// index of the hovered point, written by the hover views
+		lastContextMenuAction: '',	// the last context menu choice, repeated by shift+right-click
+		lastContextMenuParams: '',
 		decoderName: (function() { return beatspace.decoder.name; }),
 		decoderDate: (function() { return beatspace.decoder.date.toISOString(); }),
 	});
