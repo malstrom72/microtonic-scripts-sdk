@@ -1092,13 +1092,10 @@ There are a few built-in Cushy-only variables in Microtonic. You should avoid us
 `'programsLocked'`, `'Morph'`, `'Morph.human'`, `'undo.description'`, `'redo.description'`, `'shortModifierKey'`,
 `'po32Mode'`, `'isRegistered'`, `'uiScale'`, and `'skinResourcesPath'`.
 
-The error dialogs Microtonic shows for script errors, that is, errors the script does not catch itself, from actions,
-scheduled actions, GUI variable functions and the GUI, read the GUI variable `verboseErrors`. Like any GUI variable, it
-resolves to the JavaScript global of that name if there is one, so a script turns it on with `verboseErrors = true;`
-(`JSConsole` does this when it starts). `setCushyVariable('verboseErrors', 'true')` also works. If the variable does not
-exist at all, it is false in release builds. When it is true, the dialog starts with what Microtonic was doing, for
-example `Error performing action "scriptPopup":`, followed by a blank line and the error message. When it is false, the
-dialog shows only the error message. No error is hidden either way.
+Set the GUI variable `verboseErrors` to true to make script error dialogs also say what Microtonic was doing when the
+error happened, for example `Error performing action "scriptPopup":`, above the error message. Either
+`verboseErrors = true;` or `setCushyVariable('verboseErrors', 'true')` works. It is off by default in release builds.
+`JSConsole` turns it on when it starts.
 
 ### GUI Actions
 
