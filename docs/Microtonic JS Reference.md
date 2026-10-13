@@ -1092,6 +1092,11 @@ There are a few built-in Cushy-only variables in Microtonic. You should avoid us
 `'programsLocked'`, `'Morph'`, `'Morph.human'`, `'undo.description'`, `'redo.description'`, `'shortModifierKey'`,
 `'po32Mode'`, `'isRegistered'`, `'uiScale'`, and `'skinResourcesPath'`.
 
+The built-in variable `verboseErrors` is also visible as a JavaScript global, so `verboseErrors = true;` and
+`setCushyVariable('verboseErrors', 'true')` are equivalent (after the latter, the global reads the string `'true'`).
+When it is true, the error dialog for a failing script starts with a line naming the action that failed, for example
+`Error performing action "scriptPopup":`. Neither setting shows a stack trace. `JSConsole` turns it on when it starts.
+
 ### GUI Actions
 
 When the user clicks a button or selects an item from a menu, a "GUI action" is performed (as configured by the `.cushy`

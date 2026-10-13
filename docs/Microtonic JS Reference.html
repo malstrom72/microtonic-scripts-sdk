@@ -1278,6 +1278,15 @@ should avoid using these names. This is the list:
 <code>'redo.description'</code>, <code>'shortModifierKey'</code>,
 <code>'po32Mode'</code>, <code>'isRegistered'</code>,
 <code>'uiScale'</code>, and <code>'skinResourcesPath'</code>.</p>
+<p>The built-in variable <code>verboseErrors</code> is also visible as a
+JavaScript global, so <code>verboseErrors = true;</code> and
+<code>setCushyVariable('verboseErrors', 'true')</code> are equivalent
+(after the latter, the global reads the string <code>'true'</code>).
+When it is true, the error dialog for a failing script starts with a
+line naming the action that failed, for example
+<code>Error performing action "scriptPopup":</code>. Neither setting
+shows a stack trace. <code>JSConsole</code> turns it on when it
+starts.</p>
 <h3 id="gui-actions">GUI Actions</h3>
 <p>When the user clicks a button or selects an item from a menu, a “GUI
 action” is performed (as configured by the <code>.cushy</code> file).
