@@ -1,5 +1,6 @@
 @include scriptSupport.makaron
 
+@define scriptRoot=BeatSpace.mtscript
 @define script=beatspace
 @define uiHue=0.5
 @define backgroundColor=hsv(@uiHue,0.4,0.15)
@@ -50,20 +51,6 @@ autoexecs: {
 		onReload: true
 	},
 	{
-		action: "switch"
-		params: {
-			variable: lastContextMenuAction
-			cases: {
-				"lastContextMenuAction": {
-					"batch", {
-						{ "set", { lastContextMenuAction, "" } }
-						{ "set", { lastContextMenuParams, "" } }
-					}
-				}
-			}
-		}
-	},
-	{
 		action: "@script.startup"
 		params: "@netName"
 		onReload: true
@@ -89,11 +76,11 @@ autoexecs: {
 		views: {
 			{
 				type: "raster"
-				image: "BeatSpace.mtscript/@(netName)_map"
+				image: "@scriptRoot/@(netName)_map"
 			}
 			{
 				type: "vector"
-				file: "BeatSpace.mtscript/BeatSpace_constellation"
+				file: "@scriptRoot/BeatSpace_constellation"
 				defines: {
 					"color": "#30303030"
 				}
@@ -103,7 +90,7 @@ autoexecs: {
 			}
 			{
 				type: "vector"
-				file: "BeatSpace.mtscript/BeatSpace_points"
+				file: "@scriptRoot/BeatSpace_points"
 				defines: {
 					"pointSize": "@pointSize"
 					"color": "#E0D0D0E0"
@@ -116,7 +103,7 @@ autoexecs: {
 			}
 			{
 				type: "vector"
-				file: "BeatSpace.mtscript/BeatSpace_flares"
+				file: "@scriptRoot/BeatSpace_flares"
 				defines: {
 					"size": "@pointSize"
 					"color": "#A0505060"
@@ -153,7 +140,7 @@ autoexecs: {
 	{
 		type: "vector"
 		bounds: { 8, $, $-16, $ }
-		file: "BeatSpace.mtscript/BeatSpace_connector"
+		file: "@scriptRoot/BeatSpace_connector"
 		defines: {
 			"pointSize": "@pointSize"
 			"padding": "@padding"
@@ -182,7 +169,7 @@ autoexecs: {
 					{ "release", "@script.coordRelease" }	// only for solo
 				}
 				vector: {
-					file: "BeatSpace.mtscript/BeatSpace_coordinate"
+					file: "@scriptRoot/BeatSpace_coordinate"
 					defines: {
 						"index": "@index"
 						"color": "#999999"
@@ -205,8 +192,6 @@ autoexecs: {
 			}
 			{
 				type: "hover"
-				variable: @script.pointHover
-				value: @index
 				enterAction: "@script.coordEnter", enterParams: @index
 				leaveAction: "@script.coordLeave", leaveParams: @index
 			}
@@ -227,7 +212,7 @@ autoexecs: {
 		bounds: { w-40, h-32, 32, 32 }
 		action: "@script.randomize"
 		vector: {
-			file: "BeatSpace.mtscript/BeatSpace_dice"
+			file: "@scriptRoot/BeatSpace_dice"
 			bindings: {
 				"numbers": @script.diceNumbers
 			}
@@ -291,14 +276,14 @@ autoexecs: {
 						{ "Paste Constellation", "@script.paste" }
 						{ "About", "alert", "BeatSpace v1.0.2\nUsing map: [var]@script.decoderName[/var] ([var]@script.decoderDate[/var])" }
 					},
-					storeAction: lastContextMenuAction
-					storeParams: lastContextMenuParams
+					storeAction: @script.lastContextMenuAction
+					storeParams: @script.lastContextMenuParams
 				}
 			}
 			{
 				"context+shift", "execute", {
-					actionVariable: lastContextMenuAction
-					paramsVariable: lastContextMenuParams
+					actionVariable: @script.lastContextMenuAction
+					paramsVariable: @script.lastContextMenuParams
 				}
 			}
 		}

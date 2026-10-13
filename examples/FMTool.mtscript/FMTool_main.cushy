@@ -1,5 +1,6 @@
 @include scriptSupport.makaron
 
+@define scriptRoot=FMTool.mtscript
 @define script=fmTool
 @define uiHue=0.9
 @define backgroundColor=hsv(@uiHue,0.1,1.0)

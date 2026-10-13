@@ -11,4 +11,4 @@ resources: ../../Microtonic Resources
         | { action: "mixConsole.triggerChannel", params: { <int>, <int> } }
         | { action: "mixConsole.selectChannel", params: <int> }
 
-<view> = <builtInView>
+<view> = <microtonicView>

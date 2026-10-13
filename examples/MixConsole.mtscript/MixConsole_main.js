@@ -86,10 +86,14 @@ Object.assign(mixConsole, {
 	mute: {
 		execute: function(cushyParam) {
 			var ch = +cushyParam;
-			saveUndo(translate("mixConsole.undoLabel.Mute") + " #" + (ch + 1));
 			var v = (mixConsole.savedMutes[ch] >= 0.5 ? 0.0 : 1.0);
 			mixConsole.savedMutes[ch] = v;
+			/*
+				While a channel is soloed, only the saved mute changes. It is applied when the solo ends, so there is
+				nothing in the document to undo yet.
+			*/
 			if (mixConsole.soloChannel === null) {
+				saveUndo(translate("mixConsole.undoLabel.Mute") + " #" + (ch + 1));
 				var paramName = 'Mute.' + (ch + 1);
 				editParam(paramName, true);
 				setParam(paramName, v);

@@ -327,7 +327,7 @@ Object.assign(polyChain, {
     },
     chainLengthValue: {
         get: function() {
-            return polyChain.chainLength;
+            return '' + polyChain.chainLength;
         },
         set: function(v) {
             polyChain.setChainLength(v);

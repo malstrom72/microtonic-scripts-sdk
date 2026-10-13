@@ -113,7 +113,7 @@ Object.assign(macroTweak, {
 				dp.OscFreq = clamp(sp.OscFreq + d, 0, 1);
 			});
 		},
-		get: function() { return macroTweak.pitchSetting; },
+		get: function() { return '' + macroTweak.pitchSetting; },
 		human: {
 			get: function() { return (macroTweak.pitchSetting * 24).toFixed(2); },
 			set: function(v) { macroTweak.pitch.set(+v / 24.0); }
@@ -162,7 +162,7 @@ Object.assign(macroTweak, {
 				dp.OscDcy = clamp(decayTimeToParam(paramToDecayTime(sp.OscDcy) * timeScale), 0.0, 1.0);
 			});
 		},
-		get: function() { return macroTweak.timeSetting; },
+		get: function() { return '' + macroTweak.timeSetting; },
 		human: {
 			get: function() { return Math.pow(2, macroTweak.timeSetting * 4).toFixed(2); },
 			set: function(v) { macroTweak.time.set(Math.log(+v) * Math.LOG2E / 4.0); }
@@ -185,7 +185,7 @@ Object.assign(macroTweak, {
 				dp.NVel = clamp(sp.NVel + v, 0, 1);
 			});
 		},
-		get: function() { return macroTweak.dynamicsSetting; },
+		get: function() { return '' + macroTweak.dynamicsSetting; },
 		human: {
 			get: function() { return ((macroTweak.dynamicsSetting + 1) * 100.0).toFixed(2); },
 			set: function(v) { macroTweak.dynamics.set(+v / 100.0 - 1); }

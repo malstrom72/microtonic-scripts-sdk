@@ -1,5 +1,6 @@
 @include scriptSupport.makaron
 
+@define scriptRoot=MacroTweak.mtscript
 @define script=macroTweak
 @define uiHue=0.45
 @define backgroundColor=hsv(@uiHue,0.07,1.0)

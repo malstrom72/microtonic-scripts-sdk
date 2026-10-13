@@ -235,6 +235,8 @@
 			diceRoll: 0,
 			diceNumbers: DICE_STRINGS[0],
 			constellation: 'M0,0',	// svg path
+			lastContextMenuAction: '',	// the last context menu choice, repeated by shift+right-click
+			lastContextMenuParams: '',
 
 			// The rest
 			loadedNetName: '',		// on a change the decoder will be reloaded
