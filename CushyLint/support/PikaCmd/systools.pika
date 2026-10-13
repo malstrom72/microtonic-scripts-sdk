@@ -1,5 +1,5 @@
 /*
-	systools.pika v0.986
+	systools.pika v0.987
 
 	PikaScript is released under the "New Simplified BSD License". http://www.opensource.org/licenses/bsd-license.php
 	
@@ -226,8 +226,13 @@ if (PLATFORM == 'UNIX') {
 
 	fromNativePath = function { $0 };
 	toNativePath = function { $0 };
-	quotePath = function { "'" # (if ($0{0} === '-') './') # replace($0, "'", "'\\''") # "'" };	// ./ so a leading - is not taken as a command option.
-	quoteWildcardPath = function { replace(quotePath($0), '*?', '', find, 1, >"'" # $0 # "'") };	// Everything but * and ? stays quoted.
+	undashPath = function { (if ($0{0} === '-') './') # $0 };	// ./ so a leading - is not taken as a command option.
+	quotePath = function { "'" # replace(undashPath($0), "'", "'\\''") # "'" };
+	quoteWildcardPath = function {																						// Escapes everything but letters, digits, harmless punctuation and the wildcards * ? [ ].
+		if ($0 === '') ( "''" )
+		else ( replace(undashPath($0), 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-+,=@%:*?[]'
+				, '', span, 1, >(if ($0 === "\n") "'\n'" else '\' # $0)) )
+	};
 	currentDir = function { appendDirSlash(pipe('pwd -L')) };
 
 	splitPath = function {
