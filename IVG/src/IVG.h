@@ -66,12 +66,33 @@ namespace IVG {
 
 using NuXPixels::Rect; // Rect is a typedef in Carbon which can confuse the compiler so we do an explicit using for it.
 
-const int PATH_INSTRUCTION_LIMIT = 1000000;
-
 inline double square(double d) { return d * d; }
 
 void checkBounds(const NuXPixels::IntRect& bounds);
+void checkBoundsBeforeScaling(double left, double top, double width, double height);									// Scaled bounds, in double so they cannot overflow.
 void checkTextureTransformation(const NuXPixels::AffineTransformation& xf, const char* what);
+
+const double DEFAULT_PATH_SEGMENTS_LIMIT = 1e7;																			// Default for IVGBudget. Real documents use at most about 100 thousand.
+const double DEFAULT_PIXELS_LIMIT = 5e8;																				// Default for IVGBudget. Real documents use at most a few hundred million.
+
+/*
+	Limits the work one render can cause: path segments and pixels here, and the characters and statements of
+	IMPD::IMPDBudget. Work is charged before it is done where possible; going over throws "Path segment budget exceeded"
+	or "Pixel budget exceeded". The counts are cumulative over the render. The host creates one per render and passes it
+	to both the IVGExecutor and the root IMPD::Interpreter, which keep a reference to it, so it must outlive both. The
+	defaults are far beyond what real documents use. See docs/Resource Budgets.md for what the counts capture, what they
+	do not, and how they can go wrong.
+*/
+class IVGBudget : public IMPD::IMPDBudget {
+	public:		IVGBudget(double characters = IMPD::DEFAULT_CHARACTERS_LIMIT
+						, double statements = IMPD::DEFAULT_STATEMENTS_LIMIT
+						, double pathSegments = DEFAULT_PATH_SEGMENTS_LIMIT, double pixels = DEFAULT_PIXELS_LIMIT);
+	public:		void chargePathSegments(double count);
+	public:		void chargePixels(double count);
+	public:		NuXPixels::Path::size_type calcPathSegmentLimit() const;												// The largest path that can still be charged.
+	public:		double pathSegmentsLeft;
+	public:		double pixelsLeft;
+};
 
 /**
 	Small helper that wraps a pointer which might live on the heap.
@@ -261,6 +282,10 @@ class Canvas {
 	public:		virtual void blendWithMask8(const NuXPixels::Renderer<NuXPixels::Mask8>& source) { (void)source; assert(0); }
 	public:		virtual void defineBounds(const NuXPixels::IntRect& newBounds) = 0;			///< Defines the physical boundaries of the canvas (i.e. outer bounds disregarding any current transformations). Never called more than once.
 	public:		virtual NuXPixels::IntRect getBounds() const = 0;							///< Returns the outer boundaries of the canvas. A canvas may throw if bounds has not been set yet.
+	public:		virtual double calcRasterArea(const NuXPixels::IntRect& newBounds) const {								// Pixels defineBounds would allocate.
+					(void)newBounds;
+					return 0.0;
+				}
 	public:		virtual ~Canvas() { }
 	public:		template<class PIXEL_TYPE> void blend(const NuXPixels::Renderer<PIXEL_TYPE>& source);
 };
@@ -285,8 +310,9 @@ class MaskMakerCanvas : public Canvas {
 class Context {
 	friend class PatternBase;
 	
-	public:		Context(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform);
-	public:		Context(Canvas& canvas, Context& parentContext);
+	public:		Context(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform
+						, IVGBudget& budget);
+	public:		Context(Canvas& canvas, Context& parentContext);														// Shares the parent's budget.
 	public:		void resetState();
 	public:		double calcCurveQuality() const;
 	public:		State& accessState() { return state; }
@@ -296,8 +322,10 @@ class Context {
 	public:		void stroke(const NuXPixels::Path& path, Stroke& stroke, const Rect<double>& paintSourceBounds, double widthMultiplier);
 	public:		void fill(const NuXPixels::Path& path, Paint& fill, bool evenOddFillRule, const Rect<double>& paintSourceBounds);
 	public:		void draw(const NuXPixels::Path& path);
+	public:		IVGBudget& accessBudget() const { return budget; }
 
 	protected:	Canvas& canvas;
+	protected:	IVGBudget& budget;
 	protected:	State initState;
 	protected:	State state;
 };
@@ -316,8 +344,9 @@ struct Image {
 	   Executes IVG drawing instructions within a rendering context.
 **/
 class IVGExecutor : public IMPD::Executor {
-	public:		IVGExecutor(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform
-						= NuXPixels::AffineTransformation());
+	public:		IVGExecutor(Canvas& canvas, IVGBudget& budget
+						, const NuXPixels::AffineTransformation& initialTransform = NuXPixels::AffineTransformation());	// Keeps a reference: the budget must outlive the executor. Pass the same one to the root Interpreter.
+	public:		IVGBudget& accessBudget() const { return budget; }
 	public:		virtual bool format(IMPD::Interpreter& interpreter, const IMPD::FormatInfo& formatInfo);
 	public:		virtual bool execute(IMPD::Interpreter& interpreter, const IMPD::String& instruction
 						, const IMPD::String& arguments);
@@ -361,6 +390,7 @@ class IVGExecutor : public IMPD::Executor {
 	protected:	void parseStroke(IMPD::Interpreter& impd, IMPD::ArgumentsContainer& args, Stroke& stroke);
 	protected:	std::vector<const Font*> lookupExternalOrInternalFonts(IMPD::Interpreter& impd
 						, const IMPD::WideString& name, const IMPD::UniString& forString);
+	protected:	IVGBudget& budget;
 	protected:	Context rootContext;
 	protected:	Context* currentContext;
 	protected:	typedef std::map<IMPD::WideString, Font> FontMap;
@@ -546,7 +576,15 @@ template<class PIXEL_TYPE> class PatternPainter : public PatternBase {
 							, NuXPixels::AffineTransformation().transform(xf))
 							* static_cast<const NuXPixels::Renderer<NuXPixels::Mask8>&>(FadedMask(mask, withPaint.opacity)));
 				}
+	public:		virtual double calcRasterArea(const NuXPixels::IntRect& newBounds) const {
+					return static_cast<double>(newBounds.width) * newBounds.height * scale * scale;
+				}
 	public:		virtual void defineBounds(const NuXPixels::IntRect& newBounds) {
+					if (scale != 1) {
+						checkBoundsBeforeScaling(static_cast<double>(newBounds.left) * scale
+								, static_cast<double>(newBounds.top) * scale, static_cast<double>(newBounds.width) * scale
+								, static_cast<double>(newBounds.height) * scale);
+					}
 					NuXPixels::IntRect physicalBounds(newBounds.left * scale, newBounds.top * scale
 						, newBounds.width * scale, newBounds.height * scale);
 					if (image.get() != 0) IMPD::Interpreter::throwRunTimeError("Multiple bounds declarations");
@@ -584,9 +622,11 @@ class SelfContainedARGB32Canvas : public Canvas {
 	public:		virtual void blendWithARGB32(const NuXPixels::Renderer<NuXPixels::ARGB32>& source);
 	public:		virtual void defineBounds(const NuXPixels::IntRect& newBounds);
 	public:		virtual NuXPixels::IntRect getBounds() const;
+	public:		virtual double calcRasterArea(const NuXPixels::IntRect& newBounds) const;
 	public:		NuXPixels::SelfContainedRaster<NuXPixels::ARGB32>* accessRaster();
 	public:		NuXPixels::SelfContainedRaster<NuXPixels::ARGB32>* relinquishRaster();
 	protected:	void checkBoundsDeclared() const;
+	protected:	NuXPixels::IntRect calcScaledBounds(const NuXPixels::IntRect& newBounds) const;
 	protected:	std::unique_ptr< NuXPixels::SelfContainedRaster<NuXPixels::ARGB32> > raster;
 	protected:	const double rescaleBounds;
 };

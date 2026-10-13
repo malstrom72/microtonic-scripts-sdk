@@ -23,6 +23,7 @@
 
 #include <cmath>
 #include <cerrno>
+#include <cstddef>
 #include <cstring>
 #include <algorithm>
 #include <cstdlib>
@@ -128,6 +129,25 @@ UniString convertWideToUniString(const WideString& s) {
 		assert(0);
 		return UniString();
 	}
+}
+
+String narrowToString(const UniString& s) {
+	String narrowed;
+	for (UniString::const_iterator it = s.begin(); it != s.end(); ++it) {
+		const int32_t c = static_cast<int32_t>(*it);
+		if (c < 0x80) {
+			narrowed += static_cast<Char>(c);
+		} else if (c <= 0xFFFF) {
+			narrowed += "\\u" + Interpreter::toString(c, 16, 4);
+		} else {
+			narrowed += "\\U" + Interpreter::toString(c, 16, 8);
+		}
+	}
+	return narrowed;
+}
+
+String narrowToString(const WideString& s) {
+	return narrowToString(convertWideToUniString(s));
 }
 
 /* --- STLMapVariables --- */
@@ -340,23 +360,46 @@ Interpreter::EvaluationValue::operator String() const {
 	}
 }
 
-Interpreter::Interpreter(Executor& executor, Variables& vars, FormatInfo& formatInfo, int statementsLimit, int recursionLimit)
+Interpreter::Interpreter(Executor& executor, Variables& vars, FormatInfo& formatInfo, IMPDBudget& budget
+		, int recursionLimit)
 		: executor(executor), vars(vars), formatInfo(formatInfo), callingFrame(0), rootFrame(*this)
-		, statementsLimit(statementsLimit), recursionLimit(recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
+		, recursionLimit(recursionLimit), budget(budget), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
 
 Interpreter::Interpreter(Executor& executor, Variables& vars, Interpreter& callingFrame)
 		: executor(executor), vars(vars), formatInfo(callingFrame.formatInfo), callingFrame(&callingFrame), rootFrame(callingFrame.rootFrame)
-		, statementsLimit(callingFrame.statementsLimit), recursionLimit(callingFrame.recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
+		, recursionLimit(callingFrame.recursionLimit), budget(callingFrame.budget)
+		, expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
 
 Interpreter::Interpreter(Executor& executor, Interpreter& enclosingInterpreter)
 		: executor(executor), vars(enclosingInterpreter.vars), formatInfo(enclosingInterpreter.formatInfo)
 		, callingFrame(enclosingInterpreter.callingFrame), rootFrame(enclosingInterpreter.rootFrame)
-		, statementsLimit(enclosingInterpreter.statementsLimit), recursionLimit(enclosingInterpreter.recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
+		, recursionLimit(enclosingInterpreter.recursionLimit), budget(enclosingInterpreter.budget)
+		, expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
 
 Interpreter::Interpreter(Executor& executor, Interpreter& enclosingInterpreter, FormatInfo& formatInfo)
 		: executor(executor), vars(enclosingInterpreter.vars), formatInfo(formatInfo), callingFrame(enclosingInterpreter.callingFrame)
-		, rootFrame(enclosingInterpreter.rootFrame), statementsLimit(enclosingInterpreter.statementsLimit)
-		, recursionLimit(enclosingInterpreter.recursionLimit), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
+		, rootFrame(enclosingInterpreter.rootFrame), recursionLimit(enclosingInterpreter.recursionLimit)
+		, budget(enclosingInterpreter.budget), expressionNestingLimit(EXPRESSION_NESTING_LIMIT) { }
+
+void Interpreter::chargeCharacters(size_t count) const { budget.chargeCharacters(static_cast<double>(count)); }
+
+/* --- IMPDBudget --- */
+
+IMPDBudget::IMPDBudget(double characters, double statements) : charactersLeft(characters), statementsLeft(statements) { }
+
+void IMPDBudget::chargeStatements(double count) {
+	statementsLeft -= count;
+	if (statementsLeft < 0.0) {
+		Interpreter::throwRunTimeError("Statements limit reached");
+	}
+}
+
+void IMPDBudget::chargeCharacters(double count) {
+	charactersLeft -= count;
+	if (charactersLeft < 0.0) {
+		Interpreter::throwRunTimeError("Characters limit reached");
+	}
+}
 
 void Interpreter::throwBadSyntax(const String& how) { throw SyntaxException(how); }
 void Interpreter::throwRunTimeError(const String& how) { throw RunTimeException(how); }
@@ -531,6 +574,7 @@ String Interpreter::get(const String& name) const {
 	const Interpreter* f = this;
 	for (; f != 0 && !f->vars.lookup(name, value); f = f->callingFrame) { }
 	if (f == 0) throwRunTimeError(String("Variable ") + name + " does not exist");
+	chargeCharacters(value.size());
 	return value;
 }
 
@@ -614,6 +658,7 @@ void Interpreter::runStatement(const StringRange& r) {
 
 void Interpreter::run(const StringRange& r) {
 	if (recursionLimit == 0) throwRunTimeError("Recursion limit reached");
+	chargeCharacters(r.e - r.b);
 	--recursionLimit;
 	StringRange activeRange = r;
 	String expanded;
@@ -624,9 +669,10 @@ void Interpreter::run(const StringRange& r) {
 			activeRange = StringRange(p, r.e);
 			StringIt q = eatStatement(p, r.e);
 			activeRange.e = p = q;
-			if (rootFrame.statementsLimit == 0) throwRunTimeError("Statements limit reached");
-			if (!executor.progress(*this, rootFrame.statementsLimit)) throw AbortedException("Aborted");
-			--rootFrame.statementsLimit;
+			budget.chargeStatements(1.0);
+			// Statements left counting this one, as before. Clamped since a host may pass a budget beyond an int.
+			const int statementsLeft = static_cast<int>(min(budget.statementsLeft + 1.0, 2147483647.0));
+			if (!executor.progress(*this, statementsLeft)) throw AbortedException("Aborted");
 			expanded = performExpansion(activeRange);
 			activeRange = expanded;
 			runStatement(activeRange);
@@ -757,7 +803,9 @@ StringIt Interpreter::parseDouble(StringIt p, const StringIt& e, double& v) {
 				i = (i < 0 ? -100000 : 100000);
 				while (t != e && *t >= '0' && *t <= '9') ++t;
 			}
-			d *= pow(10, static_cast<double>(i));
+			if (d != 0.0) {																								// Zero times a huge power would be zero times infinity.
+				d *= pow(10, static_cast<double>(i));
+			}
 			q = t;
 		}
 	}
@@ -861,7 +909,10 @@ StringIt Interpreter::concatOperation(StringIt p, const StringIt& e, EvaluationV
 		if (q != p) {
 			p = q;
 			if (!dry) {
-				v = static_cast<String>(v) + static_cast<String>(r);
+				const String left = v;
+				const String right = r;
+				chargeCharacters(left.size() + right.size());
+				v = left + right;
 			}
 		}
 	}
@@ -989,9 +1040,9 @@ StringIt Interpreter::substringOperation(StringIt p, const StringIt& e, Evaluati
 
 		if (!dry) {
 			const String source = static_cast<String>(v);
-			const long sourceLength = lossless_cast<long>(source.size());
+			const ptrdiff_t sourceLength = static_cast<ptrdiff_t>(source.size());
 
-			// Worked out as doubles and clamped before the conversion, so a huge offset or length cannot overflow a long.
+			// Worked out as doubles and clamped to the source before the conversion, so any offset or length is safe.
 			const double sourceLengthValue = static_cast<double>(sourceLength);
 			const double offsetValue = (gotOffset ? floor(static_cast<double>(offset)) : 0.0);
 			const double lengthValue = (gotLength ? floor(static_cast<double>(length)) : 0.0);
@@ -999,8 +1050,8 @@ StringIt Interpreter::substringOperation(StringIt p, const StringIt& e, Evaluati
 			const double startValue = (gotOffset ? (offsetValue < 0.0 ? sourceLengthValue + offsetValue : offsetValue)
 					: (lengthValue < 0.0 ? sourceLengthValue : 0.0));
 			const double endValue = (gotLength ? startValue + lengthValue : sourceLengthValue);
-			const long start = static_cast<long>(min(max(startValue, 0.0), sourceLengthValue));
-			const long end = static_cast<long>(min(max(endValue, 0.0), sourceLengthValue));
+			const ptrdiff_t start = static_cast<ptrdiff_t>(min(max(startValue, 0.0), sourceLengthValue));
+			const ptrdiff_t end = static_cast<ptrdiff_t>(min(max(endValue, 0.0), sourceLengthValue));
 			if (end < start) {
 				v = String(source.rbegin() + (sourceLength - start), source.rbegin() + (sourceLength - end));
 			} else {
@@ -1299,6 +1350,7 @@ String Interpreter::performExpansion(const StringRange& r) const {
 	}
 	if (pendingSpace && b != p) processed.append(" ");
 	processed.append(b, p);
+	chargeCharacters(processed.size());
 	return processed;
 }
 
