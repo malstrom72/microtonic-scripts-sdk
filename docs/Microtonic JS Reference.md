@@ -1096,9 +1096,9 @@ The error dialogs Microtonic shows for script errors, that is, errors the script
 scheduled actions, GUI variable functions and the GUI, read the GUI variable `verboseErrors`. Like any GUI variable, it
 resolves to the JavaScript global of that name if there is one, so a script turns it on with `verboseErrors = true;`
 (`JSConsole` does this when it starts). `setCushyVariable('verboseErrors', 'true')` also works. If the variable does not
-exist at all, it is false in release builds. When it is true, the dialog starts with what
-Microtonic was doing, for example `Error performing action "scriptPopup":`, followed by a blank line and the error
-message. When it is false, the dialog shows only the error message. No error is hidden either way.
+exist at all, it is false in release builds. When it is true, the dialog starts with what Microtonic was doing, for
+example `Error performing action "scriptPopup":`, followed by a blank line and the error message. When it is false, the
+dialog shows only the error message. No error is hidden either way.
 
 ### GUI Actions
 
