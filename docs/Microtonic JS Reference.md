@@ -1027,9 +1027,9 @@ variables if they already exist.
 
 Since all scripts share the same JavaScript global variable space, putting functions and variables under a single
 JavaScript object with the same name as the script is good practice. Doing so prevents littering the variable space and
-you minimize the risk of colliding with other scripts. If you run your script with the `JSConsole` open, it will alert
-every time a global variable is created. This helps you catch mistakes such as missing the `var` keyword when declaring
-a variable.
+you minimize the risk of colliding with other scripts. If you run your script with the `JSConsole` open, it prints a
+`New global:` line every time a global variable is created, with or without `var`. This helps you catch mistakes such
+as missing the `var` keyword when declaring a variable.
 
 Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
 editing a GUI script, click the reload button at the top of the `JSConsole` window to flush cached resources and rebuild
@@ -1091,6 +1091,11 @@ ends.
 There are a few built-in Cushy-only variables in Microtonic. You should avoid using these names. This is the list:
 `'programsLocked'`, `'Morph'`, `'Morph.human'`, `'undo.description'`, `'redo.description'`, `'shortModifierKey'`,
 `'po32Mode'`, `'isRegistered'`, `'uiScale'`, and `'skinResourcesPath'`.
+
+Set the GUI variable `verboseErrors` to true to make script error dialogs also say what Microtonic was doing when the
+error happened, for example `Error performing action "scriptPopup":`, above the error message. Either
+`verboseErrors = true;` or `setCushyVariable('verboseErrors', 'true')` works. It is off by default in release builds.
+`JSConsole` turns it on when it starts.
 
 ### GUI Actions
 

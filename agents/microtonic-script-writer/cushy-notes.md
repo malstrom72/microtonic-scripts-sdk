@@ -695,13 +695,15 @@ omitting `checked` means the checked style never applies.
 
 ## Drum Patch Property Copy
 
-`JSON.stringify` / `JSON.parse` fail on Microtonic's internal drum-patch
-objects (they are native C++ proxies). The error surfaces as
-`TypeError: Cannot convert undefined or null to object`.
+The drum patches in `getElement('preset')` behave as plain data.
+`JSON.stringify` works on them, and `setElement('preset', ...)` accepts a
+`drumPatches[ch]` entry that was replaced: by another channel's drum patch
+object, by a plain object, or by a `JSON.parse` copy. All three were verified in a
+live Microtonic.
 
-To copy a drum patch, snapshot its properties into a plain JS object using
-`DRUM_PATCH_PARAMS`, then write back to the **existing** internal object
-in-place. Do not assign a new plain object to `preset.drumPatches[ch]`.
+To copy only the sound parameters and the name, without touching the target
+channel's other fields, write them into the existing object with
+`DRUM_PATCH_PARAMS`:
 
 ```javascript
 // Snapshot before the loop so in-place writes don't corrupt later reads

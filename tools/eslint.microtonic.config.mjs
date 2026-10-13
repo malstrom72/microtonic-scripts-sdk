@@ -24,8 +24,9 @@ const PRODUCT_GLOBALS = {
   parseArray: "readonly",
   parseStruct: "readonly",
   triggerChannel: "readonly",
-  // Set by JSConsole.js since 2023; undocumented. Synplant sets it with
-  // setCushyVariable instead. Unverified which form Microtonic reads.
+  // Set by JSConsole.js. Script error dialogs read it through the GUI variable
+  // lookup; true adds what Microtonic was doing. See the JS Reference, GUI
+  // Variables.
   verboseErrors: "writable"
 };
 
