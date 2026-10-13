@@ -24,9 +24,9 @@ const PRODUCT_GLOBALS = {
   parseArray: "readonly",
   parseStruct: "readonly",
   triggerChannel: "readonly",
-  // Set by JSConsole.js since 2023; undocumented. Bound to the Cushy variable of
-  // the same name, so assigning it and setCushyVariable('verboseErrors', ...)
-  // are equivalent; true adds the failing action's name to script error dialogs.
+  // Set by JSConsole.js. The same variable as the Cushy variable of that name;
+  // true adds what Microtonic was doing to script error dialogs. See the JS
+  // Reference, GUI Variables.
   verboseErrors: "writable"
 };
 

@@ -1282,11 +1282,16 @@ should avoid using these names. This is the list:
 JavaScript global, so <code>verboseErrors = true;</code> and
 <code>setCushyVariable('verboseErrors', 'true')</code> are equivalent
 (after the latter, the global reads the string <code>'true'</code>).
-When it is true, the error dialog for a failing script starts with a
-line naming the action that failed, for example
-<code>Error performing action "scriptPopup":</code>. Neither setting
-shows a stack trace. <code>JSConsole</code> turns it on when it
-starts.</p>
+It only changes the error dialogs Microtonic shows for script errors,
+that is, errors the script does not catch itself, from actions,
+scheduled actions, GUI variable functions and the GUI. When it is true,
+the dialog starts with what Microtonic was doing, for example
+<code>Error performing action "scriptPopup":</code>, followed by a blank
+line and the error message. When it is false, the dialog shows only the
+error message. No error is hidden either way, and no stack trace is
+added. <code>verboseErrors</code> defaults to false in release builds and
+is not saved, so it is lost when the JavaScript engine is reset.
+<code>JSConsole</code> turns it on when it starts.</p>
 <h3 id="gui-actions">GUI Actions</h3>
 <p>When the user clicks a button or selects an item from a menu, a “GUI
 action” is performed (as configured by the <code>.cushy</code> file).
