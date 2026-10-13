@@ -1288,9 +1288,10 @@ scheduled actions, GUI variable functions and the GUI. When it is true,
 the dialog starts with what Microtonic was doing, for example
 <code>Error performing action "scriptPopup":</code>, followed by a blank
 line and the error message. When it is false, the dialog shows only the
-error message. No error is hidden either way, and no stack trace is
-added. <code>verboseErrors</code> defaults to false in release builds and
-is not saved, so it is lost when the JavaScript engine is reset.
+error message. No error is hidden either way, and
+<code>verboseErrors</code> never adds a stack trace. It defaults to false
+in release builds and is not saved, so it is lost when the JavaScript
+engine is reset.
 <code>JSConsole</code> turns it on when it starts.</p>
 <h3 id="gui-actions">GUI Actions</h3>
 <p>When the user clicks a button or selects an item from a menu, a “GUI

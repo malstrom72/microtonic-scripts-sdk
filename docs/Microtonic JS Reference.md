@@ -1097,9 +1097,9 @@ The built-in variable `verboseErrors` is also visible as a JavaScript global, so
 It only changes the error dialogs Microtonic shows for script errors, that is, errors the script does not catch itself,
 from actions, scheduled actions, GUI variable functions and the GUI. When it is true, the dialog starts with what
 Microtonic was doing, for example `Error performing action "scriptPopup":`, followed by a blank line and the error
-message. When it is false, the dialog shows only the error message. No error is hidden either way, and no stack trace
-is added. `verboseErrors` defaults to false in release builds and is not saved, so it is lost when the JavaScript engine
-is reset. `JSConsole` turns it on when it starts.
+message. When it is false, the dialog shows only the error message. No error is hidden either way, and `verboseErrors`
+never adds a stack trace. It defaults to false in release builds and is not saved, so it is lost when the JavaScript
+engine is reset. `JSConsole` turns it on when it starts.
 
 ### GUI Actions
 
