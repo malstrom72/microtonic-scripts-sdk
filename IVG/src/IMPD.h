@@ -258,6 +258,7 @@ class Interpreter {
 	protected:	class EvaluationValue;
 	protected:	static bool isComment(StringIt p, const StringIt& e);
 	protected:	static bool isSymbolLetter(Char c);																		///< _ is considered a letter in this context, . - and 0 to 9 are not
+	protected:	static bool startsOperand(StringIt p, const StringIt& e);
 	protected:	static StringIt eatComment(StringIt p, const StringIt& e);
 	protected:	static StringIt eatWhite(StringIt p, const StringIt& e);
 	protected:	static StringIt eatEscape(StringIt p, const StringIt& e);
