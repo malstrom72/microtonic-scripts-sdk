@@ -50,6 +50,8 @@ Files (all JSON):
   `bridge on` (`time` is epoch ms; `owner` is a token identifying the instance that
   currently holds the bridge). The server uses `time` for the "announced N s ago"
   status.
+- `server-owner.json`: `{ token, pid, time }`, written by the newest server on
+  startup (temp file + atomic rename). The bridge never reads it.
 
 Requests and replies are paired by a strictly increasing `seq` (epoch-ms based,
 so it keeps climbing across restarts). The bridge ignores any `seq` it has
@@ -63,6 +65,13 @@ already handled.
 > stands down — so two engines never handle the same request. To move the bridge to
 > a different instance, run `bridge on` (and click OK) in that instance's
 > JSConsole window.
+
+> **One MCP server at a time.** The server side has the same rule. Each server
+> writes its own token to `server-owner.json` when it starts, so the newest server
+> takes over the folder. A server that finds another token there stands down for
+> good: it writes no more requests, and its tools answer with an "another session
+> took over the bridge" error (`mt_status` reports `STOOD DOWN`). Restart or
+> reconnect the MCP server in a session to take the bridge back for it.
 
 ## Tools
 
