@@ -122,9 +122,12 @@ On Windows, before the bridge is installed, the SDK helper can usually locate th
 same folder from the Sonic Charge registry keys (it reads `SetupPath` from
 `HKLM\SOFTWARE\Sonic Charge\Microtonic` and appends `Microtonic Scripts`):
 
-```powershell
-powershell -ExecutionPolicy Bypass -File references/microtonic-scripts-sdk/tools/locate-scripts-folder.ps1 -Verify
+```bat
+references\microtonic-scripts-sdk\tools\locate-scripts-folder.cmd -Verify
 ```
+
+The `.cmd` runs `locate-scripts-folder.ps1` with the execution policy bypassed for
+that script only, because Windows blocks running `.ps1` files by default.
 
 Treat that output as a high-confidence candidate to confirm with the user, not as
 a replacement for `DIRS.SCRIPTS` / *Open Scripts Folder*. The folder is normally
@@ -236,6 +239,27 @@ user a choice** rather than deciding for them:
   Prefer a project **outside** `~/Documents`/Desktop/Downloads to avoid a one-time
   Microtonic "wants to access Documents" prompt when it reads through the link.
 
+On Windows the standard folder is normally
+`C:\Program Files\Sonic Charge\Microtonic Scripts`; confirm it with
+`references\microtonic-scripts-sdk\tools\locate-scripts-folder.cmd -Verify`.
+Creating it also needs one elevated step. Run the chosen option from the project
+root in a Command Prompt opened with *Run as administrator*:
+
+- **A**:
+
+  ```bat
+  mkdir "C:\Program Files\Sonic Charge\Microtonic Scripts"
+  node references\microtonic-scripts-sdk\tools\install-jsconsole.js "C:\Program Files\Sonic Charge\Microtonic Scripts"
+  ```
+
+- **B** (a directory junction, which needs no Developer Mode):
+
+  ```bat
+  mkdir scripts
+  xcopy "references\microtonic-scripts-sdk\JSConsole.mtscript" "scripts\JSConsole.mtscript\" /E /I
+  mklink /J "C:\Program Files\Sonic Charge\Microtonic Scripts" "%CD%\scripts"
+  ```
+
 Either way this is a one-time setup. Once the folder exists, `install-jsconsole.js`
 (above) is the way to refresh the console; it also prints option A's command if
 pointed at a folder that does not exist yet.
@@ -291,6 +315,14 @@ project root:
 references/microtonic-scripts-sdk/CushyLint/CushyLint \
   "$(pwd)/scripts/MyTool.mtscript/MyTool_main.cushy" \
   "$(pwd)/references/microtonic-scripts-sdk/Microtonic Resources"
+```
+
+On Windows:
+
+```bat
+references\microtonic-scripts-sdk\CushyLint\CushyLint.bat ^
+  "%cd%\scripts\MyTool.mtscript\MyTool_main.cushy" ^
+  "%cd%\references\microtonic-scripts-sdk\Microtonic Resources"
 ```
 
 A CushyLint pass means the Cushy syntax and schema references are valid. It does

@@ -26,12 +26,16 @@ Writing `.cushy` files, running CushyLint and rendering IVG icons with IVG2PNG n
 bundled in this repository. The CushyLint and IVG2PNG binaries are prebuilt for Windows and macOS and used as-is
 (on macOS, CushyLint's binaries are built for Apple silicon; see the C++ compiler note below for Intel Macs).
 
+The command-line tools a script author uses run on Windows without Git Bash. Each `.sh` tool has a `.cmd` counterpart
+with the same arguments, output and exit codes, and CushyLint has `CushyLint.bat`. Run them from a Command Prompt or
+PowerShell, for example `tools\validate-js.cmd`.
+
 **[Node.js](https://nodejs.org/)** is the only tool you may need to install, for these tasks:
 
-- **JavaScript validation** (`tools/validate-js.sh`): runs ESLint via `npx` to catch syntax errors, undefined
-  globals and unsupported constructs in `.js` and `.mtscript` files before they reach the plugin. Microtonic's
-  engine is ECMAScript 3 with some ECMAScript 5 features, so ESLint parses scripts as ECMAScript 5 and additionally
-  rejects getter/setter literals and `with`.
+- **JavaScript validation** (`tools/validate-js.sh`, or `tools\validate-js.cmd` on Windows): runs ESLint via `npx`
+  to catch syntax errors, undefined globals and unsupported constructs in `.js` and `.mtscript` files before they
+  reach the plugin. Microtonic's engine is ECMAScript 3 with some ECMAScript 5 features, so ESLint parses scripts as
+  ECMAScript 5 and additionally rejects getter/setter literals and `with`.
 - **The live scripting bridge** (`tools/jsconsole-bridge-mcp/`): the MCP server that lets an AI assistant run code
   in a running Microtonic. See [Live Scripting Bridge](#live-scripting-bridge).
 - **IVGFontConverter**: converts TrueType/OpenType fonts to the `.ivgfont` format used by Cushy and IVG. Requires Node.js to run `IVGFontConverter.node.js`.
@@ -99,12 +103,13 @@ Here is a brief list of the technologies used in Microtonic GUIs:
   patterns and drum patches) for reference. The validators also check it.
 
 - `tools`:
-    - `validate-js.sh`, `validate-examples.sh` and `validate-static-ivg.sh`/`.cmd`: validators for JavaScript, the
-      examples and static IVG files.
+    - `validate-js`, `validate-examples` and `validate-static-ivg`, each as `.sh` and `.cmd`: validators for
+      JavaScript, the examples and static IVG files.
     - `IVG2PNG`: the prebuilt IVG renderer, and `build-ivg2png.sh`/`.cmd` to build it from source.
     - `jsconsole-bridge-mcp`: the MCP server for the [live scripting bridge](#live-scripting-bridge), registered in
       `.mcp.json`.
-    - `install-jsconsole.js` and `locate-scripts-folder.ps1`: install JSConsole and find the Microtonic Scripts folder.
+    - `install-jsconsole.js` and `locate-scripts-folder.ps1`/`.cmd`: install JSConsole and find the Microtonic Scripts
+      folder.
     - Utilities for maintaining the generated documentation.
 
 - `tmLanguages`: syntax highlighting support for Sonic Charge formats and languages.
@@ -276,7 +281,7 @@ With no argument, the helper prints the SDK source path and platform-specific ta
 unless the source console contains the bridge commands, which avoids accidentally installing a plain JSConsole copy.
 
 On Windows, before the bridge is installed, you can usually locate the same folder with
-`tools\locate-scripts-folder.ps1 -Verify`; it mirrors Microtonic's registry lookup. Confirm the result against
+`tools\locate-scripts-folder.cmd -Verify`; it mirrors Microtonic's registry lookup. Confirm the result against
 `Open Scripts Folder` before writing.
 
 Microtonic caches resources while the GUI window is open, including JavaScript source files loaded by scripts. When
@@ -317,7 +322,7 @@ link steps.
 
 On Windows the live folder is normally under `C:\Program Files\Sonic Charge\Microtonic Scripts`, which usually
 requires elevation for every copy. Before the bridge is installed you can locate it with
-`tools\locate-scripts-folder.ps1 -Verify`. In that case, consider the development-link workflow before the first manual
+`tools\locate-scripts-folder.cmd -Verify`. In that case, consider the development-link workflow before the first manual
 install so later edits are elevation-free.
 
 ### Syntax Highlighting

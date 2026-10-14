@@ -84,6 +84,12 @@ CushyLint/CushyLint "$(pwd)/MyScript.mtscript/" "$(pwd)/Microtonic Resources"
 #                                             ^
 ```
 
+On Windows:
+
+```bat
+CushyLint\CushyLint.bat "%cd%\MyScript.mtscript/" "%cd%\Microtonic Resources"
+```
+
 ## Cluster Views
 
 A `cluster` is not only a display primitive. By default it is an editable paint
@@ -815,7 +821,8 @@ references). External `.ivg` files can be validated and rasterized by the
 vendored `IVG2PNG` renderer:
 
 ```sh
-tools/validate-static-ivg.sh "path/to/MyTool.mtscript"
+tools/validate-static-ivg.sh "path/to/MyTool.mtscript"      # macOS / Linux
+tools\validate-static-ivg.cmd "path\to\MyTool.mtscript"     # Windows
 ```
 
 This script renders every static `.ivg` under the given folders to PNG and fails

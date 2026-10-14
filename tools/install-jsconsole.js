@@ -24,7 +24,7 @@ const path = require('path');
 const repoRoot = path.resolve(__dirname, '..');
 const source = path.join(repoRoot, CONSOLE_PACKAGE);
 const mainFile = 'JSConsole_main.js';
-const locator = path.join(__dirname, 'locate-scripts-folder.ps1');
+const locator = path.join(__dirname, 'locate-scripts-folder.cmd');
 
 function fail(message) {
 	console.error(message);
@@ -87,7 +87,7 @@ function usage() {
 	const platformDefault = process.platform === 'darwin'
 		? MAC_SCRIPTS_PATH
 		: process.platform === 'win32'
-			? `${WINDOWS_SCRIPTS_PATH} (confirm with tools\\locate-scripts-folder.ps1 -Verify)`
+			? `${WINDOWS_SCRIPTS_PATH} (confirm with tools\\locate-scripts-folder.cmd -Verify)`
 			: `Use ${PRODUCT} > Open Scripts Folder`;
 
 	console.log(`Install this SDK's bridged ${CONSOLE_PACKAGE} into ${SCRIPTS_FOLDER}.`);
@@ -101,7 +101,7 @@ function usage() {
 	console.log('An existing console package in the target is replaced, not merged.');
 	console.log(`Find the target with ${PRODUCT} > Open Scripts Folder (once the folder exists), DIRS.SCRIPTS`);
 	console.log('over an existing bridge, or on Windows:');
-	console.log('  powershell -ExecutionPolicy Bypass -File tools\\locate-scripts-folder.ps1 -Verify');
+	console.log('  tools\\locate-scripts-folder.cmd -Verify');
 	console.log('If the folder does not exist yet, run this installer against the expected path anyway;');
 	console.log('it prints the one-time commands that create or link the folder.');
 }
@@ -144,7 +144,7 @@ function failMissingFolder(resolvedTarget) {
 			`On Windows the folder is normally ${WINDOWS_SCRIPTS_PATH}. Confirm the`,
 			'exact path first (it reads the same registry key the engine does):',
 			'',
-			`  powershell -ExecutionPolicy Bypass -File "${locator}"`,
+			`  "${locator}" -Verify`,
 			'',
 			'That location is under C:\\Program Files, so creating it needs one elevated step. Open',
 			'Command Prompt (cmd.exe) with "Run as administrator" and choose one of:',
