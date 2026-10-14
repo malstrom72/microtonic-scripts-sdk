@@ -176,6 +176,18 @@ async function retryWhileLocked(op, limitMs) {
 	}
 }
 
+// Atomic publish: write `value` to a temp file in the bridge folder, then rename it over `dest`.
+async function writeJsonAtomic(tmpName, dest, value, limitMs) {
+	const tmp = path.join(BASE, tmpName);
+	fs.writeFileSync(tmp, JSON.stringify(value));
+	try {
+		await renameWithRetry(tmp, dest, null, limitMs);
+	} catch (e) {
+		try { fs.unlinkSync(tmp); } catch (e2) { /* already gone */ }
+		throw e;
+	}
+}
+
 /*
 	request.json and response.json hold one message each, so bridge calls run one at a time and
 	`timeout_ms` includes the wait in this queue. A call that times out withdraws its request, so a
@@ -249,23 +261,18 @@ async function withdrawRequest(seq) {
 	calls with an error instead of writing requests. This mirrors the console's owner token in
 	bridge.json and leaves the console protocol unchanged.
 */
-const OWNER_TOKEN = process.pid + '-' + crypto.randomBytes(8).toString('hex');
+const OWNER_TOKEN = crypto.randomBytes(8).toString('hex');
 let ownerClaimed = Promise.resolve();
 let stoodDownFor = null;	// the owner record that replaced ours
 
-async function claimOwnership() {
-	const tmp = path.join(BASE, 'server-owner.' + process.pid + '.tmp');
-	fs.writeFileSync(tmp, JSON.stringify({ token: OWNER_TOKEN, pid: process.pid, time: Date.now() }));
-	try {
-		await renameWithRetry(tmp, OWNER_PATH);
-	} catch (e) {
-		try { fs.unlinkSync(tmp); } catch (e2) { /* already gone */ }
-		throw e;
-	}
+function claimOwnership() {
+	return writeJsonAtomic('server-owner.' + process.pid + '.tmp', OWNER_PATH,
+		{ token: OWNER_TOKEN, pid: process.pid, time: Date.now() });
 }
 
 // Throws once another server has taken over. A missing or unreadable owner file is claimed again.
 async function checkOwnership() {
+	await ownerClaimed;
 	if (stoodDownFor === null) {
 		const owner = readJson(OWNER_PATH);
 		if (owner === null || typeof owner.token !== 'string') {
@@ -277,10 +284,8 @@ async function checkOwnership() {
 	}
 	if (stoodDownFor !== null) {
 		const who = typeof stoodDownFor.pid === 'number' ? ' (server pid ' + stoodDownFor.pid + ')' : '';
-		throw new Error('another session took over the bridge' + who + ', so this server has stood '
-			+ 'down and sent nothing. Only one MCP server can drive the ' + CONSOLE + ' bridge at a '
-			+ 'time. To use the bridge from this session again, restart or reconnect its '
-			+ SERVER_NAME + ' MCP server, which takes the bridge back.');
+		throw new Error('another session took over the bridge' + who + '; nothing was sent. Restart or '
+			+ 'reconnect this session\'s ' + SERVER_NAME + ' MCP server to take it back.');
 	}
 }
 
@@ -316,16 +321,8 @@ async function bridgeEval(args, token) {
 async function bridgeEvalNow(code, timeout, deadline, token) {
 	await checkOwnership();
 	const seq = nextSeq();
-
-	// Atomic publish: write a temp file in the same dir, then rename over request.json.
-	const tmp = path.join(BASE, 'request.' + process.pid + '.' + seq + '.tmp');
-	fs.writeFileSync(tmp, JSON.stringify({ seq: seq, code: code }));
-	try {
-		await renameWithRetry(tmp, REQUEST_PATH, null, Math.max(1, deadline - Date.now()));
-	} catch (e) {
-		try { fs.unlinkSync(tmp); } catch (e2) { /* already gone */ }
-		throw e;
-	}
+	await writeJsonAtomic('request.' + process.pid + '.' + seq + '.tmp', REQUEST_PATH, { seq: seq, code: code },
+		Math.max(1, deadline - Date.now()));
 
 	while (Date.now() < deadline && !token.cancelled) {
 		const resp = readJson(RESPONSE_PATH);
@@ -613,7 +610,6 @@ async function dispatch(msg) {
 		return;
 	}
 
-	await ownerClaimed;
 	switch (method) {
 		case 'initialize': {
 			const requested = msg.params && msg.params.protocolVersion;
