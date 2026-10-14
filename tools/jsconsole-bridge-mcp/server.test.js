@@ -77,6 +77,10 @@ function startServer(base) {
 		}
 	});
 
+	function write(line) {
+		child.stdin.write(line + '\n');
+	}
+
 	let nextId = 1;
 	function request(method, params, timeoutMs) {
 		const id = nextId++;
@@ -86,7 +90,7 @@ function startServer(base) {
 				reject(new Error('timed out waiting for response to ' + method));
 			}, timeoutMs || 5000);
 			pending.set(id, function (msg) { clearTimeout(timer); resolve(msg); });
-			child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: id, method: method, params: params || {} }) + '\n');
+			write(JSON.stringify({ jsonrpc: '2.0', id: id, method: method, params: params || {} }));
 		});
 		promise.id = id;
 		return promise;
@@ -96,9 +100,9 @@ function startServer(base) {
 		child: child,
 		request: request,
 		received: received,
-		write: function (line) { child.stdin.write(line + '\n'); },
+		write: write,
 		notify: function (method, params) {
-			child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: method, params: params || {} }) + '\n');
+			write(JSON.stringify({ jsonrpc: '2.0', method: method, params: params || {} }));
 		},
 		endStdin: function () { child.stdin.end(); },
 		kill: function () { try { child.kill(); } catch (e) {} },

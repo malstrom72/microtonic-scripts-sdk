@@ -189,12 +189,17 @@ function cancelToken() {
 	return token;
 }
 
-const NOT_CANCELLED = cancelToken();
-
 function throwIfCancelled(token) {
 	if (token.cancelled) {
 		throw new Error('cancelled by the client');
 	}
+}
+
+// Marked so callers that retry, like the reload probes, can tell a timeout from a real failure.
+function timeoutError(message) {
+	const e = new Error(message);
+	e.timedOut = true;
+	return e;
 }
 
 // Resolves true once `turn` settles, or false if `ms` runs out or the call is cancelled first.
@@ -234,7 +239,6 @@ async function withdrawRequest(seq) {
 // Tool: <prefix>_eval — write a request atomically, poll for the matching reply.
 //
 async function bridgeEval(args, token) {
-	token = token || NOT_CANCELLED;
 	const code = args && typeof args.code === 'string' ? args.code : null;
 	if (code === null) {
 		throw new Error(EVAL_TOOL + ' requires a string "code" argument');
@@ -250,7 +254,7 @@ async function bridgeEval(args, token) {
 	try {
 		if (!await waitAtMost(previous, deadline - Date.now(), token)) {
 			throwIfCancelled(token);
-			throw new Error('timed out after ' + timeout + 'ms waiting for an earlier bridge call to '
+			throw timeoutError('timed out after ' + timeout + 'ms waiting for an earlier bridge call to '
 				+ 'finish; nothing was sent.');
 		}
 		return await bridgeEvalNow(code, timeout, deadline, token);
@@ -261,7 +265,6 @@ async function bridgeEval(args, token) {
 }
 
 async function bridgeEvalNow(code, timeout, deadline, token) {
-	throwIfCancelled(token);
 	const seq = nextSeq();
 
 	// Atomic publish: write a temp file in the same dir, then rename over request.json.
@@ -295,7 +298,7 @@ async function bridgeEvalNow(code, timeout, deadline, token) {
 		? ' The request was withdrawn, so it will not run later unless the bridge had already '
 			+ 'started it.'
 		: ' The request could not be withdrawn (request.json stayed locked) and may still run later.';
-	throw new Error('timed out after ' + timeout + 'ms with no reply — the bridge is not '
+	throw timeoutError('timed out after ' + timeout + 'ms with no reply — the bridge is not '
 		+ 'responding.' + detail + ' Check, in order of likelihood: '
 		+ '1) the ' + CONSOLE + ' window is open in ' + PRODUCT_NAME + '; '
 		+ '2) you typed `bridge on` in it this session (a leftover bridge.json does not mean it is live); '
@@ -325,7 +328,6 @@ function formatEval(resp) {
 // cannot tell callers when the script rerun has finished.
 //
 async function bridgeReload(args, token) {
-	token = token || NOT_CANCELLED;
 	const until = args && typeof args.until === 'string' && args.until !== '' ? args.until : null;
 	const timeout = args && typeof args.timeout_ms === 'number'
 		? args.timeout_ms
@@ -354,7 +356,6 @@ async function bridgeReload(args, token) {
 	const deadline = started + timeout;
 	while (Date.now() < deadline) {
 		await sleep(RELOAD_POLL_MS);
-		throwIfCancelled(token);
 		const remaining = deadline - Date.now();
 		if (remaining <= 0) {
 			break;
@@ -364,7 +365,9 @@ async function bridgeReload(args, token) {
 			r = await bridgeEval({ code: probe, timeout_ms: Math.min(5000, remaining) }, token);
 		} catch (e) {
 			// One probe timing out is not the end; keep polling until the deadline.
-			throwIfCancelled(token);
+			if (!e.timedOut) {
+				throw e;
+			}
 		}
 		if (r && r.ok && String(r.value).indexOf(READY_TOKEN) >= 0) {
 			return {
@@ -391,7 +394,6 @@ async function bridgeReload(args, token) {
 const PROBE_TIMEOUT_MS = 1500;
 
 async function bridgeStatus(token) {
-	token = token || NOT_CANCELLED;
 	const lines = ['base: ' + BASE];
 	if (!fs.existsSync(BASE)) {
 		lines.push('folder: missing (will be created on first ' + EVAL_TOOL + ')');
@@ -406,10 +408,7 @@ async function bridgeStatus(token) {
 		try {
 			await bridgeEval({ code: '1', timeout_ms: PROBE_TIMEOUT_MS }, token);
 			live = true;
-		} catch (e) {
-			// No reply within the probe window.
-			throwIfCancelled(token);
-		}
+		} catch (e) { /* no reply within the probe window */ }
 	}
 
 	if (busy) {
