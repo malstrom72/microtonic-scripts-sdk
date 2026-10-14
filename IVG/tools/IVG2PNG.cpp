@@ -53,9 +53,9 @@ static bool isLittleEndian() {
 
 class IVGExecutorWithExternalFonts : public IVGExecutor {
 	public:
-		IVGExecutorWithExternalFonts(Canvas& canvas, const std::string& fontPath,
+		IVGExecutorWithExternalFonts(Canvas& canvas, IVGBudget& budget, const std::string& fontPath,
 			    const AffineTransformation& xform = AffineTransformation())
-			    : IVGExecutor(canvas, xform), fontPath(fontPath) {
+			    : IVGExecutor(canvas, budget, xform), fontPath(fontPath) {
 		}
 		virtual std::vector<const Font*> lookupFonts(IMPD::Interpreter& interpreter, const IMPD::WideString& fontName,
 			    const IMPD::UniString& forString) {
@@ -66,7 +66,7 @@ class IVGExecutorWithExternalFonts : public IVGExecutor {
 			    String fontCode;
 			    {
 			        std::string path = fontPath.empty() ? (fontName8Bit + ".ivgfont") : (fontPath + "/" + fontName8Bit + ".ivgfont");
-			        std::ifstream fileStream(path.c_str());
+			        std::ifstream fileStream(path.c_str(), std::ios::binary);
 			        if (!fileStream.good()) {
 			            return std::vector<const Font*>();
 			        }
@@ -79,7 +79,8 @@ class IVGExecutorWithExternalFonts : public IVGExecutor {
 			    FontParser fontParser;
 			    STLMapVariables vars;
 			    FormatInfo formatInfo;
-			    Interpreter impd(fontParser, vars, formatInfo);
+			    // A font file counts toward the render that loads it.
+			    Interpreter impd(fontParser, vars, formatInfo, accessBudget());
 			    impd.run(fontCode);
 			    insertResult.first->second = fontParser.finalizeFont();
 			}
@@ -96,6 +97,7 @@ class IVGExecutorWithExternalFonts : public IVGExecutor {
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <crtdbg.h>
 
 /*
 	On Windows a stack overflow leaves no stack for AddressSanitizer and libFuzzer to report it on, so the input that
@@ -107,14 +109,17 @@ extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) {
 	SetThreadStackGuarantee(&guarantee);
 	_set_error_mode(_OUT_TO_STDERR);
 	_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
 	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 	return 0;
 }
 #endif
 
 struct FuzzerExecutor : public IVGExecutor {
-	FuzzerExecutor(Canvas& canvas, const NuXPixels::AffineTransformation& initialTransform = NuXPixels::AffineTransformation())
-			: IVGExecutor(canvas, initialTransform) { }
+	FuzzerExecutor(Canvas& canvas, IVGBudget& budget) : IVGExecutor(canvas, budget) { }
 	virtual void trace(IMPD::Interpreter& interpreter, const IMPD::WideString& s) { }
 };
 
@@ -124,9 +129,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 	try {
 		{
 			STLMapVariables topVars;
-			FuzzerExecutor ivgExecutor(canvas);
+			// Tighter than the defaults, so every input stays within libFuzzer's 2 GB and replays fast.
+			IVGBudget budget(DEFAULT_CHARACTERS_LIMIT, DEFAULT_STATEMENTS_LIMIT, 5e6, 2.5e8);
+			FuzzerExecutor ivgExecutor(canvas, budget);
 			FormatInfo formatInfo;
-			Interpreter impd(ivgExecutor, topVars, formatInfo);
+			Interpreter impd(ivgExecutor, topVars, formatInfo, budget);
 			impd.run(ivgSource);
 		}
 	}
@@ -176,7 +183,7 @@ int main(int argc, const char* argv[]) {
 
 		std::string ivgContents;
 		{
-			std::ifstream inStream(inputPath);
+			std::ifstream inStream(inputPath, std::ios::binary);														// Text mode on Windows stops at a Ctrl-Z byte.
 			if (!inStream.good()) throw std::runtime_error("Could not open input IVG file");
 			ivgContents.assign(std::istreambuf_iterator<char>(inStream), std::istreambuf_iterator<char>());
 			if (!inStream.good()) throw std::runtime_error("Could not read input IVG file");
@@ -187,9 +194,10 @@ int main(int argc, const char* argv[]) {
 		SelfContainedARGB32Canvas canvas;
 		{
 			STLMapVariables topVars;
-			IVGExecutorWithExternalFonts ivgExecutor(canvas, fontPath);
+			IVGBudget budget;
+			IVGExecutorWithExternalFonts ivgExecutor(canvas, budget, fontPath);
 			FormatInfo formatInfo;
-			Interpreter impd(ivgExecutor, topVars, formatInfo);
+			Interpreter impd(ivgExecutor, topVars, formatInfo, budget);
 			impd.run(ivgContents);
 		}
 		std::cerr << "Rasterized image..." << std::endl;

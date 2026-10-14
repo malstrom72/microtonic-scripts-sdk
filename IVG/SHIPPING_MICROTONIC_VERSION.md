@@ -7,11 +7,14 @@ the SDK validates scripts with the renderer the next product releases use.
 Imported from `malstrom72/IVG` commit:
 
 ```text
-651fdabd4384007738d66266898d55b77242babe
+5ad1afdf1001974c97b6100cdc283036597855c8
 ```
 
 The pinned freeze may be newer than the IVG in released Microtonic and Synplant builds.
 Differences are expected to be small, such as a few anti-aliased pixels along curve edges.
+IVG2PNG also enforces the IVG-2 resource budgets (statements, characters, path segments and pixels;
+see `docs/Resource Budgets.md` upstream), so a document over budget fails here even where an older
+product build renders it.
 Move the pin only to a new IVG-2 freeze from IVG main, and update both script SDKs together.
 
 ## Curated Subset
@@ -38,10 +41,5 @@ included.
 
 ## Local Patches
 
-- `tools/ivgfiddle/output/setupModule.js` waits for the modularized Emscripten
-  runtime instance before initializing the editor and running IVG. This avoids
-  calling `runIVG()` while the global `Module` value still points at the
-  generated factory function, which can otherwise fail with
-  `Module.lengthBytesUTF8 is not a function`.
 - `README.md` does not link to the omitted `tests/svg/` sample corpus or the omitted
   `docs/CodingStyle.md`.

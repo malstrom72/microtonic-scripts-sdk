@@ -325,7 +325,7 @@ class Path {
 	public:		Path& addStar(double centerX, double centerY, int points, double radius1, double radius2, double rotation); // Equation to map a star polygon with p and q to a description with two radii: r2 == r1 * cos(q * (PI / p)) / cos((q - 1) * (PI / p))
 	public:		Path& close();
 	public:		Path& closeAll();
-	public:		Path& stroke(double width, EndCapStyle endCaps = BUTT, JointStyle joints = BEVEL, double miterLimit = 2.0, double curveQuality = 1.0);
+	public:		Path& stroke(double width, EndCapStyle endCaps = BUTT, JointStyle joints = BEVEL, double miterLimit = 2.0, double curveQuality = 1.0, size_type limit = static_cast<size_type>(-1));
 	public:		Path& dash(double dashLength, double gapLength, double dashOffset = 0.0, size_type limit = static_cast<size_type>(-1));
 	public:		Path& transform(const AffineTransformation& transformation);
 	public:		bool empty() const;

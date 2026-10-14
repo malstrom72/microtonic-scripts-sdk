@@ -1,5 +1,5 @@
 #!/bin/bash
-# BuildCpp.sh version 2026-10-07
+# BuildCpp.sh version 2026-10-13
 
 CPP_COMPILER="${CPP_COMPILER:-g++}"
 CPP_OPTIONS="${CPP_OPTIONS:-}"
