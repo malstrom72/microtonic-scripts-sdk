@@ -34,6 +34,9 @@ Object.assign(jsConsole, {
 				+ "Use single ` to enter multi-line code. End with another `\n"
 				+ "End line with ; to prevent printing the statement result.\n"
 				+ "\n"
+				+ "%cushyVariable: prints the value of a Cushy variable\n"
+				+ "%cushyVariable=value: sets the value of a Cushy variable\n"
+				+ "\n"
 				+ "cls: clear screen\n"
 				+ "copy: copies console buffer to clipboard\n"
 				+ "exit: closes console\n"
@@ -163,6 +166,15 @@ Object.assign(jsConsole, {
 					jc.commands[input]();
 				} else if (jc.multiline !== null) {
 					jc.multiline += input + '\n';
+				} else if (input[0] == '%') {
+					var parts = input.substr(1).split('=');
+					if (parts.length == 2) {
+						_ = unescape(parts[1]);
+						setCushyVariable(parts[0], _);
+					} else {
+						_ = getCushyVariable(parts[0]);
+					}
+					print('  = ' + composeNumbstrict(_));
 				} else {
 					_ = eval.call(null, input);
 					if (input.length > 0 && input[input.length - 1] !== ';') {
@@ -173,7 +185,7 @@ Object.assign(jsConsole, {
 						} else if (type == 'object') {
 							var gotObject = false;
 							s = JSON.stringify(_, function(key, value) {
-								if (typeof value == 'object' && !Array.isArray(value)) {
+								if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
 									gotObject = true;
 								}
 								return value;
@@ -238,7 +250,7 @@ Object.assign(jsConsole, {
 		var jc = this;
 		if (!jc.bridge.token) {
 			jc.bridge.token = 'jc-' + Math.floor(Date.now()).toString(36) + '-'
-				+ Math.floor(Math.random() * 0x7FFFFFFF).toString(36);
+				+ (random.integer() >>> 0).toString(36);
 		}
 		return jc.bridge.token;
 	},
