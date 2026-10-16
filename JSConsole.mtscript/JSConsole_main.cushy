@@ -35,8 +35,8 @@ autoexecs: {
 	{ action: "jsConsole.updateConfig", params: "@columns,@rows,@tabSize" }
 	{ action: "jsConsole.fpsTick", repeat: 0.001 }
 	{ action: "jsConsole.shutdown", onClose: true, onReload: false }
-	{ action: "jsConsole.checkLitter", repeat: 0.25 }
-	{ action: "jsConsole.bridgeTick", repeat: 0.1 }
+	{ action: "jsConsole.checkLitter", repeat: 0.25, delay: 0.25 }
+	{ action: "jsConsole.bridgeTick", repeat: 0.05 }
 }
 
 translations: {
@@ -60,11 +60,15 @@ views: {
 		index: "jsConsole.minimized",
 		pages: {			// Notice that all pages are created on init, then shown / hidden as requested
 			"true": {
-				// Drop shadow (using masks to multiply four gradient fades in each direction)
+				// Drop shadow
 				{
 					type: "vector"
 					bounds: { 0, 0, w, @titleBarHeight+@shadowBlur }
-					code: "g=call [ mask [ wipe gradient:[linear $0 from:0.0 to:1.0] ] ]; $g 0,0,@shadowBlur,0; $g 0,0,0,@shadowBlur; $g {@width+@shadowBlur},0,{@width},0; $g 0,{@titleBarHeight+@shadowBlur},0,{@titleBarHeight}; wipe rgb(0,0,0,@shadowIntensity)"
+					file: "rectDropShadow"
+					defines: {
+						shadowBlur: "@shadowBlur",
+						shadowIntensity: "@shadowIntensity"
+					}
 				}
 			},
 			"false": {
@@ -73,10 +77,14 @@ views: {
 					index: "jsConsole.opacity",
 					pages: {			// Notice that all pages are created on init, then shown / hidden as requested
 						"100": {
-							// Drop shadow (using masks to multiply four gradient fades in each direction)
+							// Drop shadow
 							{
 								type: "vector"
-								code: "g=call [ mask [ wipe gradient:[linear $0 from:0.0 to:1.0] ] ]; $g 0,0,@shadowBlur,0; $g 0,0,0,@shadowBlur; $g {@width+@shadowBlur},0,{@width},0; $g 0,{@height+@shadowBlur},0,{@height}; wipe rgb(0,0,0,@shadowIntensity)"
+								file: "rectDropShadow"
+								defines: {
+									shadowBlur: "@shadowBlur",
+									shadowIntensity: "@shadowIntensity"
+								}
 							}
 						}
 					}
