@@ -57,7 +57,7 @@ views: {
 	}
 	{
 		type: "paged",
-		index: "jsConsole.minimized",
+		index: jsConsole.minimized,
 		pages: {			// Notice that all pages are created on init, then shown / hidden as requested
 			"true": {
 				// Drop shadow
@@ -74,7 +74,7 @@ views: {
 			"false": {
 				{
 					type: "paged",
-					index: "jsConsole.opacity",
+					index: jsConsole.opacity,
 					pages: {			// Notice that all pages are created on init, then shown / hidden as requested
 						"100": {
 							// Drop shadow
