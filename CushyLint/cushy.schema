@@ -179,7 +179,7 @@
     type: "paged"
     [ bounds: <rect> ]
     [ edit: <editSpec> ]
-    index: <string>|<var>
+    index: <var>
     pages: {                                        // Notice that all pages are created on init, then shown / hidden as
         *: { <view>, ... }                          // requested.
     }
