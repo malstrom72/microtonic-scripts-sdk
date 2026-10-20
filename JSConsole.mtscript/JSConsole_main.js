@@ -249,13 +249,19 @@ Object.assign(jsConsole, {
 			return null;
 		}
 	},
+	// Returns null once bridge.json names this instance as the owner, otherwise an error message.
 	bridgeClaim: function() {
 		var jc = this;
 		try {
 			jc.realSave(jc.bridge.base + 'bridge.json', JSON.stringify({
 				ready: true, protocol: 1, time: Math.floor(Date.now()), owner: jc.bridge.token
 			}));
-		} catch (e) { }
+		} catch (e) {
+			return '' + e;
+		}
+		// A declined write permission may not throw, so check that the claim landed.
+		var info = jc.bridgeReadPresence();
+		return (info && info.owner === jc.bridge.token) ? null : 'bridge.json was not written';
 	},
 	bridgeOwnedByOther: function(info) {
 		// True when bridge.json names a DIFFERENT instance as the current owner.
@@ -293,9 +299,16 @@ Object.assign(jsConsole, {
 		/*
 			Claim ownership (this also provokes Microtonic's one-time folder
 			write-permission prompt now, at the user's explicit command, rather than
-			mid-session on the first reply).
+			mid-session on the first reply). If the write fails, say so and leave the
+			bridge off: the host cannot see a bridge that never announced itself.
 		*/
-		jc.bridgeClaim();
+		var claimError = jc.bridgeClaim();
+		if (claimError !== null) {
+			print("!!! Bridge stays OFF: could not write bridge.json (" + claimError + ").");
+			print("Folder: " + base);
+			print("Check that the folder exists and that this account can write to it, then try again.");
+			return;
+		}
 		jc.bridge.isOwner = true;
 		jc.bridge.on = true;
 		print("Bridge ON.");
