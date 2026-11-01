@@ -1,5 +1,5 @@
 if (BUILD.NUMBER < 1048) {
-    display(translate("This script requires") + " Microtonic v3.3.4", "error");
+	display(translate("This script requires") + " Microtonic v3.3.4", "error");
 } else {
-    toggleCushy("PolyChain.mtscript/PolyChain_main");
+	toggleCushy("PolyChain.mtscript/PolyChain_main");
 }

@@ -21,8 +21,8 @@ c = {$muted ? $mutedColor : ($sel ? $selectedColor : $color)}
 font "monospace" size:10 color:$c
 TEXT at:30,11 anchor:center [$text]
 if {!$enabled} [
-    pen $c
-    PATH svg:[M5,8h50]
+	pen $c
+	PATH svg:[M5,8h50]
 ]
 pen {$sel ? $connectorSelectedColor : ($hovering == $index ? $connectorHoveringColor : $connectorColor)} width:{$sel ? 2 : 0.5}
 path svg:[M6,$connectorY h48]
