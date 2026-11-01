@@ -6,7 +6,7 @@ split = call [ local e; local i=0; for e in:$into [ local into.$i=$e; i={$i+1} ]
 options curve-quality:0.5
 pen $color joints:bevel caps:square
 for e in:$flares [
-    $split $e into:x,y,s
-    pen width:{2.001-$s*2}
-    ellipse $x,$y,{$size+$s*$expand}
+	$split $e into:x,y,s
+	pen width:{2.001-$s*2}
+	ellipse $x,$y,{$size+$s*$expand}
 ]
