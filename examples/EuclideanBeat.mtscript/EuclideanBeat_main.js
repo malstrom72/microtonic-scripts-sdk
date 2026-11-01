@@ -46,7 +46,7 @@ Object.assign(euclideanBeat, {
 		var triggers = this.generateEuclidean(trigCount, stepCount);
 		var packedAccents = this.generateEuclidean(accentCount, trigCount);
 		packedAccents = this.rotateArray(packedAccents, this.accents.rotation.value);
-        
+
 		var accents = [ ];
 		accents.length = stepCount;
 		var accentIndex = 0;
