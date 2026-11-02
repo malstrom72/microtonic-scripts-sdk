@@ -760,7 +760,7 @@ String Interpreter::toString(double d, int precision) {
 		x = (x - ix) * 10.0;
 	}
 	if (x >= 5) {																									   // If remainder is >= 5, increment trailing 9's...
-		while (dp[-1] == '9') *--dp = '0';
+		while (dp > bp && dp[-1] == '9') *--dp = '0';
 		if (dp == bp) *--bp = '1';																					   // If we are at spare position, set to '1' and include, otherwise, increment last non-9.
 		else dp[-1]++;
 	}

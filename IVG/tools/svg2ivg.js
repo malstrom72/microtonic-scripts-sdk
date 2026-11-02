@@ -565,50 +565,50 @@ function outputMarker(ref, x, y, angle, kind) {
 	const height = convertUnits(attrs.markerHeight || "3", "y");
 	let scaleX = 1;
 	let scaleY = 1;
-      if (attrs.viewBox) {
-	      const vb = parseRect(attrs.viewBox);
-	      scaleX = width / vb.width;
-	      scaleY = height / vb.height;
-      }
-      let rotateAngle = NaN;
-      const orient = attrs.orient || "0";
-      if (orient === "auto" || orient === "auto-start-reverse") {
-	      rotateAngle = angle;
-	      if (orient === "auto-start-reverse" && kind === "start") rotateAngle += 180;
-      } else {
-	      rotateAngle = parseFloat(orient);
-      }
+	if (attrs.viewBox) {
+		const vb = parseRect(attrs.viewBox);
+		scaleX = width / vb.width;
+		scaleY = height / vb.height;
+	}
+	let rotateAngle = NaN;
+	const orient = attrs.orient || "0";
+	if (orient === "auto" || orient === "auto-start-reverse") {
+		rotateAngle = angle;
+		if (orient === "auto-start-reverse" && kind === "start") rotateAngle += 180;
+	} else {
+		rotateAngle = parseFloat(orient);
+	}
 	output("context [");
 	output("pen none");
 	output(`offset ${x},${y}`);
-      if (!isNaN(rotateAngle) && rotateAngle !== 0) {
-	      output(`rotate ${formatFloat(rotateAngle)}`);
-      }
-      if (scaleX !== 1 || scaleY !== 1) {
-	      output(`scale ${scaleX},${scaleY}`);
-      }
-      if (refX || refY) {
-	      output(`offset -${refX},-${refY}`);
-      }
-      for (const item of marker.contents || []) {
-	      if (item.element) convertSVGElement(item.element);
-      }
-      output("]");
+	if (!isNaN(rotateAngle) && rotateAngle !== 0) {
+		output(`rotate ${formatFloat(rotateAngle)}`);
+	}
+	if (scaleX !== 1 || scaleY !== 1) {
+		output(`scale ${scaleX},${scaleY}`);
+	}
+	if (refX || refY) {
+		output(`offset -${refX},-${refY}`);
+	}
+	for (const item of marker.contents || []) {
+		if (item.element) convertSVGElement(item.element);
+	}
+	output("]");
 }
 
 function processMarkers(attribs, pts) {
 	const getAngle = (p1, p2) => (Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180) / Math.PI;
 	if ("marker-start" in attribs && pts.length >= 2) {
-	       outputMarker(attribs["marker-start"], pts[0][0], pts[0][1], getAngle(pts[0], pts[1]), "start");
+		outputMarker(attribs["marker-start"], pts[0][0], pts[0][1], getAngle(pts[0], pts[1]), "start");
 	}
 	if ("marker-mid" in attribs && pts.length >= 3) {
-	       for (let i = 1; i < pts.length - 1; i++) {
-	               outputMarker(attribs["marker-mid"], pts[i][0], pts[i][1], getAngle(pts[i - 1], pts[i + 1]), "mid");
-	       }
+		for (let i = 1; i < pts.length - 1; i++) {
+			outputMarker(attribs["marker-mid"], pts[i][0], pts[i][1], getAngle(pts[i - 1], pts[i + 1]), "mid");
+		}
 	}
 	if ("marker-end" in attribs && pts.length >= 2) {
-	       const n = pts.length - 1;
-	       outputMarker(attribs["marker-end"], pts[n][0], pts[n][1], getAngle(pts[n - 1], pts[n]), "end");
+		const n = pts.length - 1;
+		outputMarker(attribs["marker-end"], pts[n][0], pts[n][1], getAngle(pts[n - 1], pts[n]), "end");
 	}
 }
 
@@ -623,12 +623,12 @@ function parseGradientCoord(value, axis) {
 function parseGradientStops(element) {
 	const stops = [];
 	for (const item of element.contents || []) {
-	       if (item.element && item.element.type === "stop") {
-	                const a = item.element.attributes;
-	                expandStyle(a);
-	                const cs = resolveStyles(item.element, a, styleStack[styleStack.length - 1]);
-	                Object.assign(a, cs);
-	                if (!("offset" in a) || !("stop-color" in a)) continue;
+		if (item.element && item.element.type === "stop") {
+			const a = item.element.attributes;
+			expandStyle(a);
+			const cs = resolveStyles(item.element, a, styleStack[styleStack.length - 1]);
+			Object.assign(a, cs);
+			if (!("offset" in a) || !("stop-color" in a)) continue;
 			let o = a.offset.trim();
 			o = o.endsWith("%") ? parseFloat(o) / 100 : parseFloat(o);
 			const p = convertPaint(a["stop-color"]);
@@ -925,17 +925,17 @@ function expandStyle(attribs) {
 	const styles = {};
 	const decls = attribs.style.split(";");
 	for (const decl of decls) {
-	        if (!decl.trim()) continue;
-	        const parts = decl.split(":");
-	        if (parts.length < 2) continue;
-	        const name = parts.shift().trim().toLowerCase();
-	        let value = parts.join(":").trim();
-	        let important = false;
-	        if (/!important$/i.test(value)) {
-	                important = true;
-	                value = value.replace(/!important$/i, "").trim();
-	        }
-	        if (name) styles[name] = { value, important };
+		if (!decl.trim()) continue;
+		const parts = decl.split(":");
+		if (parts.length < 2) continue;
+		const name = parts.shift().trim().toLowerCase();
+		let value = parts.join(":").trim();
+		let important = false;
+		if (/!important$/i.test(value)) {
+			important = true;
+			value = value.replace(/!important$/i, "").trim();
+		}
+		if (name) styles[name] = { value, important };
 	}
 	attribs.__style = styles;
 	delete attribs.style;
@@ -944,35 +944,35 @@ function expandStyle(attribs) {
 function parseStyleSheet(text) {
 	text = text.replace(/\/\*[^]*?\*\//g, "");
 	for (const block of text.split("}")) {
-	        const parts = block.split("{");
-	        if (parts.length < 2) continue;
-	        const selectors = parts[0]
-	                .split(",")
-	                .map((s) => s.trim())
-	                .filter(Boolean);
-	        const decls = [];
-	        for (const decl of parts[1].split(";")) {
-	                if (!decl.trim()) continue;
-	                const dparts = decl.split(":");
-	                if (dparts.length < 2) continue;
-	                const name = dparts.shift().trim().toLowerCase();
-	                let value = dparts.join(":").trim();
-	                let important = false;
-	                if (/!important$/i.test(value)) {
-	                        important = true;
-	                        value = value.replace(/!important$/i, "").trim();
-	                }
-	                if (name) decls.push({ name, value, important });
-	        }
-	        for (const sel of selectors) {
-	                const tokens = parseSelector(sel);
-	                cssRules.push({
-	                        tokens,
-	                        specificity: calcSpecificity(tokens),
-	                        order: cssRuleIndex++,
-	                        declarations: decls,
-	                });
-	        }
+		const parts = block.split("{");
+		if (parts.length < 2) continue;
+		const selectors = parts[0]
+			.split(",")
+			.map((s) => s.trim())
+			.filter(Boolean);
+		const decls = [];
+		for (const decl of parts[1].split(";")) {
+			if (!decl.trim()) continue;
+			const dparts = decl.split(":");
+			if (dparts.length < 2) continue;
+			const name = dparts.shift().trim().toLowerCase();
+			let value = dparts.join(":").trim();
+			let important = false;
+			if (/!important$/i.test(value)) {
+				important = true;
+				value = value.replace(/!important$/i, "").trim();
+			}
+			if (name) decls.push({ name, value, important });
+		}
+		for (const sel of selectors) {
+			const tokens = parseSelector(sel);
+			cssRules.push({
+				tokens,
+				specificity: calcSpecificity(tokens),
+				order: cssRuleIndex++,
+				declarations: decls,
+			});
+		}
 	}
 }
 
@@ -1167,22 +1167,22 @@ function createContextMaybe(attribs, bbox) {
 	const hasColor = "color" in attribs;
 	const oldColor = currentColor;
 	if (hasColor) {
-	       const c = attribs.color.trim().toLowerCase();
-	       if (c !== "inherit" && c !== "currentcolor") {
-	               currentColor = convertPaint(c).paint;
-	       }
+		const c = attribs.color.trim().toLowerCase();
+		if (c !== "inherit" && c !== "currentcolor") {
+			currentColor = convertPaint(c).paint;
+		}
 	}
 	const hasFont = "font-size" in attribs || "font-family" in attribs;
 	const oldFontSize = defaultFontSize;
 	const oldFontFamily = defaultFontFamily;
 	if ("font-size" in attribs) {
-	       defaultFontSize = convertUnits(attribs["font-size"], "y");
+		defaultFontSize = convertUnits(attribs["font-size"], "y");
 	}
 	if ("font-family" in attribs) {
-	       defaultFontFamily = attribs["font-family"]
-	               .split(",")[0]
-	               .trim()
-	               .replace(/^['"]|['"]$/g, "");
+		defaultFontFamily = attribs["font-family"]
+			.split(",")[0]
+			.trim()
+			.replace(/^['"]|['"]$/g, "");
 	}
 	if (needs) {
 		output("context [");
@@ -1233,19 +1233,19 @@ converters.svg = function (element, attribs) {
 			currentColor = convertPaint(c).paint;
 		}
 	}
-    if (!firstSVG) {
-        output("reset");
-    }
-    firstSVG = false;
-    // Ensure integer bounds for IVG; ceil fractional sizes and warn
-    const widthCeil = Math.ceil(width);
-    const heightCeil = Math.ceil(height);
-    if (widthCeil !== width || heightCeil !== height) {
-        warning(`Non-integer bounds (${formatFloat(width)},${formatFloat(height)}); using ceil (${widthCeil},${heightCeil}).`);
-    }
-    output(`bounds 0,0,${widthCeil},${heightCeil}`);
-    output("fill black");
-    output("pen miter-limit:4");
+	if (!firstSVG) {
+		output("reset");
+	}
+	firstSVG = false;
+	// Ensure integer bounds for IVG; ceil fractional sizes and warn
+	const widthCeil = Math.ceil(width);
+	const heightCeil = Math.ceil(height);
+	if (widthCeil !== width || heightCeil !== height) {
+		warning(`Non-integer bounds (${formatFloat(width)},${formatFloat(height)}); using ceil (${widthCeil},${heightCeil}).`);
+	}
+	output(`bounds 0,0,${widthCeil},${heightCeil}`);
+	output("fill black");
+	output("pen miter-limit:4");
 	const oldFamily = defaultFontFamily;
 	const oldSize = defaultFontSize;
 	if ("font-family" in attribs) {
@@ -1282,23 +1282,23 @@ converters.g = function (element, attribs) {
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
 converters.path = function (element, attribs) {
 	const ctx = createContextMaybe(attribs);
 	if ("d" in attribs) {
-	       output("path svg:[" + attribs.d + "]");
+		output("path svg:[" + attribs.d + "]");
 	} else {
-	       warning("Missing 'd' attribute in 'path' element.");
+		warning("Missing 'd' attribute in 'path' element.");
 	}
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
@@ -1313,8 +1313,8 @@ converters.circle = function (element, attribs) {
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
@@ -1330,8 +1330,8 @@ converters.ellipse = function (element, attribs) {
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
@@ -1356,8 +1356,8 @@ converters.line = function (element, attribs) {
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
@@ -1387,8 +1387,8 @@ converters.rect = function (element, attribs) {
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
@@ -1424,8 +1424,8 @@ converters.polygon = function (element, attribs) {
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
@@ -1460,8 +1460,8 @@ converters.polyline = function (element, attribs) {
 	if (ctx.needs) output("]");
 	if (ctx.hasColor) currentColor = ctx.oldColor;
 	if (ctx.hasFont) {
-	       defaultFontSize = ctx.oldFontSize;
-	       defaultFontFamily = ctx.oldFontFamily;
+		defaultFontSize = ctx.oldFontSize;
+		defaultFontFamily = ctx.oldFontFamily;
 	}
 };
 
@@ -1662,22 +1662,22 @@ converters.text = function (element, attribs) {
 };
 
 converters.defs = function (element) {
-        for (const item of element.contents || []) {
-                if (!item.element) continue;
-                const child = item.element;
-                if (
-                        child.type === "linearGradient" ||
-                        child.type === "radialGradient" ||
-                        child.type === "pattern" ||
-                        child.type === "defs" ||
-                        child.type === "mask" ||
-                        child.type === "style"
-                ) {
-                        convertSVGElement(child);
-                } else {
-                        registerDefinition(child);
-                }
-        }
+	for (const item of element.contents || []) {
+		if (!item.element) continue;
+		const child = item.element;
+		if (
+			child.type === "linearGradient" ||
+			child.type === "radialGradient" ||
+			child.type === "pattern" ||
+			child.type === "defs" ||
+			child.type === "mask" ||
+			child.type === "style"
+		) {
+			convertSVGElement(child);
+		} else {
+			registerDefinition(child);
+		}
+	}
 };
 
 converters.use = function (element, attribs) {
@@ -1849,15 +1849,15 @@ function convertSVGElement(element) {
 	if (element.attributes) Object.assign(element.attributes, computed); else element.attributes = computed;
 	registerDefinition(element);
 	if (element.attributes && element.attributes.visibility === "hidden") {
-	        return;
+		return;
 	}
 	elementStack.push(element);
 	styleStack.push(computed);
 	const type = element.type;
 	if (converters[type]) {
-	        converters[type](element, element.attributes);
+		converters[type](element, element.attributes);
 	} else {
-	        warning("Can't convert type: " + type);
+		warning("Can't convert type: " + type);
 	}
 	styleStack.pop();
 	elementStack.pop();
@@ -1983,49 +1983,49 @@ function convertFile(svgPath, ivgPath, defaultDimArg) {
 	resetState();
 	if (defaultDimArg) {
 		const parts = defaultDimArg.split(",");
-	       if (parts.length === 2) {
-		       defaultWidth = parseFloat(parts[0]);
-		       defaultHeight = parseFloat(parts[1]);
-	       } else {
-		       throw new Error("Invalid default dimensions: " + defaultDimArg);
-	       }
+		if (parts.length === 2) {
+			defaultWidth = parseFloat(parts[0]);
+			defaultHeight = parseFloat(parts[1]);
+		} else {
+			throw new Error("Invalid default dimensions: " + defaultDimArg);
+		}
 	}
 	let svgSource;
 	try {
-	       svgSource = fs.readFileSync(svgPath, "utf8");
+		svgSource = fs.readFileSync(svgPath, "utf8");
 	} catch (err) {
-	       throw new Error("Failed to read " + svgPath + ": " + err.message);
+		throw new Error("Failed to read " + svgPath + ": " + err.message);
 	}
 	const svg = parseXML(svgSource);
 	output("format IVG-1 requires:IMPD-1");
 	convertSVGContainer(svg);
 	if (ivgPath) {
-	       try {
-		       fs.writeFileSync(ivgPath, outputString, "utf8");
-	       } catch (err) {
-		       throw new Error("Failed to write " + ivgPath + ": " + err.message);
-	       }
-	       console.log("Converted " + svgPath + " to " + ivgPath);
+		try {
+			fs.writeFileSync(ivgPath, outputString, "utf8");
+		} catch (err) {
+			throw new Error("Failed to write " + ivgPath + ": " + err.message);
+		}
+		console.log("Converted " + svgPath + " to " + ivgPath);
 	} else {
-	       console.log("------");
-	       console.log(outputString);
+		console.log("------");
+		console.log(outputString);
 	}
 }
 
 try {
 	const args = process.argv.slice(2);
 	if (args.length < 1) {
-	       throw new Error("Usage: node svg2ivg.js input.svg [output.ivg] [defaultWidth,defaultHeight]");
+		throw new Error("Usage: node svg2ivg.js input.svg [output.ivg] [defaultWidth,defaultHeight]");
 	}
 	let ivgPath;
 	let defaultDimArg;
 	if (args[1]) {
-	       if (args[1].includes(",")) {
-		       defaultDimArg = args[1];
-	       } else {
-		       ivgPath = args[1];
-		       defaultDimArg = args[2];
-	       }
+		if (args[1].includes(",")) {
+			defaultDimArg = args[1];
+		} else {
+			ivgPath = args[1];
+			defaultDimArg = args[2];
+		}
 	}
 	convertFile(args[0], ivgPath, defaultDimArg);
 } catch (err) {
@@ -2108,10 +2108,10 @@ function selectorMatches(element, tokens) {
 	return true;
 }
 function resolveStyles(element, attribs, parentStyle) {
-        const style = {};
-        for (const prop of INHERITED_PROPERTIES) {
-                if (parentStyle && prop in parentStyle) style[prop] = parentStyle[prop];
-        }
+	const style = {};
+	for (const prop of INHERITED_PROPERTIES) {
+		if (parentStyle && prop in parentStyle) style[prop] = parentStyle[prop];
+	}
 	for (const prop of KNOWN_PRESENTATION_ATTRIBUTES) {
 		if (prop in attribs) style[prop] = attribs[prop];
 	}

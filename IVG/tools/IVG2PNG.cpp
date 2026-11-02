@@ -54,35 +54,35 @@ static bool isLittleEndian() {
 class IVGExecutorWithExternalFonts : public IVGExecutor {
 	public:
 		IVGExecutorWithExternalFonts(Canvas& canvas, IVGBudget& budget, const std::string& fontPath,
-			    const AffineTransformation& xform = AffineTransformation())
-			    : IVGExecutor(canvas, budget, xform), fontPath(fontPath) {
+				const AffineTransformation& xform = AffineTransformation())
+				: IVGExecutor(canvas, budget, xform), fontPath(fontPath) {
 		}
 		virtual std::vector<const Font*> lookupFonts(IMPD::Interpreter& interpreter, const IMPD::WideString& fontName,
-			    const IMPD::UniString& forString) {
+				const IMPD::UniString& forString) {
 			(void)interpreter;
 			std::pair< FontMap::iterator, bool > insertResult = loadedFonts.insert(std::make_pair(fontName, Font()));
 			if (insertResult.second) {
-			    const std::string fontName8Bit(fontName.begin(), fontName.end());
-			    String fontCode;
-			    {
-			        std::string path = fontPath.empty() ? (fontName8Bit + ".ivgfont") : (fontPath + "/" + fontName8Bit + ".ivgfont");
-			        std::ifstream fileStream(path.c_str(), std::ios::binary);
-			        if (!fileStream.good()) {
-			            return std::vector<const Font*>();
-			        }
-			        fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
-			        const std::istreambuf_iterator<Char> it(fileStream);
-			        const std::istreambuf_iterator<Char> end;
-			        fontCode = std::string(it, end);
-			    }
-			    std::wcerr << "parsing external font " << fontName << std::endl;
-			    FontParser fontParser;
-			    STLMapVariables vars;
-			    FormatInfo formatInfo;
-			    // A font file counts toward the render that loads it.
-			    Interpreter impd(fontParser, vars, formatInfo, accessBudget());
-			    impd.run(fontCode);
-			    insertResult.first->second = fontParser.finalizeFont();
+				const std::string fontName8Bit(fontName.begin(), fontName.end());
+				String fontCode;
+				{
+					std::string path = fontPath.empty() ? (fontName8Bit + ".ivgfont") : (fontPath + "/" + fontName8Bit + ".ivgfont");
+					std::ifstream fileStream(path.c_str(), std::ios::binary);
+					if (!fileStream.good()) {
+						return std::vector<const Font*>();
+					}
+					fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
+					const std::istreambuf_iterator<Char> it(fileStream);
+					const std::istreambuf_iterator<Char> end;
+					fontCode = std::string(it, end);
+				}
+				std::wcerr << "parsing external font " << fontName << std::endl;
+				FontParser fontParser;
+				STLMapVariables vars;
+				FormatInfo formatInfo;
+				// A font file counts toward the render that loads it.
+				Interpreter impd(fontParser, vars, formatInfo, accessBudget());
+				impd.run(fontCode);
+				insertResult.first->second = fontParser.finalizeFont();
 			}
 			return std::vector<const Font*>(1, &insertResult.first->second);
 		}

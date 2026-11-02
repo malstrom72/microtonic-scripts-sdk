@@ -152,16 +152,16 @@ let isDragging = false;
 let currentX;
 let currentPanelWidth;
 leftRightSplitElement.addEventListener('mousedown', function(e) {
-  isDragging = true;
-  currentX = e.clientX;
-  currentPanelWidth = leftPanelElement.offsetWidth;
-  e.preventDefault();
+	isDragging = true;
+	currentX = e.clientX;
+	currentPanelWidth = leftPanelElement.offsetWidth;
+	e.preventDefault();
 });
 document.addEventListener('mousemove', function(e) {
-  if (isDragging) {
-	leftPanelElement.style.width = (currentPanelWidth + e.clientX - currentX) + 'px';
-  }
+	if (isDragging) {
+		leftPanelElement.style.width = (currentPanelWidth + e.clientX - currentX) + 'px';
+	}
 });
 document.addEventListener('mouseup', function(e) {
-  isDragging = false;
+	isDragging = false;
 });
