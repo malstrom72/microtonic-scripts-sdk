@@ -16,6 +16,9 @@ case "$simd" in
 		;;
 esac
 
+# Without a deployment target clang targets the build machine's own macOS version.
+export MACOSX_DEPLOYMENT_TARGET=11.0
+
 mkdir -p tools/IVG2PNG
 
 c_sources=(
