@@ -45,10 +45,17 @@ namespace IMPD {
 
 using namespace std;
 
+// Asserts that `c` is a Unicode scalar value, and returns U+FFFD in its place if it is not.
+static UniChar checkScalar(UniChar c) {
+	const bool valid = ((c < 0xD800 || c >= 0xE000) && c <= 0x10FFFF);
+	assert(valid);
+	return (valid ? c : 0xFFFD);
+}
+
 static size_t calcUTF32ToUTF16Size(size_t utf32Size, const UniChar* utf32Chars) {
 	size_t n = utf32Size;
 	for (size_t i = 0; i < utf32Size; ++i) {
-		n += ((utf32Chars[i] >> 16) != 0 ? 1 : 0);
+		n += ((checkScalar(utf32Chars[i]) >> 16) != 0 ? 1 : 0);
 	}
 	return n;
 }
@@ -56,7 +63,7 @@ static size_t calcUTF32ToUTF16Size(size_t utf32Size, const UniChar* utf32Chars) 
 static size_t convertUTF32ToUTF16(size_t utf32Size, const UniChar* utf32Chars, uint16_t* utf16Chars) {
 	size_t outIndex = 0;
 	for (size_t i = 0; i < utf32Size; ++i) {
-		const UniChar c = utf32Chars[i];
+		const UniChar c = checkScalar(utf32Chars[i]);
 		if ((c >> 16) == 0) {
 			utf16Chars[outIndex] = static_cast<uint16_t>(c);
 			++outIndex;
@@ -69,32 +76,19 @@ static size_t convertUTF32ToUTF16(size_t utf32Size, const UniChar* utf32Chars, u
 	return outIndex;
 }
 
-static size_t calcUTF16ToUTF32Size(size_t utf16Size, const uint16_t* utf16Chars) {
-	size_t n = utf16Size;
-	for (size_t i = 0; i < utf16Size; ++i) {
-		const uint16_t c = utf16Chars[i];
-		if (c >= 0xD800 && c <= 0xDBFF) {
-			assert(i + 1 < utf16Size && utf16Chars[i + 1] >= 0xDC00 && utf16Chars[i + 1] < 0xE000);	 // Next should be low surrogate.
-			++i;
-			--n;
-		}
+// Advances `i` past one code point; an unpaired surrogate comes back as is.
+static UniChar decodeUTF16(size_t utf16Size, const uint16_t* utf16Chars, size_t& i) {
+	const UniChar c = utf16Chars[i++];
+	if (c >= 0xD800 && c < 0xDC00 && i < utf16Size && utf16Chars[i] >= 0xDC00 && utf16Chars[i] < 0xE000) {
+		return 0x10000 + ((c - 0xD800) << 10) + (utf16Chars[i++] - 0xDC00);
 	}
-	return n;
+	return c;
 }
 
 static size_t convertUTF16ToUTF32(size_t utf16Size, const uint16_t* utf16Chars, UniChar* utf32Chars) {
 	size_t outIndex = 0;
-	for (size_t i = 0; i < utf16Size; ++i) {
-		UniChar c = utf16Chars[i];
-		if (c >= 0xD800 && c <= 0xDBFF) {
-			assert(i + 1 < utf16Size);
-			const uint16_t d = utf16Chars[i + 1];
-			assert(d >= 0xDC00 && d < 0xE000);	// Next should be low surrogate.
-			c = 0x10000 + ((c - 0xD800) << 10) + (d - 0xDC00);
-			++i;
-		}
-		utf32Chars[outIndex] = c;
-		++outIndex;
+	for (size_t i = 0; i < utf16Size; ++outIndex) {
+		utf32Chars[outIndex] = checkScalar(decodeUTF16(utf16Size, utf16Chars, i));
 	}
 	return outIndex;
 }
@@ -103,7 +97,11 @@ WideString convertUniToWideString(const UniString& s) {
 	if (s.empty()) {
 		return WideString();
 	} else if (sizeof (WideChar) == sizeof (UniChar)) {
-		return WideString(reinterpret_cast<const WideChar*>(s.data()), s.size());
+		WideString ws(s.size(), 0);
+		for (size_t i = 0; i < s.size(); ++i) {
+			ws[i] = static_cast<WideChar>(checkScalar(s[i]));
+		}
+		return ws;
 	} else if (sizeof (WideChar) == sizeof (uint16_t)) {
 		const size_t requiredSize = calcUTF32ToUTF16Size(s.size(), s.data());
 		WideString ws(requiredSize, L'\0');
@@ -119,16 +117,32 @@ UniString convertWideToUniString(const WideString& s) {
 	if (s.empty()) {
 		return UniString();
 	} else if (sizeof (WideChar) == sizeof (UniChar)) {
-		return UniString(s.begin(), s.end());
+		UniString us(s.size(), 0);
+		for (size_t i = 0; i < s.size(); ++i) {
+			us[i] = checkScalar(static_cast<UniChar>(s[i]));
+		}
+		return us;
 	} else if (sizeof (WideChar) == sizeof (uint16_t)) {
-		const size_t requiredSize = calcUTF16ToUTF32Size(s.size(), reinterpret_cast<const uint16_t*>(s.data()));
-		UniString us(requiredSize, L'\0');
-		convertUTF16ToUTF32(s.size(), reinterpret_cast<const uint16_t*>(s.data()), &us[0]);
+		UniString us(s.size(), 0);
+		us.resize(convertUTF16ToUTF32(s.size(), reinterpret_cast<const uint16_t*>(s.data()), &us[0]));
 		return us;
 	} else {
 		assert(0);
 		return UniString();
 	}
+}
+
+WideString repairWideString(const WideString& s) {
+	WideString repaired(s);
+	for (size_t i = 0; i < s.size();) {
+		const size_t start = i;
+		const UniChar c = (sizeof (WideChar) == sizeof (uint16_t)
+				? decodeUTF16(s.size(), reinterpret_cast<const uint16_t*>(s.data()), i) : static_cast<UniChar>(s[i++]));
+		if ((c >= 0xD800 && c < 0xE000) || c > 0x10FFFF) {
+			repaired[start] = static_cast<WideChar>(0xFFFD);
+		}
+	}
+	return repaired;
 }
 
 String narrowToString(const UniString& s) {

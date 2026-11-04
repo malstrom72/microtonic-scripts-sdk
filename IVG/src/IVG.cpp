@@ -117,6 +117,9 @@ Path::size_type IVGBudget::calcPathSegmentLimit() const {
 }
 
 void checkBoundsBeforeScaling(double left, double top, double width, double height) {
+	if (!isfinite(left) || !isfinite(top) || !isfinite(width) || !isfinite(height)) {
+		Interpreter::throwRunTimeError("rescaled bounds out of range");
+	}
 	if (left < -32768.0 || left > 32767.0) {
 		Interpreter::throwRunTimeError(String("rescaled bounds left out of range [-32768..32767]: ")
 				+ Interpreter::toString(left));
@@ -1716,6 +1719,9 @@ bool IVGExecutor::execute(Interpreter& impd, const String& instruction, const St
 				case RIGHT_ANCHOR: break;
 			}
 			if (caretVariable != 0) {
+				if (!isfinite(state.textCaret.x)) {
+					impd.throwRunTimeError("text caret out of range");
+				}
 				impd.set(*caretVariable, impd.toString(state.textCaret.x));
 			}
 			break;
