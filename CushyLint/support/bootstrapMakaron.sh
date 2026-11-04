@@ -12,8 +12,13 @@ output="$root_dir/build/MakaronCmd"
 stamp="$output.sha256"
 sources=("$support_dir/MakaronCmd.cpp" "$support_dir/Makaron.cpp" "$support_dir/Makaron.h" "$build_script" "$script_file")
 
-# Without a deployment target clang targets the build machine's own macOS version.
-export MACOSX_DEPLOYMENT_TARGET=11.0
+# On macOS, build one universal binary (x86_64 and arm64) for macOS 11.0 and later. Without a deployment target
+# clang targets the build machine's own macOS version. Elsewhere, build for the machine's own architecture.
+model=native
+if [ "$(uname -s)" = Darwin ]; then
+	model=fat
+	export MACOSX_DEPLOYMENT_TARGET=11.0
+fi
 
 mkdir -p "$root_dir/build"
 
@@ -36,7 +41,7 @@ fi
 if [ "$needs_rebuild" = true ]; then
 	tmp="$output.tmp"
 	rm -f "$tmp"
-	"$build_script" release native "$tmp" -I "$support_dir" "$support_dir/MakaronCmd.cpp" "$support_dir/Makaron.cpp"
+	"$build_script" release "$model" "$tmp" -I "$support_dir" "$support_dir/MakaronCmd.cpp" "$support_dir/Makaron.cpp"
 	chmod +x "$tmp"
 	printf '' | "$tmp" - - >/dev/null
 	mv "$tmp" "$output"
