@@ -18,6 +18,14 @@ if [ ! -f "$source_file" ]; then
 	exit 1
 fi
 
+# On macOS, build one universal binary (x86_64 and arm64) for macOS 11.0 and later. Without a deployment target
+# clang targets the build machine's own macOS version. Elsewhere, build for the machine's own architecture.
+model=native
+if [ "$(uname -s)" = Darwin ]; then
+	model=fat
+	export MACOSX_DEPLOYMENT_TARGET=11.0
+fi
+
 mkdir -p "$root_dir/build"
 
 # Hash file contents only (not paths) so a committed stamp is valid in any checkout.
@@ -39,7 +47,7 @@ fi
 if [ "$needs_rebuild" = true ]; then
 	tmp="$output.tmp"
 	rm -f "$tmp"
-	"$build_script" release native "$tmp" -DPLATFORM_STRING=UNIX "$source_file"
+	"$build_script" release "$model" "$tmp" -DPLATFORM_STRING=UNIX "$source_file"
 	chmod +x "$tmp"
 
 	(
