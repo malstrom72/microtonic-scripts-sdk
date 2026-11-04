@@ -12,6 +12,9 @@ output="$root_dir/build/MakaronCmd"
 stamp="$output.sha256"
 sources=("$support_dir/MakaronCmd.cpp" "$support_dir/Makaron.cpp" "$support_dir/Makaron.h" "$build_script" "$script_file")
 
+# Without a deployment target clang targets the build machine's own macOS version.
+export MACOSX_DEPLOYMENT_TARGET=11.0
+
 mkdir -p "$root_dir/build"
 
 # Hash file contents only (not paths) so a committed stamp is valid in any checkout.

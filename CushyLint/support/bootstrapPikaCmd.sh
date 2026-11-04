@@ -18,6 +18,9 @@ if [ ! -f "$source_file" ]; then
 	exit 1
 fi
 
+# Without a deployment target clang targets the build machine's own macOS version.
+export MACOSX_DEPLOYMENT_TARGET=11.0
+
 mkdir -p "$root_dir/build"
 
 # Hash file contents only (not paths) so a committed stamp is valid in any checkout.
