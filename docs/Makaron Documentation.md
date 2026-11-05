@@ -52,8 +52,8 @@ If we later use `viewWidth`, for example in the expression `@viewWidth+100` it w
 
     5 // end of line comment+100
 
-Obviously, this is different from what you want. To avoid this situation, you can define the macro with a [_raw value_]
-(#raw-value) value like this:
+Obviously, this is different from what you want. To avoid this situation, you can define the macro with a
+[_raw value_](#raw-value) value like this:
 
     @define viewWidth = @<5@> // end of line comment
 
@@ -107,8 +107,8 @@ It is an error to define a macro with the same name twice. Unlike _string macros
 are *not* allowed to redefine _parametric macros_ with [`@redefine`](#redefine).
 
 You are allowed to declare a _parametric macro_ without parameters, effectively creating a _string macro_. It is useful
-for creating macros that span several lines. The alternative is to use [`@define`](#define) with a [_raw value_]
-(#raw-value). E.g. the following two examples are equivalent:
+for creating macros that span several lines. The alternative is to use [`@define`](#define) with a
+[_raw value_](#raw-value). E.g. the following two examples are equivalent:
 
     @begin macro1
     expand
