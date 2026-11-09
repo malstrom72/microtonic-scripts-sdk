@@ -334,6 +334,17 @@ Vector views have additional caching:
 - `bindings:` are available during rendering too. How often the vector actually
   rerenders depends on the change tracking and cache behavior above.
 
+A vector view only reads. Its IVG sees `defines:`, `bindings:`, native variables
+such as `$width`/`$height` and, with `guiVariables: true`, GUI variables, but it
+cannot write to Cushy or JavaScript variables. Each paint runs in its own
+throwaway variable scope, so IVG assignments, and the variable that
+`TEXT ... caret:<variable>` sets, never reach Cushy or JavaScript. A hit area or
+another view therefore cannot follow a width measured in IVG.
+
+A `hitMask:` image is built once. It can be IVG code, but that IVG has no access
+to Cushy variables and the mask is not rebuilt when variables change, so a hit
+mask cannot follow dynamic content.
+
 ### IVG And Drawing Cost
 
 - IVG/IMPD is interpreted when it renders. There is no GPU acceleration; drawing
