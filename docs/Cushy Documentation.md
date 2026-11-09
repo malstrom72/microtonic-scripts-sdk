@@ -44,7 +44,9 @@ Three ideas tie the system together:
 1. **Views nest into a tree.** Each view has `bounds` relative to its parent, and Cushy **clips hard at every view's
    bounding box** — nothing outside a view's bounds is drawn or clickable. Common view types include `group`, `caption`,
    `rectangle`, `button`, `knob`, `slider`, `click`, `hover`, `vector`, and `cluster`; the full list and every field is
-   in the schema.
+   in the schema. Later views in a `views:` list are drawn on top of earlier ones, and where they handle the mouse they
+   get it first. A `vector` view has no mouse handling, so clicks go to the views beneath it: decorative IVG drawn over
+   an interactive view does not block it.
 
 2. **GUI variables synchronize view state with your script.** A knob bound to `variable: myScript.cutoff` writes
    `myScript.cutoff` when the user turns it, and continuously reads it to redraw. Variables are always strings. A bound
