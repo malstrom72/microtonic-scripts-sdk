@@ -1,4 +1,4 @@
-// FUTURE : allow multiple input files, but we need Span to also keep track of which file it is so we get proper error messages and also the map output file needs to include filenames
+// FUTURE : allow multiple input files
 
 #include <iostream>
 #include <fstream>
@@ -7,7 +7,9 @@
 #include <ostream>
 #include <iterator>
 #include <memory>
+#include <map>
 #include <cstring>
+#include <algorithm>
 #include "Makaron.h"
 
 #ifdef _WIN32
@@ -17,6 +19,8 @@ const char SEPARATOR_CHARACTER = '/';
 #endif
 
 std::vector<std::string> includePaths;
+std::map<std::string, std::string> loadedSources;																		// by file name, for line and column in error traces
+std::vector<std::string> loadedPaths;																					// every included file by the path that opened it, in order
 
 static std::string loadEntireStream(std::istream& stream) {
 	std::istreambuf_iterator<Makaron::Char> it(stream);
@@ -25,13 +29,36 @@ static std::string loadEntireStream(std::istream& stream) {
 }
 
 
+static bool openForWriting(std::ofstream& stream, const std::string& path, const char* what) {
+	stream.open(path);
+	if (!stream.good()) {
+		std::cerr << "Could not open " << what << " file" << std::endl;
+		return false;
+	}
+	stream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
+	return true;
+}
+
+static std::string narrowString(const std::wstring& wide) {																// file names, which Makaron widens byte by byte
+	std::string narrow;
+	narrow.reserve(wide.size());
+	for (std::wstring::const_iterator it = wide.begin(); it != wide.end(); ++it) {
+		narrow += static_cast<char>(*it);
+	}
+	return narrow;
+}
+
 static bool myIncludeLoader(const Makaron::WideString& fileName, Makaron::String& contents) {
-	std::string narrowFileName(fileName.begin(), fileName.end());
+	const std::string narrowFileName = narrowString(fileName);
 	for (std::vector<std::string>::const_iterator it = includePaths.begin(); it != includePaths.end(); ++it) {
 		std::ifstream fileStream(*it + narrowFileName);
 		if (fileStream.good()) {
 			fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
 			contents = loadEntireStream(fileStream);
+			loadedSources[narrowFileName] = contents;
+			if (std::find(loadedPaths.begin(), loadedPaths.end(), *it + narrowFileName) == loadedPaths.end()) {
+				loadedPaths.push_back(*it + narrowFileName);
+			}
 			return true;
 		} else if (!fileName.empty() && fileName.front() == SEPARATOR_CHARACTER) { // only use empty path if leading /
 			assert(it->empty());
@@ -70,9 +97,20 @@ int main(int argc, const char* argv[]) {
 		context.setIncludeLoader(myIncludeLoader);
 
 		std::string mapPath;
+		std::string dependencyPath;
+		bool checkOnly = false;
 		int argi = 1;
 		while (argi < argc) {
-			if (strcmp(argv[argi], "-m") == 0) {
+			if (strcmp(argv[argi], "-c") == 0) {
+				checkOnly = true;
+				++argi;
+			} else if (strcmp(argv[argi], "-M") == 0) {
+				++argi;
+				if (argi < argc) {
+					dependencyPath = argv[argi];
+					++argi;
+				}
+			} else if (strcmp(argv[argi], "-m") == 0) {
 				++argi;
 				if (argi < argc) {
 					mapPath = argv[argi];
@@ -114,8 +152,12 @@ int main(int argc, const char* argv[]) {
 		}
 		
 		if (argi >= argc) {
-			std::cerr << "Makaron [-m <map file>] [-d <name>=<value> ...] [-i <additional include path>] <input file>|- [<output file>|-]" << std::endl;
-			std::cerr << "map lines: <output start>:<output end> (<input start>+|<span begin>:<span end>)" << std::endl;
+			std::cerr << "Makaron [-c] [-m <map file>] [-M <dependency file>] [-d <name>=<value> ...]"
+					<< " [-i <additional include path>] <input file>|- [<output file>|-]" << std::endl;
+			std::cerr << "-c checks only and writes no output; -M lists the input and every included file, one per line"
+					<< std::endl
+					<< "map lines: <output start>:<output end> (<input start>+|<span begin>:<span end>)"
+					<< "[ <file, when not the input file>]" << std::endl;
 			return 1;
 		}
 		
@@ -147,55 +189,74 @@ int main(int argc, const char* argv[]) {
 				source = loadEntireStream(fileStream);
 			}
 			
-				context.process(Makaron::Span(source, Makaron::WideString(fileName.begin(), fileName.end())),
-					processed, &offsetMap);
+			loadedSources[fileName] = source;
+			context.process(Makaron::Span(source, Makaron::WideString(fileName.begin(), fileName.end())), processed
+					, &offsetMap);
 		}
 		catch (const Makaron::Exception& x) {
 			std::cerr << "!!!! Makaron error: " << x.getError() << std::endl
-					<< "File: " << std::string(x.getFile().begin(), x.getFile().end())
+					<< "File: " << narrowString(x.getFile())
 					<< ", line: " << x.getLineNumber() << ", column: " << x.getColumnNumber()
 					<< " (@" << x.getOffset() << ")" << std::endl
 					<< std::endl
 					<< "Trace:" << std::endl;
 			Makaron::RangeVector inputRanges = findInputRanges(offsetMap, processed.size());
 			for (Makaron::RangeVector::const_iterator it = inputRanges.begin(); it != inputRanges.end(); ++it) {
-				std::pair<int, int> lineAndColumn = Makaron::calculateLineAndColumn(source, it->first);
-				std::cerr << "Line: " << lineAndColumn.first << ", column: " << lineAndColumn.second;
-				if (it->second > it->first + 1) {
-					std::cerr << " (@" << it->first << ".." << it->second << ')' << std::endl;
-				} else {
-					std::cerr << " (@" << it->first << ')' << std::endl;
+				const std::string rangeFile = narrowString(*it->file);
+				const std::map<std::string, std::string>::const_iterator loaded = loadedSources.find(rangeFile);
+				std::cerr << "File: " << rangeFile;
+				if (loaded != loadedSources.end()) {
+					const std::pair<int, int> at = Makaron::calculateLineAndColumn(loaded->second, it->begin);
+					std::cerr << ", line: " << at.first << ", column: " << at.second;
 				}
+				std::cerr << " (@" << it->begin;
+				if (it->end > it->begin + 1) {
+					std::cerr << ".." << it->end;
+				}
+				std::cerr << ')' << std::endl;
 			}
 			rc = 1;
 		}
 
 		if (!mapPath.empty()) {
-			std::ofstream fileStream(mapPath);
-			if (!fileStream.good()) {
-				std::cerr << "Could not open map file" << std::endl;
+			std::ofstream fileStream;
+			if (!openForWriting(fileStream, mapPath, "map")) {
 				return 1;
 			}
-			fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
-			for (std::vector<Makaron::OffsetMapEntry>::const_iterator it = offsetMap.begin(); it != offsetMap.end(); ++it) {
+			const Makaron::WideString inputFile(fileName.begin(), fileName.end());
+			typedef std::vector<Makaron::OffsetMapEntry>::const_iterator EntryIt;
+			for (EntryIt it = offsetMap.begin(); it != offsetMap.end(); ++it) {
 				fileStream << it->outputPoint << ':' << (it->outputPoint + it->outputStretch) << ' ' << it->inputFrom;
 				if (it->inputLength == 0) {
-					fileStream << '+' << std::endl;
+					fileStream << '+';
 				} else {
-					fileStream << ':' << (it->inputFrom + it->inputLength) << std::endl;
+					fileStream << ':' << (it->inputFrom + it->inputLength);
 				}
+				if (*it->file != inputFile) {																			// an included file is named, the input file is not
+					fileStream << ' ' << narrowString(*it->file);
+				}
+				fileStream << std::endl;
 			}
 		}
 
-		if (outputPath.empty() || outputPath == "-") {
-			std::cout << processed;
-		} else {
-			std::ofstream fileStream(outputPath);
-			if (!fileStream.good()) {
-				std::cerr << "Could not open output file" << std::endl;
+		if (!dependencyPath.empty()) {
+			std::ofstream fileStream;
+			if (!openForWriting(fileStream, dependencyPath, "dependency")) {
 				return 1;
 			}
-			fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
+			fileStream << fileName << std::endl;
+			for (std::vector<std::string>::const_iterator it = loadedPaths.begin(); it != loadedPaths.end(); ++it) {
+				fileStream << *it << std::endl;
+			}
+		}
+
+		if (!checkOnly && (outputPath.empty() || outputPath == "-")) {
+			std::cout << processed;
+		} else if (!checkOnly) {
+			std::ofstream fileStream;
+			if (!openForWriting(fileStream, outputPath, "output")) {
+				return 1;
+			}
 			fileStream << processed;
 		}
 	}

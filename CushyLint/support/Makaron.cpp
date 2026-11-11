@@ -27,11 +27,20 @@
 
 namespace Makaron {
 
+static std::string narrowString(const WideString& wide) {																// file names, which Makaron widens byte by byte
+	std::string narrow;
+	narrow.reserve(wide.size());
+	for (WideString::const_iterator it = wide.begin(); it != wide.end(); ++it) {
+		narrow += static_cast<Char>(*it);
+	}
+	return narrow;
+}
+
 const char* Exception::what() const throw() {
 	try {
 		if (errorWithLine.empty()) {
 			std::ostringstream ss;
-			ss << "Makaron error: " << error << " (" << std::string(file.begin(), file.end())
+			ss << "Makaron error: " << error << " (" << narrowString(file)
 					<< (file.empty() ? "line " : " line ") << line << ", column " << column << ")";
 			errorWithLine = ss.str();
 		}
@@ -313,23 +322,22 @@ void Context::parseArgumentList(std::vector<String>& arguments) {
 }
 
 static bool standardIncludeLoader(const WideString& fileName, String& contents) {
-    std::ifstream fileStream;
+	std::ifstream fileStream;
 
 #if defined(_WIN32) || defined(_WIN64)
-    // Windows-specific code
-    fileStream.open(fileName.c_str(), std::ios::in | std::ios::binary);
+	// Windows-specific code
+	fileStream.open(fileName.c_str(), std::ios::in | std::ios::binary);
 #else
-    // Convert std::wstring to std::string (assuming UTF-8 encoding)
-    std::string narrowFilePath(fileName.begin(), fileName.end());
-    fileStream.open(narrowFilePath.c_str(), std::ios::in | std::ios::binary);
+	const std::string narrowFilePath = narrowString(fileName);
+	fileStream.open(narrowFilePath.c_str(), std::ios::in | std::ios::binary);
 #endif
 
-    if (!fileStream.is_open()) {
-        return false;
-    }
-    fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
-    contents.assign(std::istreambuf_iterator<char>(fileStream), std::istreambuf_iterator<char>());
-    return true;
+	if (!fileStream.is_open()) {
+		return false;
+	}
+	fileStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
+	contents.assign(std::istreambuf_iterator<char>(fileStream), std::istreambuf_iterator<char>());
+	return true;
 }
 
 Context::Context(int depthLimiter, Context* parentContext)
@@ -579,7 +587,8 @@ static const char* INSTRUCTIONS[6] = {
 void Context::includeFile() {
 	skipWhite();
 	const String fileName = parseExpression("\n\r");
-	const WideString wideFileName = std::wstring(fileName.begin(), fileName.end());
+	const unsigned char* const nameBytes = reinterpret_cast<const unsigned char*>(fileName.data());
+	const WideString wideFileName(nameBytes, nameBytes + fileName.size());												// a signed char would widen 0xE9 to U+FFE9
 	optionalLineBreak();
 	String source;
 	if (!loader(wideFileName, source)) {
@@ -644,6 +653,7 @@ void Context::process(const Span& input, String& output, std::vector<OffsetMapEn
 			size_t offsetsIndex;
 			const bool hasOffsets = (offsets != 0);
 			if (hasOffsets) {
+				mapEntry.file = processing.file;
 				mapEntry.inputFrom = processing.sourceOffset(instructionBegin);
 				assert(processed != 0);
 				mapEntry.outputPoint = processed->size();
@@ -692,19 +702,15 @@ String process(const String& source, const WideString& fileName) {
 
 RangeVector findInputRanges(const std::vector<OffsetMapEntry>& offsetMap, size_t outputOffset) {
 	std::vector<OffsetMapEntry>::const_iterator it = offsetMap.begin();
-	// TODO: binary search maybe?
 	while (it != offsetMap.end() && outputOffset < it->outputPoint) {
 		++it;
 	}
 	RangeVector v;
 	while (it != offsetMap.end() && outputOffset >= it->outputPoint) {
 		if (outputOffset < it->outputPoint + it->outputStretch) {
-			if (it->inputLength == 0) {
-				const size_t inputOffset = it->inputFrom + (outputOffset - it->outputPoint);
-				v.push_back(std::make_pair(inputOffset, inputOffset + 1));
-			} else {
-				v.push_back(std::make_pair(it->inputFrom, it->inputFrom + it->inputLength));
-			}
+			const size_t from = it->inputFrom + (it->inputLength == 0 ? outputOffset - it->outputPoint : 0);			// text maps one to one
+			const InputRange range = { it->file, from, from + (it->inputLength == 0 ? 1 : it->inputLength) };
+			v.push_back(range);
 		}
 		++it;
 	}
@@ -1090,6 +1096,38 @@ bool unitTest() {
 			"@begin dupl(qwer,c,def,qwer,asdf) @end"
 			, "Duplicate parameter name \"qwer\"", 27, 1, 28));
 
+	{																													// an error inside an include is traced to its file
+		Context context;
+		context.setIncludeLoader([](const WideString& fileName, String& contents) {
+			contents = "x\n@nope\n";
+			return fileName == L"inner.makaron";
+		});
+		std::vector<OffsetMapEntry> offsets;
+		String output;
+		bool traced = false;
+		try {
+			context.process(Span("a\n@include inner.makaron\nb\n", L"outer.makaron"), output, &offsets);
+		}
+		catch (const Exception& x) {
+			const RangeVector ranges = findInputRanges(offsets, output.size());
+			traced = (x.getFile() == L"inner.makaron" && ranges.size() == 2 && *ranges[0].file == L"outer.makaron"
+					&& ranges[0].begin == 2 && *ranges[1].file == L"inner.makaron" && ranges[1].begin == 2);
+		}
+		assert(traced);
+		(void)traced;
+	}
+	{
+		Context context;
+		WideString loaded;
+		context.setIncludeLoader([&loaded](const WideString& fileName, String& contents) {
+			loaded = fileName;
+			contents = "";
+			return true;
+		});
+		String output;
+		context.process(Span("@include caf\xE9.makaron\n", L"main.makaron"), output, 0);
+		assert(loaded == L"caf\xE9.makaron");
+	}
 	return true;
 }
 

@@ -579,14 +579,38 @@ map(@VALIDATORS
 
 validateValue = function { ( VALIDATORS[[$1].kind]($0, $1, $2) ) };
 
+// Loads an included file the way MakaronCmd found it, from the first include root that has it. Void if none has it.
+loadIncludedSource = function {
+	args(@includeName);
+	found = void;
+	iterate(@::fileRefsRoots, >{
+		path = $2 # includeName;
+		if (found === void) try(>found = load(path));
+	});
+	( found )
+};
+
 reportErrorPosition = function {
 	args(@filename, @source, @excerptSourceIsMakaroned, @excerptSource, @offsetMap, @errorOffset);
 	print("");
 	lastMatchOffset = void;
+	prune(@includedSources);
 	tokenize(offsetMap, >{
 		entry = $0;
-		// <output start>:<output end> (<input start>+|<span begin>:<span end>)
-		if (wildmatch(entry, "{[0-9]?*}:{[0-9]?*} {[0-9]?*}:{[0-9]?*}", @outputStart, @outputEnd, @spanBegin, @spanEnd)) {
+		/*
+			<output start>:<output end> (<input start>+|<span begin>:<span end>)[ <file, when not the input file>]
+			The input file is not named. A named file is an included file, so its spans are offsets into that file.
+		*/
+		spanFile = void;
+		if (wildmatch(entry, "{[0-9]?*}:{[0-9]?*} {[0-9]?*}:{[0-9]?*} {?*}", @outputStart, @outputEnd, @spanBegin, @spanEnd
+				, @spanFile)) {
+			;
+		} else if (wildmatch(entry, "{[0-9]?*}:{[0-9]?*} {[0-9]?*}+ {?*}", @outputStart, @outputEnd, @inputStart
+				, @spanFile)) {
+			spanBegin = inputStart + errorOffset - outputStart;
+			spanEnd = spanBegin + 1;
+		} else if (wildmatch(entry, "{[0-9]?*}:{[0-9]?*} {[0-9]?*}:{[0-9]?*}", @outputStart, @outputEnd, @spanBegin
+				, @spanEnd)) {
 			;
 		} else if (wildmatch(entry, "{[0-9]?*}:{[0-9]?*} {[0-9]?*}+", @outputStart, @outputEnd, @inputStart)) {
 			spanBegin = inputStart + errorOffset - outputStart;
@@ -595,13 +619,26 @@ reportErrorPosition = function {
 			throw("Bad syntax in map file");
 		};
 		if (errorOffset >= outputStart && errorOffset < outputEnd) {
-			lastMatchOffset = spanBegin;
-			calcLineAndColumn(source, spanBegin, @line, @column);
-			if (spanEnd === spanBegin + 1) {
-				print(bake("File: {filename}, line: {line}, column: {column} (@{spanBegin})"));
+			spanName = filename;
+			spanSource = source;
+			if (spanFile === void) {
+				lastMatchOffset = spanBegin;
 			} else {
-				calcLineAndColumn(source, spanEnd, @endLine, @endColumn);
-				print(bake("File: {filename}, line: {line}, column: {column} -> line: {endLine}, column: {endColumn} (@{spanBegin}..@{spanEnd})"));
+				spanName = spanFile;
+				if (!exists(@includedSources[spanFile])) {
+					includedSources[spanFile] = loadIncludedSource(spanFile);
+				};
+				spanSource = includedSources[spanFile];
+			};
+			if (spanSource === void) {
+				print(bake("File: {spanName} (@{spanBegin})"));
+			} else if (spanEnd === spanBegin + 1) {
+				calcLineAndColumn(spanSource, spanBegin, @line, @column);
+				print(bake("File: {spanName}, line: {line}, column: {column} (@{spanBegin})"));
+			} else {
+				calcLineAndColumn(spanSource, spanBegin, @line, @column);
+				calcLineAndColumn(spanSource, spanEnd, @endLine, @endColumn);
+				print(bake("File: {spanName}, line: {line}, column: {column} -> line: {endLine}, column: {endColumn} (@{spanBegin}..@{spanEnd})"));
 			}
 		}
 	});
