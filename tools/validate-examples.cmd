@@ -53,6 +53,10 @@ FOR /D %%P IN ("examples\*.%package_ext%") DO CALL :checkPackage "%%P"
 IF EXIST "%console_package%\" CALL :checkPackage "%console_package%"
 
 ECHO(
+ECHO == CushyLint error reporting ==
+CALL :probeErrors
+
+ECHO(
 ECHO == JavaScript (ESLint) ==
 CALL tools\validate-js.cmd
 IF ERRORLEVEL 1 GOTO javaScriptFailed
@@ -79,6 +83,60 @@ IF NOT DEFINED failures GOTO passed
 EXIT /B 1
 :passed
 ECHO All example checks passed.
+EXIT /B 0
+
+REM Makaron expands macros inside // comments too, so a parametric macro named in a comment is a call without
+REM arguments. CushyLint must fail on that with the Makaron error and the position it maps through the Makaron map,
+REM not lose either. The probe is a copy of the first example package that needs no mirror, with such a comment
+REM appended to its first .cushy, in a scratch copy of the SDK layout.
+:probeErrors
+SET "probe_src="
+FOR /D %%P IN ("examples\*.%package_ext%") DO IF NOT DEFINED probe_src CALL :considerProbe "%%P"
+IF DEFINED probe_src GOTO probeFound
+>&2 ECHO FAIL no example package for the probe
+SET "failures=%failures% cushylint-errors"
+EXIT /B 0
+:probeFound
+SET "probe_pkg=%tmp_root%\probe\%probe_src%"
+XCOPY "%sdk_root%\%resources_dir%" "%tmp_root%\probe\%resources_dir%\" /E /I /H /Q /Y >NUL
+XCOPY "%sdk_root%\%probe_src%" "%probe_pkg%\" /E /I /H /Q /Y >NUL
+SET "probe_cushy="
+FOR /F "delims=" %%F IN ('DIR /S /B /A-D "%probe_pkg%\*.cushy"') DO IF NOT DEFINED probe_cushy SET "probe_cushy=%%F"
+>>"%probe_cushy%" ECHO(
+>>"%probe_cushy%" ECHO @begin lintProbe(a, b)
+>>"%probe_cushy%" ECHO @a @b
+>>"%probe_cushy%" ECHO @end
+>>"%probe_cushy%" ECHO // @lintProbe is named in a comment
+PUSHD "%sdk_root%\CushyLint"
+CALL .\CushyLint.bat "%probe_pkg:\=/%/" >"%log_file%" 2>&1
+SET "lint_error=%ERRORLEVEL%"
+POPD
+IF "%lint_error%"=="0" GOTO probePassed
+FINDSTR /L /C:"Makaron error: Incorrect number of arguments for lintProbe" "%log_file%" >NUL 2>&1
+IF ERRORLEVEL 1 GOTO probeLost
+FOR %%F IN ("%probe_cushy%") DO SET "probe_name=%%~nxF"
+FINDSTR /B /L /C:"File: %probe_name%, line: " "%log_file%" >NUL 2>&1
+IF ERRORLEVEL 1 GOTO probeLost
+ECHO ok   Makaron errors are reported
+EXIT /B 0
+:probePassed
+>&2 ECHO FAIL the probe passed CushyLint
+SET "failures=%failures% cushylint-errors"
+EXIT /B 0
+:probeLost
+>&2 ECHO FAIL the Makaron error or its position was lost
+TYPE "%log_file%" 1>&2
+SET "failures=%failures% cushylint-errors"
+EXIT /B 0
+
+REM Sets probe_src to package %1 if it has a .cushy and needs no mirror.
+:considerProbe
+SET "candidate=%~1"
+DIR /S /B /A-D "%candidate%\*.cushy" >NUL 2>&1
+IF ERRORLEVEL 1 EXIT /B 0
+FINDSTR /S /M /L /C:"references/%sdk_name%/" "%candidate%\*.schema" >NUL 2>&1
+IF NOT ERRORLEVEL 1 EXIT /B 0
+SET "probe_src=%candidate%"
 EXIT /B 0
 
 REM Runs CushyLint on package %1, given relative to the SDK root.
