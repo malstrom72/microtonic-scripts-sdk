@@ -126,6 +126,48 @@ for pkg in "${packages[@]}"; do
 done
 
 echo
+echo "== CushyLint error reporting =="
+# Makaron expands macros inside // comments too, so a parametric macro named in a comment is a call without
+# arguments. CushyLint must fail on that with the Makaron error and the position it maps through the Makaron map,
+# not lose either. The probe is a copy of the first example package that needs no mirror, with such a comment
+# appended to its first .cushy, in a scratch copy of the SDK layout.
+probe_src=""
+for pkg in "${packages[@]}"; do
+	case "$pkg" in
+		examples/*) ;;
+		*) continue ;;
+	esac
+	if find "$pkg" -name '*.cushy' -print -quit | grep -q . \
+			&& ! grep -rqs --include='*.schema' "references/$sdk_name/" "$pkg"; then
+		probe_src="$pkg"
+		break
+	fi
+done
+if [ -z "$probe_src" ]; then
+	echo "FAIL no example package for the probe" >&2
+	failures+=("cushylint-errors")
+else
+	probe_pkg="$tmp_root/probe/$probe_src"
+	mkdir -p "$(dirname "$probe_pkg")" "$tmp_root/probe/CushyLint"
+	cp -R "$sdk_root/$resources_dir" "$tmp_root/probe/"
+	cp "$sdk_root"/CushyLint/*.schema "$tmp_root/probe/CushyLint/"
+	cp -R "$probe_src" "$probe_pkg"
+	probe_cushy="$(find "$probe_pkg" -name '*.cushy' -print -quit)"
+	printf '\n@begin lintProbe(a, b)\n@a @b\n@end\n// @lintProbe is named in a comment\n' >>"$probe_cushy"
+	if run_cushylint "$probe_pkg" >"$log_file" 2>&1; then
+		echo "FAIL the probe passed CushyLint" >&2
+		failures+=("cushylint-errors")
+	elif grep -q "Makaron error: Incorrect number of arguments for lintProbe" "$log_file" \
+			&& grep -q "^File: $(basename "$probe_cushy"), line: " "$log_file"; then
+		echo "ok   Makaron errors are reported"
+	else
+		echo "FAIL the Makaron error or its position was lost" >&2
+		cat "$log_file" >&2
+		failures+=("cushylint-errors")
+	fi
+fi
+
+echo
 echo "== JavaScript (ESLint) =="
 if tools/validate-js.sh; then
 	echo "ok   JavaScript"
