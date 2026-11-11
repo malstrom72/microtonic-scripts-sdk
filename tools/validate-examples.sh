@@ -148,8 +148,9 @@ if [ -z "$probe_src" ]; then
 	failures+=("cushylint-errors")
 else
 	probe_pkg="$tmp_root/probe/$probe_src"
-	mkdir -p "$(dirname "$probe_pkg")"
+	mkdir -p "$(dirname "$probe_pkg")" "$tmp_root/probe/CushyLint"
 	cp -R "$sdk_root/$resources_dir" "$tmp_root/probe/"
+	cp "$sdk_root"/CushyLint/*.schema "$tmp_root/probe/CushyLint/"
 	cp -R "$probe_src" "$probe_pkg"
 	probe_cushy="$(find "$probe_pkg" -name '*.cushy' -print -quit)"
 	printf '\n@begin lintProbe(a, b)\n@a @b\n@end\n// @lintProbe is named in a comment\n' >>"$probe_cushy"

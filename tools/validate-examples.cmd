@@ -99,6 +99,8 @@ EXIT /B 0
 :probeFound
 SET "probe_pkg=%tmp_root%\probe\%probe_src%"
 XCOPY "%sdk_root%\%resources_dir%" "%tmp_root%\probe\%resources_dir%\" /E /I /H /Q /Y >NUL
+MKDIR "%tmp_root%\probe\CushyLint" >NUL 2>&1
+COPY /Y "%sdk_root%\CushyLint\*.schema" "%tmp_root%\probe\CushyLint\" >NUL
 XCOPY "%sdk_root%\%probe_src%" "%probe_pkg%\" /E /I /H /Q /Y >NUL
 SET "probe_cushy="
 FOR /F "delims=" %%F IN ('DIR /S /B /A-D "%probe_pkg%\*.cushy"') DO IF NOT DEFINED probe_cushy SET "probe_cushy=%%F"
