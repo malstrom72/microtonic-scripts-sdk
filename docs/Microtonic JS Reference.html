@@ -1266,6 +1266,12 @@ myScript.myKnob = {
     get: function() { return &#39;&#39; + ((Math.exp(myScript.myValue) - 1) / 10); },
     set: function(s) { myScript.myValue = Math.log(1 + 10 * +s); }
 }</code></pre>
+<p>Put the guard at the top level or in a top-level IIFE, where
+<code>this</code> is the global object. Inside a method
+<code>this</code> is the method’s object instead. Testing
+<code>this.myScript</code> rather than a bare <code>myScript</code>
+avoids a ReferenceError on the first run, before the variable
+exists.</p>
 <p>Besides <code>get</code> and <code>set</code>, there is a third
 function you may declare with the name <code>touch</code>. It will be
 called when the user begins and ends editing the GUI variable (e.g. when

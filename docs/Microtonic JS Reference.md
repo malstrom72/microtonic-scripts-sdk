@@ -1084,6 +1084,10 @@ knob value to logarithmic scale:
         set: function(s) { myScript.myValue = Math.log(1 + 10 * +s); }
     }
 
+Put the guard at the top level or in a top-level IIFE, where `this` is the global object. Inside a method `this` is
+the method's object instead. Testing `this.myScript` rather than a bare `myScript` avoids a ReferenceError on the first
+run, before the variable exists.
+
 Besides `get` and `set`, there is a third function you may declare with the name `touch`. It will be called when the
 user begins and ends editing the GUI variable (e.g. when the knob is clicked and when the mouse button is released). A
 single boolean parameter is passed to the function: `true` when the user begins editing and `false` when the user
