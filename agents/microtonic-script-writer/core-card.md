@@ -38,7 +38,7 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 - `@window(left, top, width, height, ...)`: `height` includes the 24 px title bar. Initialize the script's
   `windowPosition` to `''`.
 - To start a GUI package, copy `examples/MacroTweak.mtscript`, the smallest example (about 2.5k tokens: knobs,
-  captions, a button and a package schema). The other examples are 3k to 9k tokens; read them by section.
+  captions, a button and a package schema). The other examples are 3k to 9k tokens; open only the parts you need.
 
 ## Graphics (IVG)
 
