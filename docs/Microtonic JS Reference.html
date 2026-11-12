@@ -1320,8 +1320,8 @@ to visually indicate that the action is active and “in effect,” e.g., by
 inserting a checkmark before a menu item.</p>
 <p>Here is an example of an action:</p>
 <pre><code>myScript.resetMyValue = {
-    execute: function(p) { myScript.myValue = +unescape(p); }
-    checked: function(p) { return myScript.myValue == +unescape(p); }
+    execute: function(p) { myScript.myValue = +unescape(p); },
+    checked: function(p) { return myScript.myValue == +unescape(p); },
     enabled: function(p) { return myScript.canReset; }
 }</code></pre>
 <p>Besides getting called from user actions, a <code>.cushy</code> file

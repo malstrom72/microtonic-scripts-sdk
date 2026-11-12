@@ -1124,8 +1124,8 @@ by inserting a checkmark before a menu item.
 Here is an example of an action:
 
     myScript.resetMyValue = {
-        execute: function(p) { myScript.myValue = +unescape(p); }
-        checked: function(p) { return myScript.myValue == +unescape(p); }
+        execute: function(p) { myScript.myValue = +unescape(p); },
+        checked: function(p) { return myScript.myValue == +unescape(p); },
         enabled: function(p) { return myScript.canReset; }
     }
 

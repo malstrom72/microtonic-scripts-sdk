@@ -6,9 +6,10 @@
 	Usage: node tools/generate-doc-index.js [--check]
 
 	Each indexed section gets one line: its line range, an estimated size in tokens (characters / 4) and its heading.
-	`levels` is the deepest heading level indexed for a file; with levels 0 the file gets only its own line. Schema files
-	are indexed by rule definition (`<name> = ...`). With --check, nothing is written and the exit code is 1 if the
-	checked-in index differs from what would be generated, so CI catches a stale index.
+	`levels` is the deepest heading level indexed for a file; with levels 0 the file gets only its own line. `notes`
+	adds a short description after headings that do not say what they cover; a note whose heading is gone is an error.
+	Schema files are indexed by rule definition (`<name> = ...`). With --check, nothing is written and the exit code is
+	1 if the checked-in index differs from what would be generated, so CI catches a stale index.
 
 	Shared between the Microtonic and Synplant script SDKs. Only the product configuration block below differs
 	between the two copies.
@@ -20,15 +21,25 @@ const path = require("path");
 // ---- Product configuration -----------------------------------------------------------------------------------------
 const TITLE = "Microtonic Scripts SDK";
 const SUMMARY = "Docs, agent notes and schemas for writing Microtonic 3.3.4 scripts (JavaScript, Cushy GUI, IVG"
-		+ " graphics). Read core-card.md first, then open only the line ranges you need.";
+		+ " graphics). Read core-card.md first, then open only the line ranges you need. Paths are relative to the SDK"
+		+ " root, which in a project is usually references/microtonic-scripts-sdk/.";
 const CORE_CARD = "agents/microtonic-script-writer/core-card.md";
 const GROUPS = [
 	{
 		name: "Agent notes",
 		files: [
 			{ path: "agents/microtonic-script-writer/instructions.md", levels: 3 },
-			{ path: "agents/microtonic-script-writer/cushy-notes.md", levels: 3 },
-			{ path: "agents/microtonic-script-writer/validation.md", levels: 3 },
+			{ path: "agents/microtonic-script-writer/cushy-notes.md", levels: 3, notes: {
+				"Easy .cushy Mistakes": "@define comments, color spellings and ranges, ASCII, button captions"
+			} },
+			{ path: "agents/microtonic-script-writer/validation.md", levels: 3, notes: {
+				"All Examples At Once": "tools/validate-examples (.sh or .cmd) on every bundled package",
+				"JavaScript Syntax": "run tools/validate-js (.sh or .cmd), ESLint ES5 rules, globals",
+				"Single File": "CushyLint on one .cushy file",
+				"Directory": "CushyLint on a package folder",
+				"Package Schema Header": "the package .schema include: and resources: lines",
+				"Expected Practice": "when to validate, and what a CushyLint pass does not prove"
+			} },
 			{ path: "agents/microtonic-script-writer/packaging.md", levels: 3 },
 			{ path: "agents/microtonic-script-writer/examples.md", levels: 3 },
 			{ path: "agents/microtonic-script-writer/source-map.md", levels: 2 },
@@ -38,12 +49,18 @@ const GROUPS = [
 	{
 		name: "Reference",
 		files: [
-			{ path: "docs/Microtonic JS Reference.md", levels: 3 },
+			{ path: "docs/Microtonic JS Reference.md", levels: 3, notes: {
+				"Engine": "NuXJS, ES3 with partial ES5, the Math.round string bug",
+				"GUI Variables": "get, set and touch objects, the reload-safe state guard",
+				"GUI Actions": "execute, checked and enabled action objects"
+			} },
 			{ path: "docs/Cushy Documentation.md", levels: 3 },
 			{ path: "CushyLint/cushy.schema", schema: true },
 			{ path: "Microtonic Resources/microtonic.schema", schema: true },
 			{ path: "docs/Makaron Documentation.md", levels: 2 },
-			{ path: "docs/IVG Documentation.md", levels: 3 },
+			{ path: "docs/IVG Documentation.md", levels: 3, notes: {
+				"Intro": "what IVG is, a sample file, the format line"
+			} },
 			{ path: "docs/Development Scripts Folder.md", levels: 2 },
 			{ path: "README.md", levels: 2 }
 		]
@@ -109,13 +126,11 @@ function findHeadings(lines) {
 	return headings;
 }
 
-function linkPath(relativePath) {
-	return relativePath.split("/").map(encodeURIComponent).join("/");
-}
-
 function indexMarkdown(file) {
 	const lines = readLines(file.path);
 	const headings = findHeadings(lines);
+	const notes = file.notes || {};
+	const used = {};
 	const out = [];
 	for (let h = 0; h < headings.length; ++h) {
 		const heading = headings[h];
@@ -131,8 +146,18 @@ function indexMarkdown(file) {
 			}
 		}
 		const indent = heading.level === 3 ? "  " : "";
+		let note = "";
+		if (Object.prototype.hasOwnProperty.call(notes, text)) {
+			note = ": " + notes[text];
+			used[text] = true;
+		}
 		out.push(indent + "- L" + (heading.line + 1) + "-" + (end + 1) + " "
-				+ formatTokens(tokens(lines, heading.line, end)) + " " + text);
+				+ formatTokens(tokens(lines, heading.line, end)) + " " + text + note);
+	}
+	for (const text of Object.keys(notes)) {
+		if (!used[text]) {
+			throw new Error(file.path + ": no indexed heading \"" + text + "\" for its note");
+		}
 	}
 	return { lines: lines, entries: out };
 }
@@ -167,7 +192,7 @@ function generate() {
 			+ " section. Read only the lines you need, for example with `sed -n 120,180p <file>`.");
 	out.push("");
 	const coreCard = readLines(CORE_CARD);
-	out.push("- [Core card](" + linkPath(CORE_CARD) + "): rules for every task, "
+	out.push("- Core card, " + CORE_CARD + ": rules for every task, "
 			+ formatTokens(tokens(coreCard, 0, coreCard.length - 1)) + ". Always load it.");
 	for (const group of GROUPS) {
 		out.push("");
@@ -175,8 +200,8 @@ function generate() {
 		for (const file of group.files) {
 			const result = file.schema ? indexSchema(file) : indexMarkdown(file);
 			out.push("");
-			out.push("### [" + file.path + "](" + linkPath(file.path) + ") " + result.lines.length + " lines, "
-					+ formatTokens(tokens(result.lines, 0, result.lines.length - 1)));
+			out.push("### " + file.path + " (" + result.lines.length + " lines, "
+					+ formatTokens(tokens(result.lines, 0, result.lines.length - 1)) + ")");
 			if (result.entries.length > 0) {
 				out.push("");
 				for (const entry of result.entries) {

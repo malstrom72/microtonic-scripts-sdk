@@ -47,9 +47,14 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 
 ## Validate before you answer
 
-- `.cushy` files: run CushyLint on the package folder, with a trailing slash:
-  `CushyLint/CushyLint "$(pwd)/MyScript.mtscript/" "$(pwd)/Microtonic Resources"` (Windows:
-  `CushyLint\CushyLint.bat`).
-- `.ivg` files: `tools/validate-static-ivg.sh "path/to/MyScript.mtscript"` (Windows: `.cmd`), and render icons with
-  `tools/IVG2PNG/IVG2PNG` while designing them.
+Run these from the project root, with the SDK in `references/microtonic-scripts-sdk/`; from the SDK root, drop that
+prefix. On Windows, use the `.cmd` and `.bat` versions.
+
+- `.js` files: `references/microtonic-scripts-sdk/tools/validate-js.sh scripts`. Run it from the project root, or
+  ESLint skips files outside the SDK.
+- `.cushy` files: CushyLint on the package folder, with a trailing slash:
+  `references/microtonic-scripts-sdk/CushyLint/CushyLint "$(pwd)/scripts/MyScript.mtscript/"`. If the package
+  `.schema` has no `resources:` lines, add the resource folder as a second argument.
+- `.ivg` files: `references/microtonic-scripts-sdk/tools/validate-static-ivg.sh "scripts/MyScript.mtscript"`, and
+  render icons with `references/microtonic-scripts-sdk/tools/IVG2PNG/IVG2PNG` while designing them.
 - Never claim code was tested inside Microtonic unless it was.
