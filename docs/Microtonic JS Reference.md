@@ -1178,6 +1178,41 @@ preset, current drum patch, current pattern, or MIDI config. Use `getElementId` 
 preset, drum patch, pattern, or MIDI config has changed. Use `setParam` when changing only a few parameters; it updates
 single parameters directly and does not replace the whole program state.
 
+Cushy polls rather than being notified (see [Cushy Documentation → Performance](Cushy%20Documentation.md#performance)).
+Every view bound to a JavaScript variable calls its getter, and every view using a JavaScript action calls its `enabled`
+and `checked` functions, between 10 and 50 times a second (every tick for a button drawn with `vector`), even while
+the view or Microtonic's window is hidden, and once more on every mouse click. Two views bound to the same name make two
+calls. Each call looks
+the dotted name up from the globals again and passes the action's parameters as the raw string, so any parsing of them
+in the script runs on every poll. An action without `enabled` counts as enabled, and one without `checked` as not
+checked. So:
+
+-   Make getters, `enabled` and `checked` cheap: return a value that is already computed. Do not call `getElement`,
+    serialize data, or build long strings in them.
+-   Compute derived values when their inputs change, for example from an `onChanged` autoexec, and let the getter return
+    the cached result. Microtonic has no helper for this, so keep the cache in the script.
+-   A plain string property costs no function call at all, so prefer one when the value is only set from script code.
+-   Setters and `execute` run only on a user action or a `set`, so they may do expensive work.
+
+For a value derived from the document, [`getElementId`](#getelementid) is a cheap way to tell whether the input
+changed:
+
+```javascript
+var summaryForId = -1;
+var summary = '';
+
+myScript.patternSummary = {
+    get: function() {
+        var id = getElementId('pattern');
+        if (id !== summaryForId) {
+            summaryForId = id;
+            summary = buildSummary(getElement('pattern'));    // your own formatting, runs once per change
+        }
+        return summary;
+    }
+};
+```
+
 Use `JSConsole.mtscript`'s FPS display as the practical performance indicator. For script-side measurements, use
 `Date.now()` around action bodies and print occasional averages rather than tracing every tick. CushyLint and ESLint can
 catch syntax and schema problems, but they do not predict runtime performance; measure in Microtonic.

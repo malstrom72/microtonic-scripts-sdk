@@ -123,7 +123,9 @@ when nothing else fits.
 master named `<base>_x2.png` — the convention the shipped resources use, where nearly every built-in PNG exists only as
 `_x2`. **`_x4` masters are a later-Cushy addition and are not used by Microtonic 3.3.4**, so target `_x2` for Microtonic
 scripts. Vector (`vector` / IVG) graphics and `caption` text scale cleanly at any zoom and sidestep the resolution
-question entirely; prefer them where crisp graphics matter.
+question entirely; prefer them where crisp graphics matter. An image can also be drawn from IVG
+(`image: { ivgFile: "myGraphic" }`), which is crisp at every zoom and needs no PNG master; see
+[Drawing cost](#drawing-cost) for which to choose.
 
 ## A minimal window
 
@@ -166,6 +168,84 @@ A few things that trip up first-time authors, all expanded in the schema or exam
 - **Colors use normalized components** — `rgb(1,1,1,0.35)`, not `rgb(255,255,255,...)`.
 - **Keep `.cushy` source ASCII** unless you have tested the exact character path.
 
+## Performance
+
+Cushy has no change notifications. It polls: on refresh ticks every view asks its GUI variables for their values and
+its actions whether they are enabled and checked, and redraws only if something differs from what it drew last. Getters
+therefore run for as long as the window is open, and drawing cost depends on the kind of view. How much this matters for
+a given window depends on its size and contents, so check it in Microtonic.
+
+### How often views poll
+
+Microtonic refreshes its window, and the script windows shown in it, every 20 ms (50 times a second), whether the window
+is visible or hidden. Most views pace themselves: right after a change a view polls on every tick, and while nothing
+changes it slows down step by step to every 5th tick. A steady view still polls about 10 times a second.
+
+Hiding a view does not stop it polling. The views inside a hidden group, the pages a `paged` view is not showing, and
+views scrolled or clipped out of sight all keep polling at the paced rate. A sub-cushy on a hidden page is loaded at
+startup and polls too.
+
+Some polling ignores the pace:
+
+- A `vector` view re-checks its source and every variable its last IVG run read on every tick, without slowing down. It
+  reruns the IVG and redraws only when one of them changed, so the cost is the lookups: keep the variables a vector
+  reads few and cheap.
+- A button drawn with `vector` refreshes completely on every tick: its action's `enabled` and `checked`, its caption and
+  its vector's variables. A knob or slider cap drawn with `vector` re-reads its vector's variables on every tick too.
+- Every mouse click and context click in the window makes every view in it poll at once, before and after the click is
+  handled.
+- `onChanged` autoexecs look up all their variables on every refresh, so keep those lists short.
+- `repeat` autoexecs run at their own rate, whether or not anything changed.
+
+Two views bound to the same variable call its getter twice; nothing caches values within a tick. A JavaScript getter or
+action state function therefore runs 10 to 50 times a second per view that uses it, hidden or not, and again on every
+click. See the
+JS Reference's [Performance Notes](Microtonic%20JS%20Reference.md#performance-notes) for what that means for scripts.
+
+### What polling costs
+
+- An unchanged value costs only the lookup. A view invalidates and redraws only when the value differs.
+- Microtonic's built-in variables, such as `programsLocked`, `uiScale` and `po32Mode`, are cheap: they read a native
+  value directly. Every other name is looked up by name in JavaScript.
+- A `vector` view reruns its whole IVG whenever a variable it read changes. Between runs it looks up each variable the
+  last run read, by name, on every tick. `bindings:` and `guiVariables: true` cost the same here, so choose between
+  them for clarity.
+- A group with `varExpansion: 'true'` re-expands its whole `views:` text, Makaron included, on every paced tick, and a
+  change rebuilds all its children, which loses their state and reruns their autoexecs.
+
+### Drawing cost
+
+Per repaint, cheapest first:
+
+1. A `raster` view or an image field (`image:`, a button `icon:`), whether from a PNG or from IVG. The image is built
+   once and blended, clipped to the area being repainted.
+2. A static `vector` view once its cache is built. It blends a run-length compressed copy of its drawing, over its
+   whole bounds even when only part of it is repainted.
+3. A `vector` view during its first draws, or one whose variables keep changing. It runs its whole IVG on every draw,
+   through an extra offscreen buffer when `blend` is not `"normal"` or `opacity` is not 100%.
+
+**Vector view cache.** The first 5 draws after a view is created, or after its cache was dropped, run the IVG. The 6th
+draws into an offscreen buffer and keeps a compressed copy, and later draws only blend that copy. A change to the
+source, to a variable the last run read, or to the view's size drops the cache and starts the count again. Moving the
+view or its group, or covering it, does not. A view that is never repainted never builds its cache.
+
+**Images from IVG.** An image given as `ivgFile:` or `ivgCode:` (with optional `defines:`) is rendered at the final
+pixel size, so it is crisp at every zoom and display density. It is rendered once per distinct image (source,
+`defines:`, format and scale), and every view that asks for the same image shares it. Its IVG cannot read Cushy
+variables; use a `vector` view for that.
+
+The image cache is shared by all Microtonic instances and is cleared on every reload, including the reload that a zoom
+change causes. The same reset re-reads `file:` IVG sources.
+
+Choosing a graphic:
+
+- **Fixed vector art** (icons, frames, gradients, decorations): an image from IVG, in a `raster` view or a button
+  `icon:`. It is as cheap as a PNG to draw, crisp at any scale, and needs no master file.
+- **Photographic or bitmap art:** a PNG with an `_x2` master. It is resampled from that master, so it is crisp only
+  when the overall scale is exactly 2x.
+- **Graphics that follow variables:** a `vector` view with `bindings:`. Keep views that change often small, and split a
+  large drawing so that the static part sits in its own view or image.
+
 ## Validating what you write
 
 Numbstrict is easy to get subtly wrong in deeply nested view trees, so run **CushyLint** against your files before
@@ -177,6 +257,7 @@ CushyLint\CushyLint.bat "%cd%\MyScript.mtscript/" "%cd%\Microtonic Resources"   
 ```
 
 Pass a directory path **with a trailing slash** so the companion `.schema` files are picked up. CushyLint checks syntax
-and schema conformance; it does not predict runtime performance — measure that in Microtonic. See the README's
+and schema conformance; it does not predict runtime performance — measure that in Microtonic (see
+[Performance](#performance)). See the README's
 [Cushy](../README.md#cushy) section for CushyLint details and [`cushy.schema`](../CushyLint/cushy.schema) for what it
 validates against.

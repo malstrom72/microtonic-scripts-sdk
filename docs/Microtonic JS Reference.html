@@ -1395,6 +1395,49 @@ drum patch, pattern, or MIDI config has changed. Use
 <code>setParam</code> when changing only a few parameters; it updates
 single parameters directly and does not replace the whole program
 state.</p>
+<p>Cushy polls rather than being notified (see <a
+href="Cushy%20Documentation.md#performance">Cushy Documentation →
+Performance</a>). Every view bound to a JavaScript variable calls its
+getter, and every view using a JavaScript action calls its
+<code>enabled</code> and <code>checked</code> functions, between 10 and
+50 times a second (every tick for a button drawn with
+<code>vector</code>), even while the view or Microtonic’s window is
+hidden, and once more on every mouse click. Two views bound to the same
+name make two calls. Each call looks the dotted name up from the globals
+again and passes the action’s parameters as the raw string, so any
+parsing of them in the script runs on every poll. An action without
+<code>enabled</code> counts as enabled, and one without
+<code>checked</code> as not checked. So:</p>
+<ul>
+<li>Make getters, <code>enabled</code> and <code>checked</code> cheap:
+return a value that is already computed. Do not call
+<code>getElement</code>, serialize data, or build long strings in
+them.</li>
+<li>Compute derived values when their inputs change, for example from an
+<code>onChanged</code> autoexec, and let the getter return the cached
+result. Microtonic has no helper for this, so keep the cache in the
+script.</li>
+<li>A plain string property costs no function call at all, so prefer one
+when the value is only set from script code.</li>
+<li>Setters and <code>execute</code> run only on a user action or a
+<code>set</code>, so they may do expensive work.</li>
+</ul>
+<p>For a value derived from the document, <a
+href="#getelementid"><code>getElementId</code></a> is a cheap way to
+tell whether the input changed:</p>
+<pre class="javascript"><code>var summaryForId = -1;
+var summary = &#39;&#39;;
+
+myScript.patternSummary = {
+    get: function() {
+        var id = getElementId(&#39;pattern&#39;);
+        if (id !== summaryForId) {
+            summaryForId = id;
+            summary = buildSummary(getElement(&#39;pattern&#39;));    // your own formatting, runs once per change
+        }
+        return summary;
+    }
+};</code></pre>
 <p>Use <code>JSConsole.mtscript</code>’s FPS display as the practical
 performance indicator. For script-side measurements, use
 <code>Date.now()</code> around action bodies and print occasional

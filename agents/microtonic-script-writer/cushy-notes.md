@@ -255,7 +255,24 @@ occasional averages rather than tracing every tick.
 - Keep GUI-variable getters short and fast. Variable data is polled a lot in
   Cushy, not only by IVG views. Prefer simple JavaScript or Cushy variables for
   values that are read often. If a getter must compute derived text or data,
-  cache the result based on its inputs.
+  cache the result based on its inputs. Microtonic has no helper for this; keep
+  the cache in the script, for example keyed on `getElementId(...)` (see the JS
+  Reference's *Performance Notes*).
+- Rates: Microtonic refreshes its window and the script windows in it every
+  20 ms, whether the window is visible or hidden. An unchanged view backs off to
+  every 5th tick, so it still polls about 10 times a second. Hiding does not
+  stop polling: hidden groups' contents, unshown `paged` pages (their
+  sub-cushys load at startup) and clipped or scrolled-away views all keep
+  polling. A `vector` view re-checks its IVG's variables on every tick without
+  backing off (it redraws only on a change), and a button drawn with `vector`
+  also polls its action's `enabled` and `checked` on every tick. Every mouse
+  click makes all views poll at once, and `onChanged` lists are looked up on
+  every refresh. Two views bound to one name call the getter twice. Details and
+  costs:
+  [Cushy Documentation → Performance](../../docs/Cushy%20Documentation.md#performance).
+- Each JavaScript getter, `enabled`, `checked` or `execute` call resolves its
+  dotted name from the globals again and gets the action's parameters as the
+  raw string, so parsing them in the script runs on every poll.
 - JavaScript variables shadow Cushy variables with the same name. Account for
   that when naming GUI state or debugging why a view reads a particular value.
 - Object members with `get` and/or `set`, such as
@@ -305,9 +322,9 @@ occasional averages rather than tracing every tick.
   view's bounds is clipped, and the clipped-away work is not drawn.
 - Cushy can handle thousands of views. The cost depends on update patterns,
   variable refreshes, redraw area, and what each view does.
-- Hidden or invisible views usually do not carry meaningful cost, unless their
-  state depends on heavy variable refreshes. Exactly what updates while hidden
-  depends on the native view implementation.
+- Hidden or invisible views are not drawn, but in Microtonic they keep polling
+  their variables and action states (see the rates note above), so their cost is
+  their getters.
 - `hover` and `mousePosition` updates are not inherently expensive, but avoid
   doing unnecessary work in their actions or getters.
 - A `cluster` is often the right UX for many repeated cells because it tracks a
@@ -316,11 +333,13 @@ occasional averages rather than tracing every tick.
 
 Vector views have additional caching:
 
-- For the first five ticks after creation or cache flush, a vector view draws
-  directly to the destination buffer when it uses normal blending and 100%
-  opacity.
-- On the fifth redraw with no changes, it draws into an RLE-compressed offscreen
-  buffer. Later redraws can reuse that cache until source material changes.
+- Draws 1 to 5 after creation or after the cache was dropped run the IVG,
+  directly into the destination only with normal blending and 100% opacity,
+  otherwise through an offscreen buffer.
+- The 6th draw renders into an offscreen buffer and keeps a run-length
+  compressed copy, which later draws only blend, over the view's whole bounds.
+  A change to the source, to an accessed variable, or to `$width`/`$height`
+  drops the cache and restarts the count; moving or covering the view does not.
 - Static or rarely updated vector views are therefore usually cheap after the
   initial redraws.
 - A vector view tracks changes to the IVG source, bound variables that were
@@ -333,6 +352,14 @@ Vector views have additional caching:
   rendering, not a one-time textual substitution pass.
 - `bindings:` are available during rendering too. How often the vector actually
   rerenders depends on the change tracking and cache behavior above.
+- Graphic choice, cheapest per repaint first: an image (PNG, or IVG via
+  `image: { ivgFile: ... }` / button `icon:`), then a cached static vector, then
+  a vector whose variables keep changing. Images from IVG are rendered once per
+  distinct spec at the final pixel scale, so they are crisp at every zoom and
+  need no `_x2` master, but their IVG cannot read Cushy variables. Use them for
+  fixed vector art, PNGs for bitmap art, and `vector` views only for drawings
+  that follow variables. A reload (including a zoom change) clears the shared
+  image cache.
 
 A vector view only reads. Its IVG sees `defines:`, `bindings:`, native variables
 such as `$width`/`$height` and, with `guiVariables: true`, GUI variables, but it
