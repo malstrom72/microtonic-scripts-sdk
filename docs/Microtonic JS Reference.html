@@ -1251,9 +1251,10 @@ href="#engine">Engine</a>.</p>
 GUI variable that performs a transformation of the knob value to
 logarithmic scale:</p>
 <pre><code>//
-// First time run, myScript doesn&#39;t exist, set up initial state.
+// First time run, myScript doesn&#39;t exist, set up initial state. Test it as this.myScript: reading an undeclared
+// global throws a ReferenceError.
 //
-if (!myScript) {
+if (!this.myScript) {
     myScript = {
         myValue: 0.5
     }

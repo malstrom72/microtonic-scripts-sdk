@@ -533,7 +533,9 @@ The repository documents environment constraints that should shape answers:
 - When a script needs persistent script-local state while the Microtonic window
   remains open, use one explicit global object named after the script, declared
   at top level before the main IIFE, e.g.
-  `if (!MyScript) { var MyScript = { inited: false }; }`. Initialize the object
+  `if (!this.myScript) { myScript = { inited: false }; }`. Test `this.myScript`:
+  reading an undeclared global such as `myScript` throws a ReferenceError. For
+  ESLint, add `/* global myScript:writable */`. Initialize the object
   with its expected fields so the script state is easy to inspect. Avoid
   scattering additional globals or adding aliases that obscure the single state
   object.

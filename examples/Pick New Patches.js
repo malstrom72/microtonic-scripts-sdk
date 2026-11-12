@@ -7,8 +7,10 @@
 // factory patches from the same patch-name category. The script preserves each
 // channel's Output and Choke settings, matching the legacy script behavior.
 
-if (!PickNewPatches) {
-	var PickNewPatches = {
+/* global PickNewPatches:writable */
+
+if (!this.PickNewPatches) {
+	PickNewPatches = {
 		inited: false,
 		drums: [],
 		drumsByCategory: {}

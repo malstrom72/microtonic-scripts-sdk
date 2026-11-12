@@ -1068,9 +1068,10 @@ Here is an example of using a "setter" and "getter" function for a GUI variable 
 knob value to logarithmic scale:
 
     //
-    // First time run, myScript doesn't exist, set up initial state.
+    // First time run, myScript doesn't exist, set up initial state. Test it as this.myScript: reading an undeclared
+    // global throws a ReferenceError.
     //
-    if (!myScript) {
+    if (!this.myScript) {
         myScript = {
             myValue: 0.5
         }
