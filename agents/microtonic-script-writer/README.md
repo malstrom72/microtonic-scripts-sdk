@@ -11,6 +11,9 @@ authoring/validation loop for icons and vector assets, see
 [`validation.md`](validation.md).
 
 Use [`instructions.md`](instructions.md) as the canonical instruction file.
+Agents with a small context window can load [`core-card.md`](core-card.md), the rules
+for every task, and [`llms.txt`](../../llms.txt), a generated section index with line
+ranges, and open only the sections they need.
 The platform-specific files are thin wrappers for tools that expect a particular
 entry-point format:
 

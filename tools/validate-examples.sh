@@ -13,6 +13,8 @@
 #            scripts that are not inside a package)
 #   - IVG:   delegated to validate-static-ivg.sh (example .ivg plus the shared
 #            product resources folder the examples depend on)
+#   - Docs:  llms.txt, the generated doc section index, must match
+#            tools/generate-doc-index.js output
 #
 # Exits non-zero if any section fails, after running them all so you see every
 # problem in one run.
@@ -181,6 +183,14 @@ if tools/validate-static-ivg.sh; then
 	echo "ok   static IVG"
 else
 	failures+=("static-ivg")
+fi
+
+echo
+echo "== Doc index (llms.txt) =="
+if node tools/generate-doc-index.js --check; then
+	echo "ok   doc index"
+else
+	failures+=("doc-index")
 fi
 
 echo
