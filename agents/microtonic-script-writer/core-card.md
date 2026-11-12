@@ -37,6 +37,8 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 - Never modify anything in `Microtonic Resources/`; it is a copy of the shipped files.
 - `@window(left, top, width, height, ...)`: `height` includes the 24 px title bar. Initialize the script's
   `windowPosition` to `''`.
+- To start a GUI package, copy `examples/MacroTweak.mtscript`, the smallest example (about 2.5k tokens: knobs,
+  captions, a button and a package schema). The other examples are 3k to 9k tokens; read them by section.
 
 ## Graphics (IVG)
 
