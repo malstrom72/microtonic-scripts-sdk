@@ -118,8 +118,8 @@ When something must change live, look for an in-place `<var>` field first and de
 `group`). Fall back to `varExpansion` only when you truly need a script-generated tree, and expect a full rebuild only
 when nothing else fits.
 
-**Raster resources ship at 2x.** PNG resources are referenced by base name in `.cushy` (`name: "myGraphic"` or
-`file: "myGraphic"`); Microtonic resolves the file and scales it to the current zoom and DPI. Provide a high-resolution
+**Raster resources ship at 2x.** PNG resources are referenced by base name in `.cushy` (`image: "myGraphic"` or
+`image: { name: "myGraphic" }`); Microtonic resolves the file and scales it to the current zoom and DPI. Provide a high-resolution
 master named `<base>_x2.png` — the convention the shipped resources use, where nearly every built-in PNG exists only as
 `_x2`. **`_x4` masters are a later-Cushy addition and are not used by Microtonic 3.3.4**, so target `_x2` for Microtonic
 scripts. Vector (`vector` / IVG) graphics and `caption` text scale cleanly at any zoom and sidestep the resolution
