@@ -20,8 +20,8 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 
 - GUI scripts rerun on every reload, including the one a zoom change causes. Keep state in one global object named
   after the script and guard it at top level: `if (!this.myScript) { myScript = { inited: false }; }`. Reading an
-  undeclared global throws, so test `this.myScript`, not `myScript`. Add `/* global myScript:writable */` at the top of each file that uses it, for ESLint.
-  Then reassign methods and GUI variable handlers on every run.
+  undeclared global throws, so test `this.myScript`, not `myScript`. For ESLint, add `/* global myScript:writable */`
+  at the top of each file that uses it. Then reassign methods and GUI variable handlers on every run.
 - In JSConsole, `reload` reruns the scripts and keeps globals; `reset` starts a clean engine.
 
 ## Cushy GUI (`.cushy`)
