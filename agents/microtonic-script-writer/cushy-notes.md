@@ -826,10 +826,14 @@ every open.
 
 ## IVG: Prefer External Files Over Inline Code
 
-Use `file: "name"` (no extension) in `vector` and `image` views rather than
-`code: "..."` inline strings when the IVG content is static (no GUI-variable
-references). External `.ivg` files can be validated and rasterized by the
-vendored `IVG2PNG` renderer:
+Use `file: "name"` (no extension) in `vector` views rather than `code: "..."`
+inline strings when the IVG content is static (no GUI-variable references).
+Likewise, use `ivgFile: "name"` rather than `ivgCode: "..."` in an `<image>`
+value: a `raster` view's `image:`, button `icon:` and `image:`, `film:` and
+`hitMask:`. Cushy has no `image` view, and an `<image>` takes `ivgFile:` and
+`ivgCode:`, not `file:` and `code:`. Its IVG has no access to Cushy variables;
+use a `vector` view for that. External `.ivg` files can be validated and
+rasterized by the vendored `IVG2PNG` renderer:
 
 ```sh
 tools/validate-static-ivg.sh "path/to/MyTool.mtscript"      # macOS / Linux
@@ -842,7 +846,8 @@ SDK's own `Microtonic Resources/` and `examples/`. Files that reference GUI
 variables are reported as dynamic and skipped; they need separate review. See
 [`validation.md`](validation.md#static-ivg-validation) for the full workflow.
 
-Inline `code:` snippets cannot be fed to `IVG2PNG` without manual extraction.
+Inline `code:` and `ivgCode:` snippets cannot be fed to `IVG2PNG` without
+manual extraction.
 
 ## IVG Colors
 
