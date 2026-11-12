@@ -56,5 +56,6 @@ prefix. On Windows, use the `.cmd` and `.bat` versions.
   `references/microtonic-scripts-sdk/CushyLint/CushyLint "$(pwd)/scripts/MyScript.mtscript/"`. If the package
   `.schema` has no `resources:` lines, add the resource folder as a second argument.
 - `.ivg` files: `references/microtonic-scripts-sdk/tools/validate-static-ivg.sh "scripts/MyScript.mtscript"`, and
-  render icons with `references/microtonic-scripts-sdk/tools/IVG2PNG/IVG2PNG` while designing them.
+  render icons with `references/microtonic-scripts-sdk/tools/IVG2PNG/IVG2PNG` while designing them. On Windows that is
+  `IVG2PNG.exe`; `IVG2PNG` without an extension is the macOS binary.
 - Never claim code was tested inside Microtonic unless it was.
