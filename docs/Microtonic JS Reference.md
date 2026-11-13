@@ -1068,9 +1068,10 @@ Here is an example of using a "setter" and "getter" function for a GUI variable 
 knob value to logarithmic scale:
 
     //
-    // First time run, myScript doesn't exist, set up initial state.
+    // First time run, myScript doesn't exist, set up initial state. Test it as this.myScript: reading an undeclared
+    // global throws a ReferenceError.
     //
-    if (!myScript) {
+    if (!this.myScript) {
         myScript = {
             myValue: 0.5
         }
@@ -1082,6 +1083,10 @@ knob value to logarithmic scale:
         get: function() { return '' + ((Math.exp(myScript.myValue) - 1) / 10); },
         set: function(s) { myScript.myValue = Math.log(1 + 10 * +s); }
     }
+
+Put the guard at the top level or in a top-level IIFE, where `this` is the global object. Inside a method `this` is
+the method's object instead. Testing `this.myScript` rather than a bare `myScript` avoids a ReferenceError on the first
+run, before the variable exists.
 
 Besides `get` and `set`, there is a third function you may declare with the name `touch`. It will be called when the
 user begins and ends editing the GUI variable (e.g. when the knob is clicked and when the mouse button is released). A
@@ -1119,8 +1124,8 @@ by inserting a checkmark before a menu item.
 Here is an example of an action:
 
     myScript.resetMyValue = {
-        execute: function(p) { myScript.myValue = +unescape(p); }
-        checked: function(p) { return myScript.myValue == +unescape(p); }
+        execute: function(p) { myScript.myValue = +unescape(p); },
+        checked: function(p) { return myScript.myValue == +unescape(p); },
         enabled: function(p) { return myScript.canReset; }
     }
 

@@ -533,7 +533,10 @@ The repository documents environment constraints that should shape answers:
 - When a script needs persistent script-local state while the Microtonic window
   remains open, use one explicit global object named after the script, declared
   at top level before the main IIFE, e.g.
-  `if (!MyScript) { var MyScript = { inited: false }; }`. Initialize the object
+  `if (!this.myScript) { myScript = { inited: false }; }`. Test `this.myScript`:
+  reading an undeclared global such as `myScript` throws a ReferenceError. Add
+  `/* global myScript:writable */` at the top of each file that uses it, so
+  ESLint accepts it. Initialize the object
   with its expected fields so the script state is easy to inspect. Avoid
   scattering additional globals or adding aliases that obscure the single state
   object.
@@ -602,11 +605,11 @@ CushyLint run as required whenever the workspace can run it.
   instruction is already present in known-working SDK IVG examples/resources.
   CushyLint does not validate IVG.
 - When authoring a `.ivg` icon or vector asset, render the IVG repeatedly with
-  `tools/IVG2PNG/IVG2PNG`; this is an authoring preview, not merely a pre-ship
-  check. Do not make an SVG approximation or rely on generic image tools, which
-  may silently omit stroked paths. For an SVG source,
-  `IVG/tools/svg2ivg.js` can generate a draft, but tidy its verbose IVG-1 output
-  by hand and verify the result with IVG2PNG. See
+  `tools/IVG2PNG/IVG2PNG` (`IVG2PNG.exe` on Windows); this is an authoring
+  preview, not merely a pre-ship check. Do not make an SVG approximation or rely
+  on generic image tools, which may silently omit stroked paths. For an SVG
+  source, `IVG/tools/svg2ivg.js` can generate a draft, but tidy its verbose
+  IVG-1 output by hand and verify the result with IVG2PNG. See
   [`validation.md`](validation.md#static-ivg-validation).
 
 See [`validation.md`](validation.md).

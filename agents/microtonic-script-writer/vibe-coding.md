@@ -409,17 +409,17 @@ If a script needs persistent state while the Microtonic window remains open, use
 one global named after the script and initialize its fields clearly:
 
 ```js
-if (!MyScript) {
-    var MyScript = {
+if (!this.myScript) {
+    myScript = {
         inited: false,
         cache: {}
     };
 }
 
 (function () {
-    if (!MyScript.inited) {
-        MyScript.cache = {};
-        MyScript.inited = true;
+    if (!myScript.inited) {
+        myScript.cache = {};
+        myScript.inited = true;
     }
 
     // Script body here.

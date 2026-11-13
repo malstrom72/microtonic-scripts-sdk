@@ -1251,9 +1251,10 @@ href="#engine">Engine</a>.</p>
 GUI variable that performs a transformation of the knob value to
 logarithmic scale:</p>
 <pre><code>//
-// First time run, myScript doesn&#39;t exist, set up initial state.
+// First time run, myScript doesn&#39;t exist, set up initial state. Test it as this.myScript: reading an undeclared
+// global throws a ReferenceError.
 //
-if (!myScript) {
+if (!this.myScript) {
     myScript = {
         myValue: 0.5
     }
@@ -1265,6 +1266,12 @@ myScript.myKnob = {
     get: function() { return &#39;&#39; + ((Math.exp(myScript.myValue) - 1) / 10); },
     set: function(s) { myScript.myValue = Math.log(1 + 10 * +s); }
 }</code></pre>
+<p>Put the guard at the top level or in a top-level IIFE, where
+<code>this</code> is the global object. Inside a method
+<code>this</code> is the method’s object instead. Testing
+<code>this.myScript</code> rather than a bare <code>myScript</code>
+avoids a ReferenceError on the first run, before the variable
+exists.</p>
 <p>Besides <code>get</code> and <code>set</code>, there is a third
 function you may declare with the name <code>touch</code>. It will be
 called when the user begins and ends editing the GUI variable (e.g. when
@@ -1313,8 +1320,8 @@ to visually indicate that the action is active and “in effect,” e.g., by
 inserting a checkmark before a menu item.</p>
 <p>Here is an example of an action:</p>
 <pre><code>myScript.resetMyValue = {
-    execute: function(p) { myScript.myValue = +unescape(p); }
-    checked: function(p) { return myScript.myValue == +unescape(p); }
+    execute: function(p) { myScript.myValue = +unescape(p); },
+    checked: function(p) { return myScript.myValue == +unescape(p); },
     enabled: function(p) { return myScript.canReset; }
 }</code></pre>
 <p>Besides getting called from user actions, a <code>.cushy</code> file

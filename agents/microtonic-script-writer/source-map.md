@@ -1,6 +1,7 @@
 # Source Map
 
 Use these repository files as the grounding map for Microtonic scripting work.
+For a section-level index with line ranges and sizes, see [`llms.txt`](../../llms.txt).
 
 ## Core SDK References
 

@@ -12,6 +12,8 @@ REM            package plus everything under examples\, including loose example
 REM            scripts that are not inside a package)
 REM   - IVG:   delegated to validate-static-ivg.cmd (example .ivg plus the shared
 REM            product resources folder the examples depend on)
+REM   - Docs:  llms.txt, the generated doc section index, must match
+REM            tools\generate-doc-index.js output
 REM
 REM Exits non-zero if any section fails, after running them all so you see every
 REM problem in one run.
@@ -75,6 +77,16 @@ GOTO staticIvgDone
 :staticIvgFailed
 SET "failures=%failures% static-ivg"
 :staticIvgDone
+
+ECHO(
+ECHO == Doc index (llms.txt) ==
+node tools\generate-doc-index.js --check
+IF ERRORLEVEL 1 GOTO docIndexFailed
+ECHO ok   doc index
+GOTO docIndexDone
+:docIndexFailed
+SET "failures=%failures% doc-index"
+:docIndexDone
 
 ECHO(
 RMDIR /S /Q "%tmp_root%" >NUL 2>&1

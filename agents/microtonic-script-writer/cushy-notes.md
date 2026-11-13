@@ -57,7 +57,7 @@ sync or action dispatch can break:
 
 - `@define script=<name>` in the `.cushy` file.
 - The top-level JavaScript global object, such as
-  `if (!myScript) { var myScript = ... }`.
+  `if (!this.myScript) { myScript = ... }`.
 - The schema action prefix and wrapper rule names, such as
   `action: "myScript.startup"`.
 
