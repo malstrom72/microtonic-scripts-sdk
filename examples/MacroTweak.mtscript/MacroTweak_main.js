@@ -45,12 +45,14 @@ Object.assign(macroTweak, {
 
 	/*
 		Each tweak starts from the current document so changes made elsewhere (transport, pattern chains, mutes) are not
-		written back over. Like Microtonic's own knobs, a drag keeps going if the program changes under it.
+		written back over. Like Microtonic's own knobs, a drag keeps going if the program changes under it; the knobs then
+		reset on release.
 
 		One undo step per drag, taken at its first write. A write with no drag open ("Enter Exact Value...") gets its
 		own step.
 	*/
 	tweak: function(undoName, tweaker) {
+		var changedElsewhere = (this.identity() !== this.lastElementId);
 		if (!this.undoSaved) {
 			saveUndo("Change " + undoName);
 			this.undoSaved = (this.resetBlocked > 0);
@@ -72,7 +74,9 @@ Object.assign(macroTweak, {
 			current.modified = true;
 			setElement('preset', current);
 		}
-		this.lastElementId = this.identity();
+		if (!changedElsewhere) {
+			this.lastElementId = this.identity();
+		}
 	},
 
 	touch: function(mouseDown) {
