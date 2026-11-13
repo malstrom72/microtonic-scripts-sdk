@@ -21,8 +21,26 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 - GUI scripts rerun on every reload, including the one a zoom change causes. Keep state in one global object named
   after the script and guard it at top level: `if (!this.myScript) { myScript = { inited: false }; }`. Reading an
   undeclared global throws, so test `this.myScript`, not `myScript`. For ESLint, add `/* global myScript:writable */`
-  at the top of each file that uses it. Then reassign methods and GUI variable handlers on every run.
-- In JSConsole, `reload` reruns the scripts and keeps globals; `reset` starts a clean engine.
+  at the top of each file that uses it. Keep only changing state in that object; constants, methods and GUI variable
+  handlers go outside the guard and are reassigned on every run.
+- A reload must leave everything the user sees unchanged: startup code must not re-randomize, re-capture or write to
+  the document.
+- In JSConsole, `reload` reruns the scripts and keeps globals; `reset` starts a clean engine. When the state object's
+  shape changes during development, use `reset` instead of writing migration code.
+
+## Changing the document
+
+- Call `saveUndo(label)` immediately before each write. With `collapse` `true` and the same label as the last undo
+  entry, the write joins that entry, even from a separate gesture; for one undo step per drag, see `saveUndo` in the
+  JS Reference.
+- Before `setElement('preset', p)`, set `p.modified = true`, as the examples do.
+
+## Code and comments
+
+- Comments describe the code as it is now: no revision history ("renamed from"), version counters or "verified"
+  claims.
+- Write each rule once. When two functions need the same decision, call one shared function instead of keeping two
+  copies in sync.
 
 ## Cushy GUI (`.cushy`)
 
@@ -37,6 +55,11 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 - Never modify anything in `Microtonic Resources/`; it is a copy of the shipped files.
 - `@window(left, top, width, height, ...)`: `height` includes the 24 px title bar. Initialize the script's
   `windowPosition` to `''`.
+- Every script action the `.cushy` names, `autoexecs` included, must be listed in the package `.schema`. Remove the
+  entry when you remove the action.
+- Lay out from a few `@define`s for margins, gutters and columns, not hand-typed coordinates. Before calling a GUI
+  done, look at a screenshot of it: every caption fits its longest value, and edges and gaps are consistent. Button
+  labels say what the button does; explanations go in the `hint`.
 - To start a GUI package, copy `examples/MacroTweak.mtscript`, the smallest example (about 2.5k tokens: knobs,
   captions, a button and a package schema). The other examples are 3k to 9k tokens; open only the parts you need.
 
@@ -49,8 +72,9 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 
 ## Validate before you answer
 
-Run these from the project root, with the SDK in `references/microtonic-scripts-sdk/`; from the SDK root, drop that
-prefix. On Windows, use the `.cmd` and `.bat` versions.
+Run every check below again after each round of edits, not only the first time; work is not done while a check fails
+or was skipped. Run them from the project root, with the SDK in `references/microtonic-scripts-sdk/`; from the SDK
+root, drop that prefix. On Windows, use the `.cmd` and `.bat` versions.
 
 - `.js` files: `references/microtonic-scripts-sdk/tools/validate-js.sh scripts`. Run it from the project root, or
   ESLint skips files outside the SDK.

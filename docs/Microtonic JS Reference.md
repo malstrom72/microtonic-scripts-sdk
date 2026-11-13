@@ -584,6 +584,11 @@ For a continuous gesture such as a drag, call `saveUndo` once at the gesture's f
 every mouse move. If `collapse` is `true` and `label` is identical to the last element in the undo history, Microtonic
 will not create a new snapshot (use for repeated actions to avoid "spamming" the undo history).
 
+Collapsing does not know about gestures: two separate drags with the same label and `collapse` `true` become one undo
+step. For one undo step per drag, do as `examples/MacroTweak.mtscript` does: set a flag such as `undoPending = true`
+when the drag starts (in the GUI variable's `touch(true)`), and on each write call `saveUndo(label, !undoPending)` and
+then set `undoPending = false`. The first write of a drag then creates a new snapshot and later writes join it.
+
 GUI-less scripts are one-shot scripts without a running Cushy interface. They normally do not need to call `saveUndo`
 because Microtonic automatically adds an undo snapshot for a GUI-less script execution when that execution changes the
 Microtonic state. GUI scripts stay loaded and can perform multiple independent edits over time, so they should create

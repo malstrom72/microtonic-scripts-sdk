@@ -546,7 +546,13 @@ The repository documents environment constraints that should shape answers:
   can be rescaled. GUI scripts must survive JavaScript files being run again.
 - For GUI scripts, prefer a rerun-safe startup pattern: guard one top-level
   script object so first-run state is created only once, then assign or refresh
-  methods and GUI variable handlers on subsequent reruns.
+  methods and GUI variable handlers on subsequent reruns. Keep only changing
+  state in the guarded object; constants and methods inside it would never be
+  refreshed by a reload.
+- A reload must leave everything the user sees unchanged: startup code must not
+  re-randomize, re-capture or write to the document. When the state object's
+  shape changes during development, use a JSConsole `reset` instead of writing
+  migration code.
 - For GUI-less scripts, a single main IIFE is usually enough. Use additional
   nested IIFEs only when a temporary setup step creates large transient data
   that should not be retained accidentally.
@@ -564,6 +570,21 @@ The repository documents environment constraints that should shape answers:
 - When using a standard moveable and closable window pattern, make sure the
   close control is actually wired to a working close action rather than only
   being visually present.
+
+## Changing The Document
+
+- Call `saveUndo(label)` immediately before each document write. `collapse`
+  merges a write into the last undo entry with the same label, even from a
+  separate gesture; for one undo step per drag, follow `saveUndo` in the JS
+  Reference, as `examples/MacroTweak.mtscript` does.
+- Before `setElement('preset', p)`, set `p.modified = true`, as the examples
+  do.
+- Take drum parameter names and step counts from `DRUM_PATCH_PARAMS` instead of
+  hard-coding them. A stepped parameter is a choice such as a waveform or filter
+  mode; when blending two values, prefer switching it at a threshold, since
+  stepping through it passes values that neither end has.
+- When a script overlaps a built-in feature, such as Sound Morph, check the
+  Microtonic User Guide and tell the user how the script relates to it.
 
 ## Script Type Selection
 
@@ -591,15 +612,29 @@ CushyLint run as required whenever the workspace can run it.
 - **Never modify anything inside `Microtonic Resources/`.** It is a verbatim
   copy of the files shipped with the installed Microtonic version. Changes
   there would be overwritten on any Microtonic update and affect all scripts.
+- Run CushyLint and the other checks again after each round of edits, not
+  only the first time. Work is not done while a check fails or was skipped.
 - Do not invent `.cushy` fields or built-in actions. Check
   `CushyLint/cushy.schema`, `Microtonic Resources/microtonic.schema`, and
   relevant examples first.
+- Every script action the `.cushy` names, `autoexecs` included, must be listed
+  in the package `.schema`. Remove the entry when you remove the action.
 - For GUI script design, use `examples/screenshots/` to visually align new or
   revised scripts with Microtonic and the official example scripts. Match the
   existing scale, spacing, contrast, saturation, window treatment, and control
   density unless the user explicitly wants a different visual direction. Hues
   may vary by script; keep accent colors purposeful and balanced rather than
   treating any one screenshot as the required palette.
+- Look at a screenshot of the running GUI before calling it done, or ask the
+  user for one. Check that every caption fits its longest realistic value,
+  since captions clip hard at their bounds, and that edges and gaps are
+  consistent.
+- Build the layout from a few `@define`s for margins, gutters and column
+  positions instead of hand-typed coordinates, and line decoration up with the
+  control it belongs to.
+- Button labels say what the button does, in the user's words, with no
+  developer terms such as "seed". Put explanations in the `hint`, not the
+  label.
 - Before adding or changing inline `ivgCode` or `.ivg` files, check
   `docs/IVG Documentation.md` for every IVG instruction used unless that exact
   instruction is already present in known-working SDK IVG examples/resources.
@@ -647,6 +682,16 @@ For normal requests, structure the answer like this:
 
 Keep explanations compact unless the user asks for a deep walkthrough.
 
+## Code And Comments
+
+- Comments describe the code as it is now: no revision history ("renamed
+  from"), version counters or "verified" claims.
+- Write each rule once. When two functions need the same decision, call one
+  shared function instead of keeping two copies in sync.
+- Do not guard against missing fields that the docs say always exist.
+- UI text that tells the user how to recover must match what the code does:
+  follow that path through the code.
+
 ## Debugging
 
 When debugging:
@@ -665,5 +710,7 @@ which one you are using and why.
 
 - Do not pretend to have validated code inside Microtonic.
 - Do not claim undocumented SDK support.
+- Before reporting an SDK issue, search the docs for it and check that the
+  cause is not in your own script.
 - When something is uncertain, say what is grounded in this repository and what
   is an informed assumption.
