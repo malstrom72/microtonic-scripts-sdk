@@ -56,7 +56,9 @@ prefix. On Windows, use the `.cmd` and `.bat` versions.
   ESLint skips files outside the SDK.
 - `.cushy` files: CushyLint on the package folder, with a trailing slash:
   `references/microtonic-scripts-sdk/CushyLint/CushyLint "$(pwd)/scripts/MyScript.mtscript/"`. If the package
-  `.schema` has no `resources:` lines, add the resource folder as a second argument.
+  `.schema` has no `resources:` lines, add the resource folder as a second argument. On Windows, Git Bash included,
+  call `CushyLint/CushyLint.bat` with the same argument, forward slashes and a trailing `/`: the file without an
+  extension is the Unix script and tries to compile with g++.
 - `.ivg` files: `references/microtonic-scripts-sdk/tools/validate-static-ivg.sh "scripts/MyScript.mtscript"`, and
   render icons with `references/microtonic-scripts-sdk/tools/IVG2PNG/IVG2PNG` while designing them. On Windows that is
   `IVG2PNG.exe`; `IVG2PNG` without an extension is the macOS binary.
