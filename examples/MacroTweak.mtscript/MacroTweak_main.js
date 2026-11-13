@@ -82,7 +82,7 @@ Object.assign(macroTweak, {
 			}
 		}
 
-		saveUndo("Change " + undoName, !this.undoPending);
+		saveUndo("Change " + undoName, this.resetBlocked > 0 && !this.undoPending);
 		this.undoPending = false;
 
 		if (selectedOnly) {
@@ -109,6 +109,7 @@ Object.assign(macroTweak, {
 				this.dragAborted = false;
 			}
 		} else if (--this.resetBlocked === 0) {
+			this.dragAborted = false;
 			this.checkAndReset();
 		}
 	},
