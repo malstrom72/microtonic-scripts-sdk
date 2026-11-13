@@ -440,8 +440,10 @@ mask cannot follow dynamic content.
   state the user should return to. Calling after the mutation records the wrong
   side of the change.
 - For a continuous gesture, save undo on the first actual document-changing
-  update, then guard further drag updates until release. This gives one undo
-  entry per gesture.
+  update, then guard further drag updates until release. Clear the guard in
+  both `touch(true)` and `touch(false)`, and set it only while a drag is in
+  progress, so each drag and each "Enter Exact Value..." write gets its own
+  undo entry (see `saveUndo` in the JS Reference).
 - GUI scripts that mirror document state should poll a cheap change key such as
   `getElementId('preset')`, `getElementId('drumPatch')`, or
   `getElementId('midiConfig')` and only re-read the full element when the id
