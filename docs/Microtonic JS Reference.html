@@ -797,13 +797,18 @@ Microtonic will not create a new snapshot (use for repeated actions to
 avoid “spamming” the undo history).</p>
 <p>Collapsing does not know about gestures: two separate drags with the
 same label and <code>collapse</code> <code>true</code> become one undo
-step. For one undo step per drag, do as
-<code>examples/MacroTweak.mtscript</code> does: set a flag such as
-<code>undoPending = true</code> when the drag starts (in the GUI
-variable’s <code>touch(true)</code>), and on each write call
-<code>saveUndo(label, !undoPending)</code> and then set
-<code>undoPending = false</code>. The first write of a drag then creates
-a new snapshot and later writes join it.</p>
+step. Writes can also arrive outside any drag: <code>touch</code> is
+called only on the variable being edited, so an “Enter Exact Value…”
+popup that edits <code>myKnob.human</code> never calls
+<code>myKnob.touch</code>. For one undo step per drag and one per write
+outside a drag, do as <code>examples/MacroTweak.mtscript</code> does:
+count <code>touch(true)</code> and <code>touch(false)</code> calls to
+know when a drag is in progress, set <code>undoPending = true</code>
+when one starts, and on each write call
+<code>saveUndo(label, dragging &amp;&amp; !undoPending)</code> and then
+set <code>undoPending = false</code>. Reset any other per-drag state,
+such as an aborted flag, when the drag ends, so it cannot affect a later
+write outside a drag.</p>
 <p>GUI-less scripts are one-shot scripts without a running Cushy
 interface. They normally do not need to call <code>saveUndo</code>
 because Microtonic automatically adds an undo snapshot for a GUI-less
