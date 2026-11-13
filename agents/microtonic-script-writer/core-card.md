@@ -57,6 +57,9 @@ lines. The full instructions are [`instructions.md`](instructions.md).
   `windowPosition` to `''`.
 - Every script action the `.cushy` names, `autoexecs` included, must be listed in the package `.schema`. Remove the
   entry when you remove the action.
+- Lay out from a few `@define`s for margins, gutters and columns, not hand-typed coordinates. Before calling a GUI
+  done, look at a screenshot of it: every caption fits its longest value, and edges and gaps are consistent. Button
+  labels say what the button does; explanations go in the `hint`.
 - To start a GUI package, copy `examples/MacroTweak.mtscript`, the smallest example (about 2.5k tokens: knobs,
   captions, a button and a package schema). The other examples are 3k to 9k tokens; open only the parts you need.
 

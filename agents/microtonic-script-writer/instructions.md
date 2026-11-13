@@ -625,6 +625,16 @@ CushyLint run as required whenever the workspace can run it.
   density unless the user explicitly wants a different visual direction. Hues
   may vary by script; keep accent colors purposeful and balanced rather than
   treating any one screenshot as the required palette.
+- Look at a screenshot of the running GUI before calling it done, or ask the
+  user for one. Check that every caption fits its longest realistic value,
+  since captions clip hard at their bounds, and that edges and gaps are
+  consistent.
+- Build the layout from a few `@define`s for margins, gutters and column
+  positions instead of hand-typed coordinates, and line decoration up with the
+  control it belongs to.
+- Button labels say what the button does, in the user's words, with no
+  developer terms such as "seed". Put explanations in the `hint`, not the
+  label.
 - Before adding or changing inline `ivgCode` or `.ivg` files, check
   `docs/IVG Documentation.md` for every IVG instruction used unless that exact
   instruction is already present in known-working SDK IVG examples/resources.
