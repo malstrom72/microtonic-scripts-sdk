@@ -427,8 +427,7 @@ mask cannot follow dynamic content.
   updates the way replacing the whole program can.
 - `saveUndo(..., collapse)` is a UX choice, not a performance optimization. Use
   `collapse: true` when repeated actions with the same description should become
-  one undo item instead of many. The merge also spans separate gestures; for
-  one item per drag, see `saveUndo` in the JS Reference.
+  one undo item instead of many.
 - `triggerChannel` is cheap enough for normal GUI interaction.
 
 ### Undo And Document Sync

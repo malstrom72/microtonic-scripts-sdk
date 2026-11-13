@@ -573,10 +573,9 @@ The repository documents environment constraints that should shape answers:
 
 ## Changing The Document
 
-- Call `saveUndo(label)` immediately before each document write. `collapse`
-  merges a write into the last undo entry with the same label, even from a
-  separate gesture; for one undo step per drag, follow `saveUndo` in the JS
-  Reference, as `examples/MacroTweak.mtscript` does.
+- Call `saveUndo(label)` immediately before each document write; for a drag,
+  only before its first write, as `saveUndo` in the JS Reference and
+  `examples/MacroTweak.mtscript` show.
 - Before `setElement('preset', p)`, set `p.modified = true`, as the examples
   do.
 - Take drum parameter names and step counts from `DRUM_PATCH_PARAMS` instead of
