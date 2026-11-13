@@ -584,13 +584,11 @@ For a continuous gesture such as a drag, call `saveUndo` once at the gesture's f
 every mouse move. If `collapse` is `true` and `label` is identical to the last element in the undo history, Microtonic
 will not create a new snapshot (use for repeated actions to avoid "spamming" the undo history).
 
-Collapsing does not know about gestures: two separate drags with the same label and `collapse` `true` become one undo
-step. Writes can also arrive outside any drag: `touch` is called only on the variable being edited, so an "Enter Exact
-Value..." popup that edits `myKnob.human` never calls `myKnob.touch`. For one undo step per drag and one per write
-outside a drag, do as `examples/MacroTweak.mtscript` does: count `touch(true)` and `touch(false)` calls to know when a
-drag is in progress, set `undoPending = true` when one starts, and on each write call
-`saveUndo(label, dragging && !undoPending)` and then set `undoPending = false`. Reset any other per-drag state, such as
-an aborted flag, when the drag ends, so it cannot affect a later write outside a drag.
+To save once per drag, clear a flag in both `touch(true)` and `touch(false)`, call `saveUndo` on a write only while the
+flag is clear, and set the flag after saving if a drag is in progress. "Enter Exact Value..." edits `myKnob.human` and
+calls `touch` only on that variable, so its write arrives with no drag in progress and gets its own undo step, as in
+`examples/MacroTweak.mtscript`. A command, such as a button or menu action, saves undo every time, even if it changes
+nothing.
 
 GUI-less scripts are one-shot scripts without a running Cushy interface. They normally do not need to call `saveUndo`
 because Microtonic automatically adds an undo snapshot for a GUI-less script execution when that execution changes the

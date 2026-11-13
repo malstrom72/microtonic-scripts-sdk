@@ -12,14 +12,12 @@ if (!this.macroTweak) {
 
 Object.assign(macroTweak, {
 	resetBlocked: 0,
-	undoPending: false,
-	dragAborted: false,
+	undoSaved: false,
 	checkAndReset: function() {
 		if (this.resetBlocked === 0) {
 			var elementId = getElementId(this.channelsChoice === 'selected' ? 'drumPatch' : 'preset');
 			if (this.lastElementId !== elementId) {
 				this.lastElementId = elementId;
-				this.tweakedPreset = getElement('preset');
 				this.sourcePreset = getElement('preset');	// must be separate copy
 
 				this.pitchSetting = 0.0;
@@ -45,50 +43,28 @@ Object.assign(macroTweak, {
 		return getElementId(this.channelsChoice === 'selected' ? 'drumPatch' : 'preset');
 	},
 
-	sameDrumPatch: function(a, b) {
-		for (var i = 0; i < DRUM_PATCH_PARAMS.length; ++i) {
-			var name = DRUM_PATCH_PARAMS[i].NAME;
-			if (a[name] !== b[name]) {
-				return false;
-			}
-		}
-		return true;
-	},
-
 	/*
-		Each tweak starts from the current document, not from tweakedPreset, so changes made elsewhere during a drag
-		(transport, pattern chains, mutes) are not written back over. If the drum patches themselves were changed
-		elsewhere (undo, edits, another program), the rest of the drag is ignored and the knobs reset on release.
+		Each tweak starts from the current document so changes made elsewhere (transport, pattern chains, mutes) are not
+		written back over. Like Microtonic's own knobs, a drag keeps going if the program changes under it; the knobs then
+		reset on release.
+
+		One undo step per drag, taken at its first write. A write with no drag open ("Enter Exact Value...") gets its
+		own step.
 	*/
 	tweak: function(undoName, tweaker) {
-		if (this.dragAborted) {
-			return;
+		var changedElsewhere = (this.identity() !== this.lastElementId);
+		if (!this.undoSaved) {
+			saveUndo("Change " + undoName);
+			this.undoSaved = (this.resetBlocked > 0);
 		}
+
 		var channel = selected('channel');
 		var selectedOnly = (this.channelsChoice === 'selected');
 		var current = getElement(selectedOnly ? 'drumPatch' : 'preset');
-		if (this.resetBlocked > 0 && this.identity() !== this.lastElementId) {
-			var unchanged = true;
-			if (selectedOnly) {
-				unchanged = this.sameDrumPatch(this.tweakedPreset.drumPatches[channel], current);
-			} else {
-				for (var i = 0; i < CHANNEL_COUNT && unchanged; ++i) {
-					unchanged = this.sameDrumPatch(this.tweakedPreset.drumPatches[i], current.drumPatches[i]);
-				}
-			}
-			if (!unchanged) {
-				this.dragAborted = true;
-				return;
-			}
-		}
-
-		saveUndo("Change " + undoName, this.resetBlocked > 0 && !this.undoPending);
-		this.undoPending = false;
 
 		if (selectedOnly) {
 			tweaker(this.sourcePreset.drumPatches[channel], current);
 			setElement('drumPatch', current);
-			this.tweakedPreset.drumPatches[channel] = getElement('drumPatch');
 		} else {
 			for (var i = 0; i < CHANNEL_COUNT; ++i) {
 				if (this.channelsChoice === 'all' || this.sourcePreset.mutes[i] < 0.5) {
@@ -97,19 +73,17 @@ Object.assign(macroTweak, {
 			}
 			current.modified = true;
 			setElement('preset', current);
-			this.tweakedPreset = getElement('preset');
 		}
-		this.lastElementId = this.identity();
+		if (!changedElsewhere) {
+			this.lastElementId = this.identity();
+		}
 	},
 
 	touch: function(mouseDown) {
+		this.undoSaved = false;
 		if (mouseDown) {
-			if (this.resetBlocked++ === 0) {
-				this.undoPending = true;
-				this.dragAborted = false;
-			}
+			++this.resetBlocked;
 		} else if (--this.resetBlocked === 0) {
-			this.dragAborted = false;
 			this.checkAndReset();
 		}
 	},
@@ -121,6 +95,9 @@ Object.assign(macroTweak, {
 				return;
 			}
 			v = clamp(v, -1, 1);
+			if (v === macroTweak.pitchSetting) {
+				return;
+			}
 			macroTweak.pitchSetting = v;
 			var d = OCTAVE_STEP * 2 * v;
 			macroTweak.tweak('Pitch', function(sp, dp) {
@@ -144,6 +121,9 @@ Object.assign(macroTweak, {
 				return;
 			}
 			v = clamp(v, -1, 1);
+			if (v === macroTweak.timeSetting) {
+				return;
+			}
 			macroTweak.timeSetting = v;
 			var timeScale = Math.pow(2, v * 4);
 
@@ -193,6 +173,9 @@ Object.assign(macroTweak, {
 				return;
 			}
 			v = clamp(v, -1, 1);
+			if (v === macroTweak.dynamicsSetting) {
+				return;
+			}
 			macroTweak.dynamicsSetting = v;
 			macroTweak.tweak('Dynamics', function(sp, dp) {
 				dp.Level = clamp(lerp(sp.Level, macroTweak.meanLevel, v), 0, 1);
