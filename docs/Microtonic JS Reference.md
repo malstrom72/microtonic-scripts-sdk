@@ -1114,8 +1114,9 @@ When the user clicks a button or selects an item from a menu, a "GUI action" is 
 file). The action can be a built-in action or one your script provides as a Javascript function. Cushy calls the
 actions with a single string parameter, but often these contain Numbstrict structures with key/value pairs. The
 parameter is passed to Javascript in its raw unparsed format. E.g., a string will contain its enclosing quotes (you can
-use [unescape](#unescape) to remove them). Always parse the parameter, so quoting in the `.cushy` never matters:
-`+unescape(p)` for a number, `unescape(p)` for a string, `parseNumbstrict(p)` for a structure.
+use [unescape](#unescape) to remove them). Write a number unquoted (`542`, not `"542"`) and read it with `+p`; write a
+string quoted and read it with `unescape(p)`; read a structure with `parseNumbstrict(p)`. Declaring the parameter's
+type in the package `.schema` lets CushyLint catch a quoted number.
 
 When you implement an action with a JS function, you have two options:
 
