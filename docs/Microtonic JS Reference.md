@@ -1114,7 +1114,8 @@ When the user clicks a button or selects an item from a menu, a "GUI action" is 
 file). The action can be a built-in action or one your script provides as a Javascript function. Cushy calls the
 actions with a single string parameter, but often these contain Numbstrict structures with key/value pairs. The
 parameter is passed to Javascript in its raw unparsed format. E.g., a string will contain its enclosing quotes (you can
-use [unescape](#unescape) to remove them).
+use [unescape](#unescape) to remove them). Always parse the parameter, so quoting in the `.cushy` never matters:
+`+unescape(p)` for a number, `unescape(p)` for a string, `parseNumbstrict(p)` for a structure.
 
 When you implement an action with a JS function, you have two options:
 
