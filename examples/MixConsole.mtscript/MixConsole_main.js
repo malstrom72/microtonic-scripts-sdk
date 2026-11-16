@@ -70,8 +70,8 @@ Object.assign(mixConsole, {
 		get: function() { return '' + (mixConsole.reassignedChannel(this.channel) + 1); }
 	}),
 	selectChannel: {
-		execute: function(channel) { select('channel', +channel); },
-		checked: function(channel) { return selected('channel') === +channel; }
+		execute: function(channel) { select('channel', +unescape(channel)); },
+		checked: function(channel) { return selected('channel') === +unescape(channel); }
 	},
 	triggerChannel: {
 		execute: function(params) {
@@ -85,7 +85,7 @@ Object.assign(mixConsole, {
 	},
 	mute: {
 		execute: function(cushyParam) {
-			var ch = +cushyParam;
+			var ch = +unescape(cushyParam);
 			var v = (mixConsole.savedMutes[ch] >= 0.5 ? 0.0 : 1.0);
 			mixConsole.savedMutes[ch] = v;
 			/*
@@ -101,12 +101,12 @@ Object.assign(mixConsole, {
 			}
 		},
 		checked: function(cushyParam) {
-			return mixConsole.savedMutes[+cushyParam] >= 0.5;
+			return mixConsole.savedMutes[+unescape(cushyParam)] >= 0.5;
 		}
 	},
 	solo: {
 		execute: function(cushyParam) {
-			var ch = +cushyParam;
+			var ch = +unescape(cushyParam);
 			saveUndo(translate("mixConsole.undoLabel.Solo") + " #" + (ch + 1));
 			if (mixConsole.soloChannel !== ch) {
 				for (var i = 0; i < CHANNEL_COUNT; ++i) {
@@ -119,7 +119,7 @@ Object.assign(mixConsole, {
 			}
 		},
 		checked: function(cushyParam) {
-			return mixConsole.soloChannel === +cushyParam;
+			return mixConsole.soloChannel === +unescape(cushyParam);
 		}
 	},
 	switch: {
