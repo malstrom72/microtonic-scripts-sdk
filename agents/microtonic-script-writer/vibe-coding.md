@@ -58,8 +58,8 @@ When bootstrapping an empty project, keep the user-facing sequence clear:
    first** (macOS `/Library/Application Support/Sonic Charge/Microtonic Scripts`;
    Windows via the locator). Do not lead with `DIRS.SCRIPTS` or *Open Scripts
    Folder* on a cold bootstrap: there is no bridge yet, so `DIRS.SCRIPTS` is
-   unavailable, and Microtonic greys out the puzzle menu — including *Open Scripts
-   Folder* — until the folder exists, so neither can identify a folder that isn't
+   unavailable, and Microtonic greys out the puzzle menu (including *Open Scripts
+   Folder*) until the folder exists, so neither can identify a folder that isn't
    there.
    - **Standard path missing** → this is a fresh install with no `Microtonic
      Scripts` folder yet. Treat it as the
@@ -192,14 +192,14 @@ node references/microtonic-scripts-sdk/tools/install-jsconsole.js "/ABS/PATH/TO/
 
 On a never-used Microtonic install the `Microtonic Scripts` folder does not exist
 yet. Microtonic still shows the puzzle (script) menu, but it stays greyed out and
-inactive — including *Open Scripts Folder* — until the folder exists, so there is
+inactive (including *Open Scripts Folder*) until the folder exists, so there is
 nothing you can click to reach it. The standard macOS location is
 `/Library/Application Support/Sonic Charge/Microtonic Scripts` (on Windows, use the
 [locator](#installing-scripts-in-microtonic)). It is protected (root-owned
 `/Library`), so first-time creation needs one elevated step either way. **Offer the
 user a choice** rather than deciding for them:
 
-- **A — Create the folder at the standard location (stays stock).** Best when they
+- **A: Create the folder at the standard location (stays stock).** Best when they
   just want the bridge working with minimal change to their install. Stage through
   `/tmp` so the elevated copy never reads the SDK checkout (macOS TCC blocks that
   when the checkout is under `~/Documents`, Desktop, or Downloads):
@@ -213,11 +213,11 @@ user a choice** rather than deciding for them:
   The folder stays root-owned; later installs need elevation, but iteration rides
   the bridge.
 
-- **B — Link the standard location to your project's `scripts/` folder**
+- **B: Link the standard location to your project's `scripts/` folder**
   ([development scripts folder](../../README.md#development-scripts-folder)). Best
   when they want to edit installed scripts in place without elevation afterwards.
   This is the `scripts/` folder from the [recommended layout](#recommended-project-layout)
-  above — the same directory your project scripts live in — so linking it makes
+  above (the same directory your project scripts live in), so linking it makes
   every project script Microtonic's live installation. Because the standard location
   does not exist yet there is nothing to back up: put the console in `scripts/`, then
   point the standard path at it with one elevated `ln -s` (creating a link does not
@@ -235,7 +235,7 @@ user a choice** rather than deciding for them:
   resolve it); the inner paths use single quotes so the spaces survive. Afterwards
   `install-jsconsole.js` and edits run as the normal user with no elevation. Copying
   the console into `scripts/` means its `JSConsole_main.schema` needs the
-  project-relative paths shown above — rewrite them for CushyLint/editor tooling.
+  project-relative paths shown above; rewrite them for CushyLint/editor tooling.
   Prefer a project **outside** `~/Documents`/Desktop/Downloads to avoid a one-time
   Microtonic "wants to access Documents" prompt when it reads through the link.
 

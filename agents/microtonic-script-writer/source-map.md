@@ -26,7 +26,7 @@ For a section-level index with line ranges and sizes, see [`llms.txt`](../../llm
 ## Cushy And GUI References
 
 - [`docs/Cushy Documentation.md`](../../docs/Cushy%20Documentation.md):
-  orientation to the Cushy system — mental model, minimal window walkthrough,
+  orientation to the Cushy system: mental model, minimal window walkthrough,
   and a map of where each part of Cushy is documented. Start here, then drill
   into the schema for exact syntax.
 - [`CushyLint/cushy.schema`](../../CushyLint/cushy.schema): official `.cushy`

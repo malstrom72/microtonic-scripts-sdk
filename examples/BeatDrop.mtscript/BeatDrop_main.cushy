@@ -45,7 +45,7 @@
 @define c6=#8A5BE5
 @define c7=#E55BB0
 
-// generic, channel-agnostic trigger color — shared by the NEXT preview and the
+// generic, channel-agnostic trigger color, shared by the NEXT preview and the
 // legend so neither masquerades as a specific channel (c0..c7). It is a muted
 // steel tone (not one of the 8 vivid channel hues) and dark enough that the
 // white @accentPen inset reads. Accent = this same fill + the inset, like the board.

@@ -125,7 +125,7 @@ function failMissingFolder(resolvedTarget) {
 			`  cp -R ${JSON.stringify(source)} /tmp/`,
 			`  osascript -e 'do shell script "mkdir -p \\"${resolvedTarget}\\" && cp -R \\"${stagedCopy}\\" \\"${resolvedTarget}/\\"" with administrator privileges'`,
 			'',
-			'That is a one-time setup — ongoing iteration goes over the bridge, not this folder.',
+			'That is a one-time setup; ongoing iteration goes over the bridge, not this folder.',
 			'',
 			'Alternatively, link the standard location to your project\'s scripts/ folder so later',
 			'installs and edits need no elevation (see "development scripts folder" in the README).',
