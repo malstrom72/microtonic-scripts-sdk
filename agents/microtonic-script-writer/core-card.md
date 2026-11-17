@@ -49,9 +49,10 @@ lines. The full instructions are [`instructions.md`](instructions.md).
 - Views clip hard at their bounds: nothing outside a view's bounds is drawn or clickable.
 - Keep `.cushy` source and the strings getters return ASCII.
 - Makaron expands macros everywhere, comments included: never write `@name` of a macro in a `//` comment.
-- Action `params` reach `execute`, `checked` and `enabled` as the raw Numbstrict text, so a quoted string keeps its
-  quotes: `params: "2"` arrives as `"2"`, and `+p` is NaN. Use `unescape(p)` for a single value or
-  `parseNumbstrict(p)` for a structure.
+- Action `params` reach `execute`, `checked` and `enabled` as the raw Numbstrict text from the `.cushy` file. Write a
+  number unquoted (`params: 542`), declare it `<int>` or `<real>` in the package `.schema` and read it with `+p`.
+  Write a string quoted, declare it `<string>` and read it with `unescape(p)`. Read a structure with
+  `parseNumbstrict(p)`. An action without params gets `''`.
 - Cushy polls every bound variable and action state 10 to 50 times a second, hidden or not. Keep getters, `enabled`
   and `checked` cheap: return values computed when their inputs changed.
 - Never modify anything in `Microtonic Resources/`; it is a copy of the shipped files.

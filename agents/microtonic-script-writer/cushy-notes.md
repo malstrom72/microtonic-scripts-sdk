@@ -273,11 +273,14 @@ occasional averages rather than tracing every tick.
 - Each JavaScript getter, `enabled`, `checked` or `execute` call resolves its
   dotted name from the globals again and gets the action's parameters as the
   raw string, so parsing them in the script runs on every poll.
-- Action parameters arrive as the raw Numbstrict text written in the `.cushy`
-  file, so a quoted string keeps its quotes: `params: "2"` reaches `execute`
-  and `checked` as `"2"`, quotes included, and `+p` is NaN. Use `unescape(p)`
-  for a single value or `parseNumbstrict(p)` for a structure. Unquoted numbers
-  only happen to work with `+p`. See GUI Actions in the
+- Action parameters reach `execute`, `checked` and `enabled` as the raw
+  Numbstrict text from the `.cushy` file. Write a number unquoted
+  (`params: 542`), declare it `<int>` or `<real>` in the package `.schema` and
+  read it with `+p`; CushyLint then rejects a quoted number, which would
+  arrive as `"542"` with its quotes and make `+p` NaN. Write a string quoted,
+  declare it `<string>` and read it with `unescape(p)` (`+unescape(p)` if the
+  string holds a number). Read a structure with `parseNumbstrict(p)`. An action
+  without params gets `''`. See GUI Actions in the
   [JS Reference](../../docs/Microtonic%20JS%20Reference.md#gui-actions).
 - JavaScript variables shadow Cushy variables with the same name. Account for
   that when naming GUI state or debugging why a view reads a particular value.
