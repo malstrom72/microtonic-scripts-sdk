@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 //
-// JSConsole bridge — MCP server
-// =============================
+// JSConsole bridge: MCP server
+// ============================
 //
 // Drives the file bridge built into the product's JS Console script package so an
 // MCP client (e.g. Claude Code) can evaluate JavaScript against a *live* engine and
@@ -31,7 +31,7 @@
 // of this server.
 //
 // Transport is MCP stdio: newline-delimited JSON-RPC 2.0 on stdin/stdout.
-// stdout MUST carry only protocol messages — all diagnostics go to stderr.
+// stdout MUST carry only protocol messages; all diagnostics go to stderr.
 //
 
 'use strict';
@@ -42,7 +42,7 @@ const os = require('os');
 const path = require('path');
 
 // ---------------------------------------------------------------------------
-// BEGIN PRODUCT CONFIGURATION — the only part of this file that differs between
+// BEGIN PRODUCT CONFIGURATION: the only part of this file that differs between
 // the Microtonic and Synplant Scripts SDKs.
 // ---------------------------------------------------------------------------
 const PRODUCT = {
@@ -290,7 +290,7 @@ async function checkOwnership() {
 }
 
 //
-// Tool: <prefix>_eval — write a request atomically, poll for the matching reply.
+// Tool <prefix>_eval: write a request atomically, poll for the matching reply.
 //
 async function bridgeEval(args, token) {
 	const code = args && typeof args.code === 'string' ? args.code : null;
@@ -345,12 +345,12 @@ async function bridgeEvalNow(code, timeout, deadline, token) {
 		? ' The request was withdrawn, so it will not run later unless the bridge had already '
 			+ 'started it.'
 		: ' The request could not be withdrawn (request.json stayed locked) and may still run later.';
-	throw timeoutError('timed out after ' + timeout + 'ms with no reply — the bridge is not '
+	throw timeoutError('timed out after ' + timeout + 'ms with no reply; the bridge is not '
 		+ 'responding.' + detail + ' Check, in order of likelihood: '
 		+ '1) the ' + CONSOLE + ' window is open in ' + PRODUCT_NAME + '; '
 		+ '2) you typed `bridge on` in it this session (a leftover bridge.json does not mean it is live); '
 		+ '3) ' + PRODUCT_NAME + ' is running. '
-		+ 'Only if it was working and just stopped: a modal dialog may be blocking the bridge tick — '
+		+ 'Only if it was working and just stopped: a modal dialog may be blocking the bridge tick; '
 		+ 'dismiss it in ' + PRODUCT_NAME + ', then `bridge off` / `bridge on`. '
 		+ 'Run ' + STATUS_TOOL + ' to probe the connection.');
 }
@@ -367,7 +367,7 @@ function formatEval(resp) {
 }
 
 //
-// Tool: <prefix>_reload — invoke the asynchronous reload action, then poll an
+// Tool <prefix>_reload: invoke the asynchronous reload action, then poll an
 // observable effect until the edited scripts are actually live.
 //
 // performCushyAction itself is synchronous; `reload` is the asynchronous part. Its
@@ -425,17 +425,17 @@ async function bridgeReload(args, token) {
 		}
 	}
 	throw new Error('reload was invoked but the `until` predicate did not become true within '
-		+ timeout + 'ms. The predicate may be wrong, or the script may have failed to parse — '
+		+ timeout + 'ms. The predicate may be wrong, or the script may have failed to parse; '
 		+ 'check the ' + CONSOLE + ' output before assuming the reload did not happen.');
 }
 
 //
-// Tool: <prefix>_status — report whether the bridge is actually responding.
+// Tool <prefix>_status: report whether the bridge is actually responding.
 //
 // The bridge.json presence file only proves the bridge was enabled at *some* point:
 // it is written on `bridge on` and not refreshed while running, so it lingers after
 // the console is closed or the product quits. Presence is therefore NOT liveness.
-// To report the truth we actively probe — send a trivial eval and see if a reply
+// To report the truth we actively probe: send a trivial eval and see if a reply
 // comes back.
 //
 const PROBE_TIMEOUT_MS = 1500;
@@ -468,7 +468,7 @@ async function bridgeStatus(token) {
 		lines.push('bridge: BUSY, another call is in progress, so no probe was sent. Run '
 			+ STATUS_TOOL + ' again after it returns.');
 	} else if (live) {
-		lines.push('bridge: LIVE — responded to a probe.');
+		lines.push('bridge: LIVE (responded to a probe).');
 	} else if (presence && presence.ready) {
 		// bridge.json carries the bridge's own epoch-ms `time` stamp.
 		let announced = '';
@@ -482,7 +482,7 @@ async function bridgeStatus(token) {
 			+ '3) ' + PRODUCT_NAME + ' is not running; 4) a modal dialog is blocking the bridge tick (dismiss it, '
 			+ 'then `bridge off` / `bridge on`).');
 	} else {
-		lines.push('bridge: NOT RESPONDING and no presence file — open the ' + CONSOLE + ' window in '
+		lines.push('bridge: NOT RESPONDING and no presence file; open the ' + CONSOLE + ' window in '
 			+ PRODUCT_NAME + ' and type `bridge on`.');
 	}
 	// Our own last seq, since a timed-out request.json has been withdrawn.

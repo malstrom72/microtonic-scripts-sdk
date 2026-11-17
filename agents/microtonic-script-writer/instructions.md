@@ -118,9 +118,9 @@ Recommended bootstrap phase order:
 1. Create `AGENTS.md`, `CLAUDE.md`, `.mcp.json` for Claude Code compatibility,
    `scripts/`, and `references/microtonic-scripts-sdk/`.
 2. Identify the exact live scripts folder. **Check the standard path on disk
-   first** — do not lead with `DIRS.SCRIPTS` or *Open Scripts Folder* on a cold
+   first**; do not lead with `DIRS.SCRIPTS` or *Open Scripts Folder* on a cold
    bootstrap. There is no bridge yet, so `DIRS.SCRIPTS` is unavailable, and
-   Microtonic greys out the puzzle menu — including *Open Scripts Folder* — until
+   Microtonic greys out the puzzle menu (including *Open Scripts Folder*) until
    the folder exists, so neither can point at a folder that isn't there. On macOS
    the standard path is `/Library/Application Support/Sonic Charge/Microtonic
    Scripts`; on Windows it is normally under `C:\Program Files\Sonic Charge\
@@ -225,7 +225,7 @@ bridge works regardless of where the SDK or project lives. A user-scoped
 equally valid alternative that serves every Microtonic project on the machine.
 
 **The bridge lives inside JSConsole**, so Microtonic must be running *this SDK's*
-`JSConsole.mtscript` (the copy in the checkout, which contains the bridge) — not
+`JSConsole.mtscript` (the copy in the checkout, which contains the bridge), not
 a factory or previously installed JSConsole, which has no `bridge on` command.
 During bootstrap, first ask whether the user wants to link Microtonic's live
 scripts folder to the project `scripts/` folder for development. Linking is not
@@ -287,7 +287,7 @@ pointed at a folder that does not exist yet. On macOS the standard location is
 protected (root-owned `/Library`), so first-time creation needs one elevated
 step. **Offer the user a choice** rather than deciding for them:
 
-- **A — Create the folder at the standard location (stays stock).** Stage through
+- **A: Create the folder at the standard location (stays stock).** Stage through
   `/tmp` so the elevated copy never reads the SDK checkout (macOS TCC blocks that
   when the checkout is under `~/Documents`, Desktop, or Downloads):
 
@@ -300,7 +300,7 @@ step. **Offer the user a choice** rather than deciding for them:
   The folder stays root-owned; later installs need elevation, but iteration rides
   the bridge.
 
-- **B — Link the standard location to project `scripts/`.** There is nothing to
+- **B: Link the standard location to project `scripts/`.** There is nothing to
   back up since the standard location does not exist yet. Put the console in
   `scripts/`, then point the standard path at it with one elevated `ln -s`
   (creating a link does not read the target, so no TCC block):
@@ -401,7 +401,7 @@ and the SDK's JSConsole is installed, make the remaining setup explicit:
 
 If `mt_status` reports `bridge: NOT RESPONDING`, the bridge is not answering. This
 almost always means JSConsole is not open, or `bridge on` was not typed **this
-session** — a leftover `bridge.json` presence file does not mean the bridge is live.
+session**: a leftover `bridge.json` presence file does not mean the bridge is live.
 It can also mean JSConsole is not the SDK's bridged copy or the MCP client has not
 loaded the project server yet. Report that state plainly and ask the user to
 complete the missing setup step before suspecting anything more exotic.
@@ -410,11 +410,11 @@ complete the missing setup step before suspecting anything more exotic.
 snippets in an IIFE so temporary `var`s do not leak or shadow host globals.
 Avoid evals that can open modal dialogs during reload/startup; a modal can
 block the bridge tick from writing replies until the dialog is dismissed. When an
-eval times out or `last reply seq` is frozen, **do not assume a modal — that is the
+eval times out or `last reply seq` is frozen, **do not assume a modal; that is the
 least common cause.** Diagnose in order of likelihood: 1) is the JSConsole window
 open? 2) was `bridge on` typed **this session** (a stale `bridge.json` does not
 count)? 3) is Microtonic running? Only if the bridge *was* working and just stopped
-is a modal likely — then dismiss any Microtonic dialog and run `bridge off` /
+is a modal likely. Then dismiss any Microtonic dialog and run `bridge off` /
 `bridge on`. `mt_status` distinguishes these by probing (LIVE vs NOT RESPONDING).
 
 To run a script over the bridge, evaluate Microtonic's `run()` function with
@@ -437,7 +437,7 @@ the change is loaded. The reload action is asynchronous, so
 `mt_eval("performCushyAction('reload')")` returning does not mean the script
 rerun is finished, and an immediate probe may still see the old code. A normal
 reload keeps the engine and globals alive and does not unload or close the
-current script window, so the bridge survives it — this is the edit → reload →
+current script window, so the bridge survives it. This is the edit → reload →
 re-test loop. Do not drive a full reset
 (`performCushyAction('reload', 'reset')`) over the bridge: it wipes JS memory
 on the next tick and tears down the bridge, which then has to be re-enabled
@@ -449,7 +449,7 @@ machine-global folder, so only one Microtonic instance can serve it at a time.
 `bridge on` records an `owner` token in `bridge.json`; if another instance already
 owns it, `bridge on` pops an OK/Cancel dialog in that window asking whether to take
 over. Taking over writes the new owner, and the previous owner detects the change
-on its next tick and stands down — so requests are never handled by two engines at
+on its next tick and stands down, so requests are never handled by two engines at
 once. `mt_status`/`mt_eval` always talk to whichever instance currently owns the
 folder. If you have several Microtonic instances open, make sure the one you intend
 to drive is the current owner by running `bridge on` (and clicking OK) in its

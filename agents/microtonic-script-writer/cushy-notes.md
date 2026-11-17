@@ -8,8 +8,8 @@ These notes do not replace the schema, JS reference, or example packages. When
 exact syntax or supported fields matter, verify against the references listed in
 [`source-map.md`](source-map.md).
 
-For an orientation to the Cushy system — the mental model, coordinates and
-scaling, and what is static versus dynamic — start with
+For an orientation to the Cushy system (the mental model, coordinates and
+scaling, and what is static versus dynamic), start with
 [`docs/Cushy Documentation.md`](../../docs/Cushy%20Documentation.md). This file
 picks up where that one leaves off, with practical gotchas and patterns.
 
@@ -706,8 +706,8 @@ padPress: function() {
 
 ## All Text Requires an Explicit Font
 
-Cushy has no default font. Any text — `caption` views, button `caption` fields
-(via `font` in `<buttonStyle>`), bubble styles, or any other text-bearing view —
+Cushy has no default font. Any text (`caption` views, button `caption` fields
+with `font` in `<buttonStyle>`, bubble styles, or any other text-bearing view)
 will not be drawn at all unless an explicit `font` is specified. There is no
 fallback rendering.
 
@@ -723,7 +723,7 @@ standard: { fill: "...", font: { ivgfont: "sans-serif", size: 14, color: "..." }
 
 Use `action: "set"` with a **plain string variable** for radio-button groups
 (e.g. scale pickers, channel selectors). Per the Cushy spec, `set` is checked
-when `<var>` is already exactly `<value>` — so the `checked:` button style
+when `<var>` is already exactly `<value>`, so the `checked:` button style
 applies automatically with no JS code required.
 
 ```
@@ -742,7 +742,7 @@ scaleGenerator = { scaleIndex: '0', ... };
 ```
 
 This is the pattern MacroTweak's channel-choice buttons use. For custom actions,
-the equivalent is an action object with both `execute` and `checked` functions —
+the equivalent is an action object with both `execute` and `checked` functions;
 omitting `checked` means the checked style never applies.
 
 ## Drum Patch Property Copy
@@ -836,7 +836,7 @@ those at top level for a standard window.
 ## Window Default Position
 
 Microtonic's main canvas is `{ 0, 0, 740, 550 }` (from `main.cushy`). Script
-windows must fit within this — clipping is hard, not graceful.
+windows must fit within this: clipping is hard, not graceful.
 
 The `@window(left, top, width, height, ...)` macro's `height` **includes** the
 24px title bar (defined as `@titleBarHeight` in `common.makaron`). It also
@@ -853,7 +853,7 @@ top  = (550 - height) / 2
 
 `windowPosition` is restored between window close/re-open because the script
 stores it on its state object inside the `if (!this.script)` initialization
-guard — so the value survives the window being closed and the JS file re-running.
+guard, so the value survives the window being closed and the JS file re-running.
 The `dragArea` reads the variable on open and writes it on drag, but persistence
 is entirely the script's responsibility. Without the guard (or without
 `windowPosition` on the persisted object), position resets to the default on
@@ -894,9 +894,9 @@ manual extraction.
 ## IVG Font Character Coverage
 
 The built-in IVG `sans-serif` font does not cover all Unicode characters.
-Use only printable ASCII (U+0020–U+007E) in GUI variable return values and
-caption fallback strings. Characters outside that range — including the em-dash
-`—` (U+2014) and similar typographic characters — render as one replacement
+Use only printable ASCII (U+0020 to U+007E) in GUI variable return values and
+caption fallback strings. Characters outside that range, such as the long dash
+(U+2014) and other typographic characters, render as one replacement
 box per code unit, which typically appears as `???` in the UI. Use plain ASCII
 alternatives such as `-` or `...` instead.
 
@@ -908,8 +908,8 @@ alternatives such as `-` or `...` instead.
 |---|---|---|
 | Preset | `.mtpreset` | `.mtpg` |
 | Drum patch | `.mtdrum` | `.mtdp` |
-| MIDI config | `.scmc` | — |
-| Script package | `.mtscript` (directory) | — |
+| MIDI config | `.scmc` | none |
+| Script package | `.mtscript` (directory) | none |
 
 Both current and legacy formats are accepted by `isMarshaledFormat` /
 `unmarshal` / `load` in Microtonic's open dialogs. When scanning for files to
@@ -923,8 +923,8 @@ pattern when user-created files from older versions may be present.
 `/Library/Audio/Presets/Sonic Charge/Microtonic Presets/` on macOS). It
 contains two subdirectories:
 
-- `All/` — flat list of all factory presets as `.mtpreset` files
-- `By Package/` — the same presets organised into per-pack subdirectories
+- `All/`: flat list of all factory presets as `.mtpreset` files
+- `By Package/`: the same presets organised into per-pack subdirectories
 
 Scanning `DIRS.PRESETS + 'All/'` is the simplest way to access the full
 factory preset library from a script.

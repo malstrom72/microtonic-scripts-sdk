@@ -243,7 +243,7 @@ bounds 0,0,300,300
 ```
 
 Colors in IVG are ARGB pre-multiplied (`#AARRGGBB`). All of R, G, B must be
-≤ A — the renderer will error on invalid values. Fully opaque 6-digit colors
+≤ A; the renderer will error on invalid values. Fully opaque 6-digit colors
 (`#RRGGBB`) are always safe.
 
 For tiny glyphs or cell-sized artwork, render a scaled test version that shows
