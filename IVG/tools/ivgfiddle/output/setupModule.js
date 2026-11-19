@@ -18,10 +18,3 @@ runIVG();
 }
 };
 var Module = moduleConfig;
-window.addEventListener('load', function() {
-if (typeof Module === 'function') {
-Module(moduleConfig).then(function(instance) {
-Module = instance;
-});
-}
-});

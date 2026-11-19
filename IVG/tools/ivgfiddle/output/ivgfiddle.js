@@ -165,3 +165,10 @@ document.addEventListener('mousemove', function(e) {
 document.addEventListener('mouseup', function(e) {
 	isDragging = false;
 });
+
+// Start the runtime here, not on window 'load', which has already fired when htmlpreview injects the scripts.
+if (typeof Module === 'function') {
+	Module(moduleConfig).then(function(instance) {
+		Module = instance;
+	});
+}
