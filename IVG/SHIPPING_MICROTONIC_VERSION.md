@@ -7,7 +7,7 @@ the SDK validates scripts with the renderer the next product releases use.
 Imported from `malstrom72/IVG` commit:
 
 ```text
-cdabe2888d846111e6cd8c2ebed4a91ddcd097c7
+8598ae26be26002f1f7ead8e4e6bdd2da0f99f81
 ```
 
 The pinned freeze may be newer than the IVG in released Microtonic and Synplant builds.
